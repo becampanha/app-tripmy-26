@@ -1,0 +1,26 @@
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #e7e2da;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+body,
+#root {
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+button {
+  font-family: inherit;
+}

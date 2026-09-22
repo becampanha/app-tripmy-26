@@ -1,0 +1,118 @@
+[
+  { "date": "24/12", "weekday": "Qui", "theme": "Ida para Miami", "activities": [
+    { "time": "23h10", "title": "Voo para Miami", "subtitle": "Saída às 23h em São Paulo" }
+  ]},
+  { "date": "25/12", "weekday": "Sex", "theme": "Chegada em Orlando", "activities": [
+    { "time": "6h", "title": "Chegada em Miami", "subtitle": "" },
+    { "time": "12h", "title": "Chegada no Disney Springs", "subtitle": "" },
+    { "time": "12h-13h", "title": "Almoço no Jaleo", "subtitle": "Disney Springs" },
+    { "time": "13h-17h", "title": "Passeio pelo Disney Springs", "subtitle": "Dá para ir ao hotel e voltar pra janta" },
+    { "time": "17h30-18h30", "title": "Check-in no hotel", "subtitle": "" },
+    { "time": "18h30", "title": "Marshmallow no hotel", "subtitle": "Tudo fechado por ser 25/12" }
+  ]},
+  { "date": "26/12", "weekday": "Sáb", "theme": "Universal Studios", "activities": [
+    { "time": "7h30-8h", "title": "Café da manhã no hotel", "subtitle": "" },
+    { "time": "8h", "title": "Saída do hotel", "subtitle": "" },
+    { "time": "9h-17h", "title": "Universal Studios", "subtitle": "" },
+    { "time": "17h-18h", "title": "Walmart", "subtitle": "8990 Turkey Lake Rd, Orlando" }
+  ]},
+  { "date": "27/12", "weekday": "Dom", "theme": "Dia de compras", "activities": [
+    { "time": "7h30", "title": "Saída do hotel", "subtitle": "" },
+    { "time": "8h-9h", "title": "Café da manhã no First Watch", "subtitle": "Alternativa: Denny's" },
+    { "time": "9h-11h", "title": "Ross, Marshalls e REI", "subtitle": "Winter Park" },
+    { "time": "11h-13h", "title": "Nordstrom Rack", "subtitle": "Abre 11h" },
+    { "time": "13h-14h", "title": "Almoço no Five Guys", "subtitle": "Alternativas: 4 Rivers, Olive Garden" },
+    { "time": "14h-15h", "title": "Trader Joe's", "subtitle": "" },
+    { "time": "15h-16h", "title": "Castle Park", "subtitle": "Parquinho para as crianças" },
+    { "time": "16h30-18h", "title": "Target", "subtitle": "" },
+    { "time": "18h-19h", "title": "Jantar no Maggiano's", "subtitle": "Alternativa: LongHorn Steakhouse" }
+  ]},
+  { "date": "28/12", "weekday": "Seg", "theme": "Parque Epic", "activities": [
+    { "time": "Dia todo", "title": "Epic", "subtitle": "" }
+  ]},
+  { "date": "29/12", "weekday": "Ter", "theme": "Islands of Adventure", "activities": [
+    { "time": "Dia todo", "title": "Islands of Adventure", "subtitle": "" }
+  ]},
+  { "date": "30/12", "weekday": "Qua", "theme": "Compras", "activities": [
+    { "time": "7h45", "title": "Saída do hotel", "subtitle": "" },
+    { "time": "8h-9h30", "title": "Café da manhã no Boma", "subtitle": "" },
+    { "time": "10h-17h", "title": "Orlando Vineland Outlet", "subtitle": "Almoço no Fords Garage ou praça de alimentação" },
+    { "time": "18h15", "title": "Saída do hotel", "subtitle": "" },
+    { "time": "18h45", "title": "Jantar no SoDo Square", "subtitle": "" },
+    { "time": "20h", "title": "Culto", "subtitle": "445 North Forsyth Road" }
+  ]},
+  { "date": "31/12", "weekday": "Qui", "theme": "Animal Kingdom", "activities": [
+    { "time": "6h20", "title": "Fila do ônibus", "subtitle": "" },
+    { "time": "6h30-6h45", "title": "Embarque no ônibus", "subtitle": "" },
+    { "time": "6h50-7h10", "title": "Chegada no parque", "subtitle": "" },
+    { "time": "7h20", "title": "Fila do parque", "subtitle": "" },
+    { "time": "7h30", "title": "Entrada no parque", "subtitle": "Early entry - abertura oficial às 8h" },
+    { "time": "18h", "title": "Jantar de fim de ano", "subtitle": "" },
+    { "time": "19h", "title": "Fechamento do parque", "subtitle": "" }
+  ]},
+  { "date": "01/01", "weekday": "Sex", "theme": "Compras", "activities": [
+    { "time": "8h-8h30", "title": "Café da manhã no hotel", "subtitle": "" },
+    { "time": "9h30-11h30", "title": "Target / descanso", "subtitle": "Ou caça ao tesouro no hotel" },
+    { "time": "12h-13h", "title": "Almoço no The Boathouse", "subtitle": "Disney Springs" },
+    { "time": "13h-16h", "title": "99 Level e Disney Springs", "subtitle": "" },
+    { "time": "16h-18h", "title": "Walmart", "subtitle": "" },
+    { "time": "18h-19h", "title": "Jantar no Giordano's", "subtitle": "Alternativa: Perkins" }
+  ]},
+  { "date": "02/01", "weekday": "Sáb", "theme": "Hollywood Studios", "activities": [
+    { "time": "6h25", "title": "Fila do ônibus", "subtitle": "" },
+    { "time": "6h40-7h", "title": "Embarque no ônibus", "subtitle": "" },
+    { "time": "7h-7h20", "title": "Chegada no parque", "subtitle": "" },
+    { "time": "7h30", "title": "Fila do parque", "subtitle": "" },
+    { "time": "8h", "title": "Entrada no parque", "subtitle": "Early entry - abertura oficial às 8h30" },
+    { "time": "21h", "title": "Show de encerramento", "subtitle": "" },
+    { "time": "21h", "title": "Fechamento do parque", "subtitle": "" }
+  ]},
+  { "date": "03/01", "weekday": "Dom", "theme": "Compras", "activities": [
+    { "time": "9h", "title": "Saída do hotel", "subtitle": "" },
+    { "time": "9h30-10h30", "title": "Café da manhã no Cracker Barrel", "subtitle": "" },
+    { "time": "10h30-11h", "title": "Target", "subtitle": "" },
+    { "time": "11h-13h30", "title": "Ross, Best Buy, Marshalls", "subtitle": "" },
+    { "time": "13h30-14h30", "title": "Almoço", "subtitle": "Chick-fil-A, Panda Express, Five Guys, Arby's" },
+    { "time": "14h30-16h30", "title": "Burlington, Carter's, Old Navy", "subtitle": "" },
+    { "time": "18h30", "title": "Culto", "subtitle": "" },
+    { "time": "21h", "title": "Jantar no hotel", "subtitle": "" }
+  ]},
+  { "date": "04/01", "weekday": "Seg", "theme": "Epcot", "activities": [
+    { "time": "7h05", "title": "Fila do ônibus", "subtitle": "" },
+    { "time": "7h15-7h30", "title": "Embarque no ônibus", "subtitle": "" },
+    { "time": "7h45-8h", "title": "Chegada no parque", "subtitle": "" },
+    { "time": "8h10", "title": "Fila do parque", "subtitle": "" },
+    { "time": "8h30", "title": "Entrada no parque", "subtitle": "Early entry - abertura oficial às 9h" },
+    { "time": "21h", "title": "Show e fechamento", "subtitle": "" }
+  ]},
+  { "date": "05/01", "weekday": "Ter", "theme": "Compras", "activities": [
+    { "time": "8h", "title": "Saída do hotel", "subtitle": "" },
+    { "time": "8h30-9h30", "title": "Café da manhã no Denny's", "subtitle": "" },
+    { "time": "10h-13h", "title": "Lojas Clearance", "subtitle": "Ou parque da Universal" },
+    { "time": "13h-14h", "title": "Almoço no Shake Shack", "subtitle": "Alternativa: Olive Garden, Culver's" },
+    { "time": "14h-16h", "title": "Nordstrom Rack", "subtitle": "" },
+    { "time": "16h-17h30", "title": "Mall at Millenia", "subtitle": "" },
+    { "time": "18h-19h", "title": "Jantar no Maggiano's", "subtitle": "Alternativa: LongHorn Steakhouse" }
+  ]},
+  { "date": "06/01", "weekday": "Qua", "theme": "Magic Kingdom", "activities": [
+    { "time": "6h50", "title": "Fila do ônibus", "subtitle": "" },
+    { "time": "7h-7h15", "title": "Embarque no ônibus", "subtitle": "" },
+    { "time": "7h30-7h45", "title": "Chegada no parque", "subtitle": "" },
+    { "time": "8h", "title": "Fila do parque", "subtitle": "" },
+    { "time": "8h30", "title": "Entrada no parque", "subtitle": "Early entry - abertura oficial às 9h" },
+    { "time": "22h", "title": "Show e fechamento", "subtitle": "" }
+  ]},
+  { "date": "07/01", "weekday": "Qui", "theme": "Compras", "activities": [
+    { "time": "9h", "title": "Saída do hotel", "subtitle": "" },
+    { "time": "9h30-10h30", "title": "Café da manhã no IHOP", "subtitle": "" },
+    { "time": "10h30-12h30", "title": "Walmart", "subtitle": "" },
+    { "time": "12h30-13h30", "title": "Jantar no Homecomin' Kitchen", "subtitle": "Disney Springs" },
+    { "time": "13h30-18h", "title": "Dia livre", "subtitle": "Compras, malas ou parque" }
+  ]},
+  { "date": "08/01", "weekday": "Sex", "theme": "Não definido ainda", "activities": [
+    { "time": "9h30", "title": "Checkout do hotel", "subtitle": "Ida para Miami" }
+  ]},
+  { "date": "09/01", "weekday": "Sáb", "theme": "Não definido ainda", "activities": [] },
+  { "date": "10/01", "weekday": "Dom", "theme": "Não definido ainda", "activities": [] },
+  { "date": "11/01", "weekday": "Seg", "theme": "Volta para São Paulo", "activities": [] }
+]

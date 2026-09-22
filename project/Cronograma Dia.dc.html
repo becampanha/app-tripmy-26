@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+  body{margin:0;background:#e7e2da;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+  ::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+
+<div style="width:100%;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 16px;box-sizing:border-box">
+  <div style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;box-shadow:0 30px 60px -20px rgba(0,0,0,0.35);flex:none;background:#151210">
+
+    <div style="position:absolute;inset:0;z-index:0">
+      <image-slot id="bg-photo" shape="rect" placeholder="Solte uma foto do destino (praia, cidade, montanha...)" credit="{{ bgCredit }}" credit-href="{{ bgCreditHref }}" src="{{ bgSrc }}" style="width:100%;height:100%"></image-slot>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0) 30%);pointer-events:none"></div>
+    </div>
+
+    <div style="position:absolute;top:22px;left:22px;right:22px;z-index:2">
+      <div style="font-size:12.5px;font-weight:700;letter-spacing:0.4px;color:rgba(255,255,255,0.8);text-transform:uppercase">Orlando, Disney</div>
+      <div style="font-size:22px;font-weight:800;margin-top:3px;letter-spacing:-0.2px;color:#fff">{{ headerDate }}</div>
+
+      <div ref="{{ daysRef }}" onMouseDown="{{ onDaysMouseDown }}" onMouseMove="{{ onDaysMouseMove }}" onMouseUp="{{ onDaysMouseUp }}" onMouseLeave="{{ onDaysMouseUp }}" style="display:flex;gap:10px;overflow-x:auto;margin-top:14px;padding:2px 2px 6px;-webkit-overflow-scrolling:touch;cursor:grab;user-select:none">
+        <sc-for list="{{ days }}" as="day" hint-placeholder-count="7">
+          <div onClick="{{ day.onClick }}" style="{{ day.wrapStyle }}">
+            <div style="{{ day.weekdayStyle }}">{{ day.weekday }}</div>
+            <div style="{{ day.numStyle }}">{{ day.num }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;z-index:1">
+
+      <div style="height:340px"></div>
+
+      <div style="position:sticky;top:158px;height:calc(844px - 158px);background:#f7f5f1;border-radius:28px 28px 0 0;box-shadow:0 -12px 30px rgba(28,26,23,0.18);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden">
+
+        <div style="display:flex;justify-content:center;padding:8px 0 10px;flex:none">
+          <div style="width:38px;height:4px;border-radius:2px;background:#dcd6ca"></div>
+        </div>
+
+        <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 22px;margin-bottom:16px;flex:none">
+          <div style="color:#1c1a17;font-size:17px;font-weight:800;letter-spacing:-0.1px">{{ dayTheme }}</div>
+          <div style="color:#9a9186;font-size:12.5px;font-weight:600">{{ activityCountLabel }}</div>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;padding:0 22px 120px;box-sizing:border-box">
+          <sc-for list="{{ activities }}" as="act" hint-placeholder-count="3">
+            <div style="display:flex;gap:12px;align-items:center;padding:14px;margin-bottom:10px;background:#fff;border-radius:18px;box-shadow:0 2px 10px rgba(28,26,23,0.06)">
+              <div style="display:flex;flex-direction:column;align-items:center;width:56px;flex:none">
+                <div style="color:#1c1a17;font-size:13px;font-weight:700;white-space:nowrap">{{ act.time }}</div>
+              </div>
+              <div style="width:8px;height:8px;border-radius:50%;background:#1c1a17;flex:none"></div>
+              <div style="flex:1;min-width:0">
+                <div style="color:#1c1a17;font-size:15px;font-weight:700;line-height:1.25">{{ act.title }}</div>
+                <sc-if value="{{ act.hasSubtitle }}" hint-placeholder-val="{{ false }}">
+                  <div style="color:#9a9186;font-size:12.5px;font-weight:500;margin-top:2px;line-height:1.3">{{ act.subtitle }}</div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+
+          <sc-if value="{{ noActivities }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:30px 0;text-align:center;color:#b6ae9f;font-size:13.5px;font-weight:600">Sem atividades definidas para este dia.</div>
+          </sc-if>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="position:absolute;left:22px;right:22px;bottom:20px;display:flex;align-items:center;justify-content:space-around;background:#ffffff;border-radius:22px;padding:12px 8px;box-shadow:0 10px 26px rgba(28,26,23,0.14);z-index:3">
+      <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="2">
+        <div onClick="{{ tab.onClick }}" style="{{ tab.wrapStyle }}">
+          <sc-if value="{{ tab.isMap }}" hint-placeholder-val="{{ true }}">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="{{ tab.iconColor }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/>
+              <path d="M15 5.764v15"/>
+              <path d="M9 3.236v15"/>
+            </svg>
+          </sc-if>
+          <sc-if value="{{ tab.isStore }}" hint-placeholder-val="{{ false }}">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="{{ tab.iconColor }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/>
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+              <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/>
+              <path d="M2 7h20"/>
+              <path d="M22 7v3a2 2 0 0 1-2 2 2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/>
+            </svg>
+          </sc-if>
+          <div style="{{ tab.labelStyle }}">{{ tab.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { selected: 1, tab: 0 };
+
+  tabDefs = [
+    { label: 'Roteiro', isMap: true, isStore: false },
+    { label: 'Lugares', isMap: false, isStore: true },
+  ];
+
+  selectTab(i) { this.setState({ tab: i }); }
+
+  days = [
+    { date: '24/12', weekday: 'Qui', theme: 'Ida para Miami', activities: [
+      { time: '23h10', title: 'Voo para Miami', subtitle: 'Saída às 23h em São Paulo' },
+    ]},
+    { date: '25/12', weekday: 'Sex', theme: 'Chegada em Orlando', activities: [
+      { time: '6h', title: 'Chegada em Miami', subtitle: '' },
+      { time: '12h', title: 'Chegada no Disney Springs', subtitle: '' },
+      { time: '12h-13h', title: 'Almoço no Jaleo', subtitle: 'Disney Springs' },
+      { time: '13h-17h', title: 'Passeio pelo Disney Springs', subtitle: 'Dá para ir ao hotel e voltar pra janta' },
+      { time: '17h30-18h30', title: 'Check-in no hotel', subtitle: '' },
+      { time: '18h30', title: 'Marshmallow no hotel', subtitle: 'Tudo fechado por ser 25/12' },
+    ]},
+    { date: '26/12', weekday: 'Sáb', theme: 'Universal Studios', activities: [
+      { time: '7h30-8h', title: 'Café da manhã no hotel', subtitle: '' },
+      { time: '8h', title: 'Saída do hotel', subtitle: '' },
+      { time: '9h-17h', title: 'Universal Studios', subtitle: '' },
+      { time: '17h-18h', title: 'Walmart', subtitle: '8990 Turkey Lake Rd, Orlando' },
+    ]},
+    { date: '27/12', weekday: 'Dom', theme: 'Dia de compras', activities: [
+      { time: '7h30', title: 'Saída do hotel', subtitle: '' },
+      { time: '8h-9h', title: 'Café da manhã no First Watch', subtitle: 'Alternativa: Denny\'s' },
+      { time: '9h-11h', title: 'Ross, Marshalls e REI', subtitle: 'Winter Park' },
+      { time: '11h-13h', title: 'Nordstrom Rack', subtitle: 'Abre 11h' },
+      { time: '13h-14h', title: 'Almoço no Five Guys', subtitle: 'Alternativas: 4 Rivers, Olive Garden' },
+      { time: '14h-15h', title: 'Trader Joe\'s', subtitle: '' },
+      { time: '15h-16h', title: 'Castle Park', subtitle: 'Parquinho para as crianças' },
+      { time: '16h30-18h', title: 'Target', subtitle: '' },
+      { time: '18h-19h', title: 'Jantar no Maggiano\'s', subtitle: 'Alternativa: LongHorn Steakhouse' },
+    ]},
+    { date: '28/12', weekday: 'Seg', theme: 'Parque Epic', activities: [
+      { time: 'Dia todo', title: 'Epic', subtitle: '' },
+    ]},
+    { date: '29/12', weekday: 'Ter', theme: 'Islands of Adventure', activities: [
+      { time: 'Dia todo', title: 'Islands of Adventure', subtitle: '' },
+    ]},
+    { date: '30/12', weekday: 'Qua', theme: 'Compras', activities: [
+      { time: '7h45', title: 'Saída do hotel', subtitle: '' },
+      { time: '8h-9h30', title: 'Café da manhã no Boma', subtitle: '' },
+      { time: '10h-17h', title: 'Orlando Vineland Outlet', subtitle: 'Almoço no Fords Garage ou praça de alimentação' },
+      { time: '18h15', title: 'Saída do hotel', subtitle: '' },
+      { time: '18h45', title: 'Jantar no SoDo Square', subtitle: '' },
+      { time: '20h', title: 'Culto', subtitle: '445 North Forsyth Road' },
+    ]},
+    { date: '31/12', weekday: 'Qui', theme: 'Animal Kingdom', activities: [
+      { time: '6h20', title: 'Fila do ônibus', subtitle: '' },
+      { time: '6h30-6h45', title: 'Embarque no ônibus', subtitle: '' },
+      { time: '6h50-7h10', title: 'Chegada no parque', subtitle: '' },
+      { time: '7h20', title: 'Fila do parque', subtitle: '' },
+      { time: '7h30', title: 'Entrada no parque', subtitle: 'Early entry - abertura oficial às 8h' },
+      { time: '18h', title: 'Jantar de fim de ano', subtitle: '' },
+      { time: '19h', title: 'Fechamento do parque', subtitle: '' },
+    ]},
+    { date: '01/01', weekday: 'Sex', theme: 'Compras', activities: [
+      { time: '8h-8h30', title: 'Café da manhã no hotel', subtitle: '' },
+      { time: '9h30-11h30', title: 'Target / descanso', subtitle: 'Ou caça ao tesouro no hotel' },
+      { time: '12h-13h', title: 'Almoço no The Boathouse', subtitle: 'Disney Springs' },
+      { time: '13h-16h', title: '99 Level e Disney Springs', subtitle: '' },
+      { time: '16h-18h', title: 'Walmart', subtitle: '' },
+      { time: '18h-19h', title: 'Jantar no Giordano\'s', subtitle: 'Alternativa: Perkins' },
+    ]},
+    { date: '02/01', weekday: 'Sáb', theme: 'Hollywood Studios', activities: [
+      { time: '6h25', title: 'Fila do ônibus', subtitle: '' },
+      { time: '6h40-7h', title: 'Embarque no ônibus', subtitle: '' },
+      { time: '7h-7h20', title: 'Chegada no parque', subtitle: '' },
+      { time: '7h30', title: 'Fila do parque', subtitle: '' },
+      { time: '8h', title: 'Entrada no parque', subtitle: 'Early entry - abertura oficial às 8h30' },
+      { time: '21h', title: 'Show de encerramento', subtitle: '' },
+      { time: '21h', title: 'Fechamento do parque', subtitle: '' },
+    ]},
+    { date: '03/01', weekday: 'Dom', theme: 'Compras', activities: [
+      { time: '9h', title: 'Saída do hotel', subtitle: '' },
+      { time: '9h30-10h30', title: 'Café da manhã no Cracker Barrel', subtitle: '' },
+      { time: '10h30-11h', title: 'Target', subtitle: '' },
+      { time: '11h-13h30', title: 'Ross, Best Buy, Marshalls', subtitle: '' },
+      { time: '13h30-14h30', title: 'Almoço', subtitle: 'Chick-fil-A, Panda Express, Five Guys, Arby\'s' },
+      { time: '14h30-16h30', title: 'Burlington, Carter\'s, Old Navy', subtitle: '' },
+      { time: '18h30', title: 'Culto', subtitle: '' },
+      { time: '21h', title: 'Jantar no hotel', subtitle: '' },
+    ]},
+    { date: '04/01', weekday: 'Seg', theme: 'Epcot', activities: [
+      { time: '7h05', title: 'Fila do ônibus', subtitle: '' },
+      { time: '7h15-7h30', title: 'Embarque no ônibus', subtitle: '' },
+      { time: '7h45-8h', title: 'Chegada no parque', subtitle: '' },
+      { time: '8h10', title: 'Fila do parque', subtitle: '' },
+      { time: '8h30', title: 'Entrada no parque', subtitle: 'Early entry - abertura oficial às 9h' },
+      { time: '21h', title: 'Show e fechamento', subtitle: '' },
+    ]},
+    { date: '05/01', weekday: 'Ter', theme: 'Compras', activities: [
+      { time: '8h', title: 'Saída do hotel', subtitle: '' },
+      { time: '8h30-9h30', title: 'Café da manhã no Denny\'s', subtitle: '' },
+      { time: '10h-13h', title: 'Lojas Clearance', subtitle: 'Ou parque da Universal' },
+      { time: '13h-14h', title: 'Almoço no Shake Shack', subtitle: 'Alternativa: Olive Garden, Culver\'s' },
+      { time: '14h-16h', title: 'Nordstrom Rack', subtitle: '' },
+      { time: '16h-17h30', title: 'Mall at Millenia', subtitle: '' },
+      { time: '18h-19h', title: 'Jantar no Maggiano\'s', subtitle: 'Alternativa: LongHorn Steakhouse' },
+    ]},
+    { date: '06/01', weekday: 'Qua', theme: 'Magic Kingdom', activities: [
+      { time: '6h50', title: 'Fila do ônibus', subtitle: '' },
+      { time: '7h-7h15', title: 'Embarque no ônibus', subtitle: '' },
+      { time: '7h30-7h45', title: 'Chegada no parque', subtitle: '' },
+      { time: '8h', title: 'Fila do parque', subtitle: '' },
+      { time: '8h30', title: 'Entrada no parque', subtitle: 'Early entry - abertura oficial às 9h' },
+      { time: '22h', title: 'Show e fechamento', subtitle: '' },
+    ]},
+    { date: '07/01', weekday: 'Qui', theme: 'Compras', activities: [
+      { time: '9h', title: 'Saída do hotel', subtitle: '' },
+      { time: '9h30-10h30', title: 'Café da manhã no IHOP', subtitle: '' },
+      { time: '10h30-12h30', title: 'Walmart', subtitle: '' },
+      { time: '12h30-13h30', title: 'Jantar no Homecomin\' Kitchen', subtitle: 'Disney Springs' },
+      { time: '13h30-18h', title: 'Dia livre', subtitle: 'Compras, malas ou parque' },
+    ]},
+    { date: '08/01', weekday: 'Sex', theme: 'Não definido ainda', activities: [
+      { time: '9h30', title: 'Checkout do hotel', subtitle: 'Ida para Miami' },
+    ]},
+    { date: '09/01', weekday: 'Sáb', theme: 'Não definido ainda', activities: [] },
+    { date: '10/01', weekday: 'Dom', theme: 'Não definido ainda', activities: [] },
+    { date: '11/01', weekday: 'Seg', theme: 'Volta para São Paulo', activities: [] },
+  ];
+
+  selectDay(i) { this.setState({ selected: i }); }
+
+  daysRef = React.createRef();
+  dragState = null;
+
+  onDaysMouseDown = (e) => {
+    this.dragState = { startX: e.clientX, startScroll: this.daysRef.current.scrollLeft, moved: false };
+  };
+  onDaysMouseMove = (e) => {
+    if (!this.dragState) return;
+    const dx = e.clientX - this.dragState.startX;
+    if (Math.abs(dx) > 3) this.dragState.moved = true;
+    this.daysRef.current.scrollLeft = this.dragState.startScroll - dx;
+  };
+  onDaysMouseUp = () => { this.dragState = null; };
+
+  renderVals() {
+    const sel = this.state.selected;
+    const bubbleBase = 'flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:48px;height:58px;border-radius:18px;cursor:pointer;transition:background .2s,border-color .2s;';
+    const days = this.days.map((d, i) => {
+      const active = i === sel;
+      return {
+        weekday: d.weekday,
+        num: d.date.split('/')[0],
+        onClick: () => this.selectDay(i),
+        wrapStyle: bubbleBase + (active
+          ? 'background:#1c1a17;'
+          : 'background:#eee9df;'),
+        weekdayStyle: `font-size:10.5px;font-weight:700;letter-spacing:0.3px;text-transform:uppercase;color:${active ? 'rgba(255,255,255,0.65)' : '#9a9186'}`,
+        numStyle: `font-size:16px;font-weight:800;color:${active ? '#fff' : '#1c1a17'}`,
+      };
+    });
+
+    const tabs = this.tabDefs.map((t, i) => {
+      const active = i === this.state.tab;
+      return {
+        label: t.label,
+        icon: t.icon,
+        isMap: t.isMap,
+        isStore: t.isStore,
+        onClick: () => this.selectTab(i),
+        wrapStyle: 'display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 22px;border-radius:14px;cursor:pointer;',
+        iconColor: active ? '#1c1a17' : '#c9c2b6',
+        labelStyle: `font-size:11px;font-weight:700;color:${active ? '#1c1a17' : '#c9c2b6'}`,
+      };
+    });
+
+    const currentDay = this.days[sel];
+    const n = currentDay.activities.length;
+
+    return {
+      tabs,
+      selectTab: this.selectTab.bind(this),
+      days,
+      daysRef: this.daysRef,
+      onDaysMouseDown: this.onDaysMouseDown,
+      onDaysMouseMove: this.onDaysMouseMove,
+      onDaysMouseUp: this.onDaysMouseUp,
+      headerDate: `${currentDay.weekday}, ${currentDay.date}`,
+      dayTheme: currentDay.theme,
+      activityCountLabel: n === 0 ? '' : n === 1 ? '1 atividade' : `${n} atividades`,
+      activities: currentDay.activities.map(a => ({ ...a, hasSubtitle: !!a.subtitle })),
+      noActivities: n === 0,
+      selectDay: this.selectDay.bind(this),
+      bgSrc: 'https://images.unsplash.com/photo-1670336861932-796471787bcd?q=95&w=1170&auto=format&fit=crop&fm=jpg',
+      bgCredit: 'Photo by Nicholas Fuentes on Unsplash',
+      bgCreditHref: 'https://unsplash.com/@nickfuentes_',
+    };
+  }
+}
+
+</script>
+</body>
+</html>

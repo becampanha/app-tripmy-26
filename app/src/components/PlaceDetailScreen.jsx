@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import places from '../data/places.json';
+import { fetchPlaces } from '../api/itineraryApi.js';
 
 function BackIcon() {
   return (
@@ -13,8 +13,19 @@ function BackIcon() {
 export default function PlaceDetailScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const place = places.find((p) => p.id === id);
+  const [place, setPlace] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [photoIndex, setPhotoIndex] = useState(0);
+
+  useEffect(() => {
+    fetchPlaces()
+      .then((places) => setPlace(places.find((p) => p.id === id) || null))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return <div style={{ padding: 40, textAlign: 'center', color: '#9a9186' }}>Carregando…</div>;
+  }
 
   if (!place) {
     return (

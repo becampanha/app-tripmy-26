@@ -1,15 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import PlaceCard from './PlaceCard.jsx';
 import { fetchPlaces } from '../api/itineraryApi.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Loja', 'Parque', 'Outro'];
 
-export default function PlacesScreen() {
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1a17" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 6 6 18" />
+      <path d="M6 6l12 12" />
+    </svg>
+  );
+}
+
+export default function PlaceSelectorModal({ onSelect, onClose }) {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState(CATEGORIES[0]);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPlaces()
@@ -17,18 +32,37 @@ export default function PlacesScreen() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = useMemo(() => {
-    return places.filter((p) => p.category === category);
-  }, [places, category]);
+  const filtered = useMemo(() => places.filter((p) => p.category === category), [places, category]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#151210', boxSizing: 'border-box' }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 20,
+        background: '#151210',
+        overflowY: 'auto',
+        boxSizing: 'border-box',
+      }}
+    >
       <div style={{ padding: '22px 22px 0' }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: 0.4, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase' }}>
-          Orlando, Disney
-        </div>
-        <div style={{ fontSize: 22, fontWeight: 800, marginTop: 3, letterSpacing: -0.2, color: '#fff' }}>
-          Lugares
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Selecionar lugar</div>
+          <div
+            onClick={onClose}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 12,
+              background: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <CloseIcon />
+          </div>
         </div>
 
         <div
@@ -73,7 +107,7 @@ export default function PlacesScreen() {
           borderRadius: '28px 28px 0 0',
           minHeight: 'calc(100dvh - 170px)',
           boxSizing: 'border-box',
-          padding: '20px 22px 120px',
+          padding: '20px 22px 60px',
         }}
       >
         <div style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 600, marginBottom: 14 }}>
@@ -81,7 +115,12 @@ export default function PlacesScreen() {
         </div>
 
         {filtered.map((place) => (
-          <PlaceCard key={place.id} place={place} onAction={() => navigate(`/lugares/${place.id}`)} />
+          <PlaceCard
+            key={place.id}
+            place={place}
+            onAction={() => onSelect(place)}
+            actionIcon={<CheckIcon />}
+          />
         ))}
 
         {!loading && filtered.length === 0 && (

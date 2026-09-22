@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import itinerary from '../data/itinerary.json';
 import BackgroundPhoto from './BackgroundPhoto.jsx';
-import PhotoControls from './PhotoControls.jsx';
 import DayTabs from './DayTabs.jsx';
-import BottomTabBar from './BottomTabBar.jsx';
-import { useBackgroundPhoto } from '../hooks/useBackgroundPhoto.js';
 
 // Proportions carried over from the design prototype (a 390x844 reference
 // frame): the panel starts 340/844 down the screen and pins 158/844 from
@@ -18,8 +15,6 @@ const DEFAULT_PHOTO_URL =
 
 export default function ScheduleScreen() {
   const [selectedDay, setSelectedDay] = useState(1);
-  const [activeTab, setActiveTab] = useState(0);
-  const photo = useBackgroundPhoto(DEFAULT_PHOTO_URL);
 
   const currentDay = itinerary[selectedDay];
   const n = currentDay.activities.length;
@@ -27,8 +22,7 @@ export default function ScheduleScreen() {
 
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', overflow: 'hidden', background: '#151210' }}>
-      <BackgroundPhoto url={photo.url} ready={photo.ready} />
-      <PhotoControls isCustom={photo.isCustom} upload={photo.upload} reset={photo.reset} />
+      <BackgroundPhoto url={DEFAULT_PHOTO_URL} ready={true} />
 
       <div style={{ position: 'absolute', top: 22, left: 22, right: 22, zIndex: 2 }}>
         <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: 0.4, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase' }}>
@@ -104,8 +98,6 @@ export default function ScheduleScreen() {
           </div>
         </div>
       </div>
-
-      <BottomTabBar active={activeTab} onSelect={setActiveTab} />
     </div>
   );
 }

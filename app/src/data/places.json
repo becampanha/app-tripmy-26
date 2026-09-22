@@ -1,0 +1,2054 @@
+[
+  {
+    "id": "ChIJ-0qgNoF_3YgRg3Lh7xHDooU",
+    "name": "Disney Springs",
+    "category": "Loja",
+    "address": "1486 Buena Vista Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.7,
+    "googleMapsUri": "https://maps.google.com/?cid=9629473435077931651&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/disney-springs.jpg",
+    "tag": "🏬 Shopping",
+    "dishPhotos": [
+      "/places/dishes/disney-springs-dish-4.jpg",
+      "/places/dishes/disney-springs-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ0_My9aR_3YgRQnilGsmaCps",
+    "name": "Jaleo",
+    "category": "Restaurante",
+    "address": "1482 E Buena Vista Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.3,
+    "googleMapsUri": "https://maps.google.com/?cid=11171912014172092482&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/jaleo.jpg",
+    "tag": "🍷 Espanhol",
+    "dishPhotos": [
+      "/places/dishes/jaleo-dish-3.jpg",
+      "/places/dishes/jaleo-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJdd8VlMN-54gRoaU0d_zYhfk",
+    "name": "Universal Studios Florida",
+    "category": "Parque",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 4.7,
+    "googleMapsUri": "https://maps.google.com/?cid=17980015666189870497&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/universal-studios-florida.jpg",
+    "tag": "🎢 Parque temático",
+    "dishPhotos": [
+      "/places/dishes/universal-studios-florida-dish-2.jpg",
+      "/places/dishes/universal-studios-florida-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJDZop4q1_54gR0k1wqo3X8iY",
+    "name": "Walmart Turkey Lake",
+    "category": "Mercado",
+    "address": "8990 Turkey Lake Rd, Orlando, FL 32819, EUA",
+    "rating": 4.3,
+    "googleMapsUri": "https://maps.google.com/?cid=2806542521255087570&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/walmart-turkey-lake.jpg",
+    "tag": "🛍️ Departamento",
+    "dishPhotos": [
+      "/places/dishes/walmart-turkey-lake-dish-2.jpg",
+      "/places/dishes/walmart-turkey-lake-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJYw0EoWeB3YgRcID5rjAT42Y",
+    "name": "First Watch",
+    "category": "Restaurante",
+    "address": "7710 Palm Pkwy #110, Orlando, FL 32836, EUA",
+    "rating": 4.6,
+    "googleMapsUri": "https://maps.google.com/?cid=7413790511396913264&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/first-watch.jpg",
+    "tag": "🍳 Breakfast",
+    "dishPhotos": [
+      "/places/dishes/first-watch-dish-1.jpg",
+      "/places/dishes/first-watch-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJp3kkkgJ854gRrmSEK2BqGX8",
+    "name": "Nordstrom Rack",
+    "category": "Loja",
+    "address": "4036 Eastgate Dr, Orlando, FL 32839, EUA",
+    "rating": 4.2,
+    "googleMapsUri": "https://maps.google.com/?cid=9158468278514115758&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/nordstrom-rack.jpg",
+    "tag": "🛍️ Departamento",
+    "dishPhotos": [
+      "/places/dishes/nordstrom-rack-dish-3.jpg",
+      "/places/dishes/nordstrom-rack-dish-1.jpg"
+    ]
+  },
+  {
+    "id": "ChIJGZvhRVN-54gRr1GjOxsJeb4",
+    "name": "Five Guys",
+    "category": "Restaurante",
+    "address": "8324 International Dr, Orlando, FL 32819, EUA",
+    "rating": 4.4,
+    "googleMapsUri": "https://maps.google.com/?cid=13725011351957623215&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/five-guys.jpg",
+    "tag": "🍔 Hambúrguer",
+    "dishPhotos": [
+      "/places/dishes/five-guys-dish-2.jpg",
+      "/places/dishes/five-guys-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJbeFK_p5_54gRGvfzUjKvlFA",
+    "name": "Trader Joe's",
+    "category": "Mercado",
+    "address": "8323 Sand Lake Rd, Orlando, FL 32819, EUA",
+    "rating": 4.7,
+    "googleMapsUri": "https://maps.google.com/?cid=5806458450262357786&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/trader-joe-s.jpg",
+    "tag": "🛒 Mercearia",
+    "dishPhotos": [
+      "/places/dishes/trader-joe-s-dish-2.jpg",
+      "/places/dishes/trader-joe-s-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJwe2Xc7WB3YgRUYV9BpQtNoc",
+    "name": "Target",
+    "category": "Loja",
+    "address": "11619 Daryl Carter Pkwy, Orlando, FL 32821, EUA",
+    "rating": 4.2,
+    "googleMapsUri": "https://maps.google.com/?cid=9743024957649945937&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/target.jpg",
+    "tag": "🛍️ Departamento",
+    "dishPhotos": [
+      "/places/dishes/target-dish-1.jpg",
+      "/places/dishes/target-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJAaUq3kp-54gRyViNZL3YMOI",
+    "name": "Maggiano's Little Italy",
+    "category": "Restaurante",
+    "address": "9101 International Dr #2400, Orlando, FL 32819, EUA",
+    "rating": 4.6,
+    "googleMapsUri": "https://maps.google.com/?cid=16298765359401228489&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/maggiano-s-little-italy.jpg",
+    "tag": "🍝 Italiano",
+    "dishPhotos": [
+      "/places/dishes/maggiano-s-little-italy-dish-1.jpg",
+      "/places/dishes/maggiano-s-little-italy-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJa7bjTAB_54gR-M-m-KIOCP0",
+    "name": "Universal's Epic Universe",
+    "category": "Parque",
+    "address": "1001 Epic Blvd, Orlando, FL 32819, EUA",
+    "rating": 3.9,
+    "googleMapsUri": "https://maps.google.com/?cid=18232839184528625656&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/universal-s-epic-universe.jpg",
+    "tag": "🎢 Parque temático",
+    "dishPhotos": [
+      "/places/dishes/universal-s-epic-universe-dish-2.jpg",
+      "/places/dishes/universal-s-epic-universe-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJvRBCrN9-54gR84ltVW4FZBM",
+    "name": "Islands of Adventure",
+    "category": "Parque",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 4.7,
+    "googleMapsUri": "https://maps.google.com/?cid=1397247755829479923&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/islands-of-adventure.jpg",
+    "tag": "🎢 Parque temático",
+    "dishPhotos": [
+      "/places/dishes/islands-of-adventure-dish-3.jpg",
+      "/places/dishes/islands-of-adventure-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJU2C5fCd83YgR0k2LWFiNXYg",
+    "name": "Boma - Flavors of Africa",
+    "category": "Restaurante",
+    "address": "2901 Osceola Pkwy, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.6,
+    "googleMapsUri": "https://maps.google.com/?cid=9826165372574453202&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/boma-flavors-of-africa.jpg",
+    "tag": "🍽️ Buffet",
+    "dishPhotos": [
+      "/places/dishes/boma-flavors-of-africa-dish-2.jpg",
+      "/places/dishes/boma-flavors-of-africa-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJfUTGO2uA3YgR8t5QlAd-jTY",
+    "name": "Orlando Vineland Premium Outlets",
+    "category": "Loja",
+    "address": "8200 Vineland Ave, Orlando, FL 32821, EUA",
+    "rating": 4.5,
+    "googleMapsUri": "https://maps.google.com/?cid=3930936620782509810&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/orlando-vineland-premium-outlets.jpg",
+    "tag": "🏬 Shopping",
+    "dishPhotos": [
+      "/places/dishes/orlando-vineland-premium-outlets-dish-3.jpg",
+      "/places/dishes/orlando-vineland-premium-outlets-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJk3zZMXJ754gR9ByvBshSDvo",
+    "name": "SoDough Square (SODO/South Downtown)",
+    "category": "Restaurante",
+    "address": "419 E Michigan St Suite 5, Orlando, FL 32806, EUA",
+    "rating": 4.7,
+    "googleMapsUri": "https://maps.google.com/?cid=18018430178215009524&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/sodough-square-sodo-south-downtown.jpg",
+    "tag": "🍕 Pizza",
+    "dishPhotos": [
+      "/places/dishes/sodough-square-sodo-south-downtown-dish-1.jpg",
+      "/places/dishes/sodough-square-sodo-south-downtown-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJyWaYUYd_3YgR7gx9sx98KI0",
+    "name": "The Boathouse",
+    "category": "Restaurante",
+    "address": "1620 E Buena Vista Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.8,
+    "googleMapsUri": "https://maps.google.com/?cid=10171516234013412590&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/the-boathouse.jpg",
+    "tag": "🦐 Frutos do mar",
+    "dishPhotos": [
+      "/places/dishes/the-boathouse-dish-3.jpg",
+      "/places/dishes/the-boathouse-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJo0jZYuh_3YgR47dTr4KVdTY",
+    "name": "Level99 Disney Springs",
+    "category": "Outro",
+    "address": "1486 East Buena Vista Dr M13U, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.7,
+    "googleMapsUri": "https://maps.google.com/?cid=3924207038843041763&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/level99-disney-springs.jpg",
+    "tag": "🎢 Parque temático",
+    "dishPhotos": [
+      "/places/dishes/level99-disney-springs-dish-2.jpg",
+      "/places/dishes/level99-disney-springs-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ4QK_lBmA3YgRAtDaG1mt8WM",
+    "name": "Giordano's",
+    "category": "Restaurante",
+    "address": "12151 S Apopka Vineland Rd, Orlando, FL 32836, EUA",
+    "rating": 4.2,
+    "googleMapsUri": "https://maps.google.com/?cid=7201727877373153282&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/giordano-s.jpg",
+    "tag": "🍕 Pizza",
+    "dishPhotos": [
+      "/places/dishes/giordano-s-dish-2.jpg",
+      "/places/dishes/giordano-s-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJPavt6RWH3YgRYehkzt9ZuxY",
+    "name": "Cracker Barrel Old Country Store",
+    "category": "Restaurante",
+    "address": "13300 S Orange Blossom Trl, Orlando, FL 32837, EUA",
+    "rating": 4.4,
+    "googleMapsUri": "https://maps.google.com/?cid=1638001707254605921&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/cracker-barrel-old-country-store.jpg",
+    "tag": "🍽️ Americano",
+    "dishPhotos": [
+      "/places/dishes/cracker-barrel-old-country-store-dish-2.jpg",
+      "/places/dishes/cracker-barrel-old-country-store-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJBZjQBRiA3YgRV-oz81B1cI4",
+    "name": "Denny's Restaurant",
+    "category": "Restaurante",
+    "address": "12375 Kissimmee Vineland Rd, Orlando, FL 32836, EUA",
+    "rating": 4.3,
+    "googleMapsUri": "https://maps.google.com/?cid=10263832541315459671&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/denny-s-restaurant.jpg",
+    "tag": "🍳 Breakfast",
+    "dishPhotos": [
+      "/places/dishes/denny-s-restaurant-dish-2.jpg",
+      "/places/dishes/denny-s-restaurant-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJo0SyeOuB3YgR99EGKZAJI0Q",
+    "name": "Shake Shack Orlando Premium (Food Court)",
+    "category": "Restaurante",
+    "address": "8200 Vineland Ave #1169, Orlando, FL 32821, EUA",
+    "rating": 4.4,
+    "googleMapsUri": "https://maps.google.com/?cid=4909778533532226039&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/shake-shack-orlando-premium-food-court.jpg",
+    "tag": "🍔 Hambúrguer",
+    "dishPhotos": [
+      "/places/dishes/shake-shack-orlando-premium-food-court-dish-2.jpg",
+      "/places/dishes/shake-shack-orlando-premium-food-court-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJV9nGk6h-54gRdODVBCpxrOM",
+    "name": "The Mall at Millenia",
+    "category": "Loja",
+    "address": "4200 Conroy Rd, Orlando, FL 32839, EUA",
+    "rating": 4.6,
+    "googleMapsUri": "https://maps.google.com/?cid=16405611967887564916&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/the-mall-at-millenia.jpg",
+    "tag": "🏬 Shopping",
+    "dishPhotos": [
+      "/places/dishes/the-mall-at-millenia-dish-2.jpg",
+      "/places/dishes/the-mall-at-millenia-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJqTY5bBiA3YgRkzmDXHWUuHA",
+    "name": "IHOP",
+    "category": "Restaurante",
+    "address": "12400 S Apopka Vineland Rd, Orlando, FL 32836, EUA",
+    "rating": 4.7,
+    "googleMapsUri": "https://maps.google.com/?cid=8122405159746877843&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/ihop.jpg",
+    "tag": "🍳 Breakfast",
+    "dishPhotos": [
+      "/places/dishes/ihop-dish-2.jpg",
+      "/places/dishes/ihop-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJk5xl2oZ_3YgRg7yR_vn87h4",
+    "name": "Chef Art Smith's Homecomin'",
+    "category": "Restaurante",
+    "address": "1602 E Buena Vista Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.6,
+    "googleMapsUri": "https://maps.google.com/?cid=2228997016242994307&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQQAhgEIAA",
+    "photo": "/places/chef-art-smith-s-homecomin.jpg",
+    "tag": "🍽️ Americano",
+    "dishPhotos": [
+      "/places/dishes/chef-art-smith-s-homecomin-dish-2.jpg",
+      "/places/dishes/chef-art-smith-s-homecomin-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJQfQtgM9-54gRDe_E7zAxHI8",
+    "name": "IHOP",
+    "category": "Restaurante",
+    "tag": "🍳 Breakfast",
+    "address": "5203 S Kirkman Rd, Orlando, FL 32819, EUA",
+    "rating": 4.7,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-ihop.jpg",
+    "cost": 15.0,
+    "hours": "24h",
+    "distanceFromHotel": 12.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.0 ★★★★☆",
+    "recommendation": "Panquecas com calda de morango",
+    "dishPhotos": [
+      "/places/dishes/ihop-dish-2.jpg",
+      "/places/dishes/ihop-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ8dKqMySH54gRVSzTpZw5f1A",
+    "name": "Keke's Breakfast Cafe",
+    "category": "Restaurante",
+    "tag": "🍳 Breakfast",
+    "address": "7512 Dr Phillips Blvd, Orlando, FL 32819, EUA",
+    "rating": 4.8,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-keke-s-breakfast-cafe.jpg",
+    "cost": 20.0,
+    "hours": "7h-14h30",
+    "distanceFromHotel": 12.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Pancake de mirtilo",
+    "dishPhotos": [
+      "/places/dishes/keke-s-breakfast-cafe-dish-2.jpg",
+      "/places/dishes/keke-s-breakfast-cafe-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJb_uwu_p-54gRnNQ2dnLjZiI",
+    "name": "Red Lobster",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "UNIVERSAL STUDIOS, 5936 International Dr NEAR, Orlando, FL 32819, EUA",
+    "rating": 4.4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-red-lobster.jpg",
+    "cost": 35.0,
+    "hours": "11h-22h",
+    "distanceFromHotel": 10.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.0 ★★★★☆",
+    "recommendation": "Cheddar Bay Biscuits e lagosta",
+    "dishPhotos": [
+      "/places/dishes/red-lobster-dish-2.jpg",
+      "/places/dishes/red-lobster-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJwTbbJpx_54gRN5aKRhMcC18",
+    "name": "Maple Street Biscuit Company",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "11810 Glass House Ln #140, Orlando, FL 32836, EUA",
+    "rating": 4.4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-maple-street-biscuit-company.jpg",
+    "cost": 15.0,
+    "hours": "7h-14h",
+    "distanceFromHotel": 10.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "The Squawking Goat com biscuit",
+    "dishPhotos": [
+      "/places/dishes/maple-street-biscuit-company-dish-2.jpg",
+      "/places/dishes/maple-street-biscuit-company-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ63iDXVZ954gRBZvFTyIGaYM",
+    "name": "Panda Express",
+    "category": "Restaurante",
+    "tag": "🥢 Chinesa",
+    "address": "8025 S John Young Pkwy, Orlando, FL 32819, EUA",
+    "rating": 3.9,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-panda-express.jpg",
+    "cost": 12.0,
+    "hours": "10h30-22h",
+    "distanceFromHotel": 10.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.0 ★★★★☆",
+    "recommendation": "Orange Chicken famoso",
+    "dishPhotos": [
+      "/places/dishes/panda-express-dish-1.jpg",
+      "/places/dishes/panda-express-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJu4iOBtF654gR4hgxlzDsJZY",
+    "name": "Se7enBites",
+    "category": "Restaurante",
+    "tag": "🥐 Padaria",
+    "address": "617 N Primrose Dr, Orlando, FL 32803, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-se7enbites.jpg",
+    "cost": 20.0,
+    "hours": "8h-15h",
+    "distanceFromHotel": 25.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.6 ★★★★★",
+    "recommendation": "Biscuits and gravy e pies caseiros",
+    "dishPhotos": [
+      "/places/dishes/se7enbites-dish-1.jpg",
+      "/places/dishes/se7enbites-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ7zWqvqF-3YgRvO-zCJPcvzU",
+    "name": "Giordano's",
+    "category": "Restaurante",
+    "tag": "🍕 Pizza",
+    "address": "7866 W Irlo Bronson Memorial Hwy, Kissimmee, FL 34747, EUA",
+    "rating": 4.1,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-giordano-s.jpg",
+    "cost": 25.0,
+    "hours": "11h-22h",
+    "distanceFromHotel": 6.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.3 ★★★★☆",
+    "recommendation": "Pizza deep dish recheada",
+    "dishPhotos": [
+      "/places/dishes/giordano-s-dish-2.jpg",
+      "/places/dishes/giordano-s-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJI5kYMLN_54gRWs28-yGqm3A",
+    "name": "Olive Garden",
+    "category": "Restaurante",
+    "tag": "🍝 Italiano",
+    "address": "8984 International Dr, Orlando, FL 32819, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-olive-garden.jpg",
+    "cost": 25.0,
+    "hours": "11h-22h",
+    "distanceFromHotel": 9.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "Fettuccine Alfredo com pão sem fim",
+    "dishPhotos": [
+      "/places/dishes/olive-garden-dish-1.jpg",
+      "/places/dishes/olive-garden-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ2yADAqp-54gRSeMDU0N4Dss",
+    "name": "Krispy Kreme",
+    "category": "Restaurante",
+    "tag": "🍩 Rosquinha",
+    "address": "4080 Millenia Blvd, Orlando, FL 32839, EUA",
+    "rating": 4.6,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-krispy-kreme.jpg",
+    "cost": 5.0,
+    "hours": "6h-22h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "Original Glazed quentinha",
+    "dishPhotos": [
+      "/places/dishes/krispy-kreme-dish-1.jpg",
+      "/places/dishes/krispy-kreme-dish-2.jpg"
+    ]
+  },
+  {
+    "id": "ChIJkSN9KdyB3YgRrHk16bL3Wrk",
+    "name": "The Cheesecake Factory",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "11602 Regency Village Dr, Orlando, FL 32821, EUA",
+    "rating": 4.3,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-the-cheesecake-factory.jpg",
+    "cost": 35.0,
+    "hours": "11h-23h",
+    "distanceFromHotel": 13.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.3 ★★★★☆",
+    "recommendation": "Cheesecake de frutas vermelhas",
+    "dishPhotos": [
+      "/places/dishes/the-cheesecake-factory-dish-1.jpg",
+      "/places/dishes/the-cheesecake-factory-dish-2.jpg"
+    ]
+  },
+  {
+    "id": "ChIJgdagYYt_54gRZ7E11ypdtWc",
+    "name": "The Juicy Crab I Drive",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "7308 International Dr, Orlando, FL 32819, EUA",
+    "rating": 4.2,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-the-juicy-crab-i-drive.jpg",
+    "cost": 40.0,
+    "hours": "12h-22h",
+    "distanceFromHotel": 11.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "Combo camarão, lagosta e caranguejo",
+    "dishPhotos": [
+      "/places/dishes/the-juicy-crab-i-drive-dish-3.jpg",
+      "/places/dishes/the-juicy-crab-i-drive-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJYRpZMKZ_54gRZmT7gL3nRuw",
+    "name": "Eddie V's Prime Seafood",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "7488 W Sand Lake Rd, Orlando, FL 32819, EUA",
+    "rating": 4.7,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-eddie-v-s-prime-seafood.jpg",
+    "cost": 90.0,
+    "hours": "16h-22h",
+    "distanceFromHotel": 12.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.6 ★★★★★",
+    "recommendation": "Steak prime e crab cake",
+    "dishPhotos": [
+      "/places/dishes/eddie-v-s-prime-seafood-dish-3.jpg",
+      "/places/dishes/eddie-v-s-prime-seafood-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJPcTOak1-54gRzOWrFljfZxk",
+    "name": "Boston Lobster Feast",
+    "category": "Restaurante",
+    "tag": "🍽️ Buffet",
+    "address": "8731 International Dr, Orlando, FL 32819, EUA",
+    "rating": 4.3,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-boston-lobster-feast.jpg",
+    "cost": 55.0,
+    "hours": "14h-22h",
+    "distanceFromHotel": 10.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.0 ★★★★☆",
+    "recommendation": "Buffet all-you-can-eat de lagosta",
+    "dishPhotos": [
+      "/places/dishes/boston-lobster-feast-dish-1.jpg",
+      "/places/dishes/boston-lobster-feast-dish-2.jpg"
+    ]
+  },
+  {
+    "id": "ChIJT0UkeAB_54gR7x5xFCg0pIU",
+    "name": "Shake Shack Dr. Phillips",
+    "category": "Restaurante",
+    "tag": "🍔 Hambúrguer",
+    "address": "7800 Dr Phillips Blvd Ste 300, Orlando, FL 32819, EUA",
+    "rating": 4.4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-shake-shack-dr-phillips.jpg",
+    "cost": 15.0,
+    "hours": "11h-23h",
+    "distanceFromHotel": 12.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "ShackBurger e batata waffle",
+    "dishPhotos": [
+      "/places/dishes/shake-shack-dr-phillips-dish-0.jpg",
+      "/places/dishes/shake-shack-dr-phillips-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJcSPnOMN_54gRdo531i-2Q6w",
+    "name": "First Watch",
+    "category": "Restaurante",
+    "tag": "🍳 Breakfast",
+    "address": "6772 Grand National Dr, Orlando, FL 32819, EUA",
+    "rating": 4.7,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-first-watch.jpg",
+    "cost": 18.0,
+    "hours": "7h-14h30",
+    "distanceFromHotel": 11.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Avocado toast e Frittata",
+    "dishPhotos": [
+      "/places/dishes/first-watch-dish-1.jpg",
+      "/places/dishes/first-watch-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJvSTOX-1-54gR0tBx7ZyzRnM",
+    "name": "Hash House A Go Go",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "5350 International Dr, Orlando, FL 32819, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-hash-house-a-go-go.jpg",
+    "cost": 25.0,
+    "hours": "8h-15h",
+    "distanceFromHotel": 12.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Andy's Sage Fried Chicken Benedict",
+    "dishPhotos": [
+      "/places/dishes/hash-house-a-go-go-dish-2.jpg",
+      "/places/dishes/hash-house-a-go-go-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJO9qK8DR53YgRjIDXs3uxNao",
+    "name": "Peach Valley Café",
+    "category": "Restaurante",
+    "tag": "🍳 Breakfast",
+    "address": "1683 Future Wy, Kissimmee, FL 34747, EUA",
+    "rating": 4.6,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-peach-valley-caf.jpg",
+    "cost": 15.0,
+    "hours": "7h-14h30",
+    "distanceFromHotel": 15.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.6 ★★★★★",
+    "recommendation": "Peach French Toast e Peach Pancakes",
+    "dishPhotos": [
+      "/places/dishes/peach-valley-caf-dish-1.jpg",
+      "/places/dishes/peach-valley-caf-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJFXQQhTd_54gRpBdv9hWeeEA",
+    "name": "Le Cafe De Paris",
+    "category": "Restaurante",
+    "tag": "☕ Café",
+    "address": "5170 Dr Phillips Blvd, Orlando, FL 32819, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-le-cafe-de-paris.jpg",
+    "cost": 15.0,
+    "hours": "8h-20h",
+    "distanceFromHotel": 11.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Croque-Monsieur e crepes",
+    "dishPhotos": [
+      "/places/dishes/le-cafe-de-paris-dish-1.jpg",
+      "/places/dishes/le-cafe-de-paris-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJezfg1CZ-54gRZjJcqAVudzU",
+    "name": "TGI Fridays",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "10811 International Dr, Orlando, FL 32821, EUA",
+    "rating": 4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-tgi-fridays.jpg",
+    "cost": 25.0,
+    "hours": "11h-1h",
+    "distanceFromHotel": 8.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.0 ★★★★☆",
+    "recommendation": "Jack Daniel's Ribs e Loaded Potato Skins",
+    "dishPhotos": [
+      "/places/dishes/tgi-fridays-dish-1.jpg",
+      "/places/dishes/tgi-fridays-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJy-qcFhl-3YgRXBYEn8OV5So",
+    "name": "'Ohana",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "1600 Seven Seas Drive, Bay Lake, FL 32830, EUA",
+    "rating": 4.3,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-ohana.jpg",
+    "cost": 65.0,
+    "hours": "7h30-22h",
+    "distanceFromHotel": 7.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.6 ★★★★★",
+    "recommendation": "Jantar polinésio com bread pudding",
+    "dishPhotos": [
+      "/places/dishes/ohana-dish-2.jpg",
+      "/places/dishes/ohana-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJVVVVVWVe54gRq0bXP3x-OgA",
+    "name": "California Grill",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "4600 World Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.6,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-california-grill.jpg",
+    "cost": 85.0,
+    "hours": "17h-22h",
+    "distanceFromHotel": 6.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.6 ★★★★★",
+    "recommendation": "Filet mignón com vista dos fogos",
+    "dishPhotos": [
+      "/places/dishes/california-grill-dish-2.jpg",
+      "/places/dishes/california-grill-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJfae0pxd-3YgR1ZtP2RQreIY",
+    "name": "Victoria & Albert's",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "4401 Floridian Wy, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.8,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-victoria-albert-s.jpg",
+    "cost": 295.0,
+    "hours": "17h30-21h",
+    "distanceFromHotel": 7.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.8 ★★★★★",
+    "recommendation": "Menú-degustação premiado",
+    "dishPhotos": [
+      "/places/dishes/victoria-albert-s-dish-2.jpg",
+      "/places/dishes/victoria-albert-s-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJTxam8_eRwogRfrYv12qBQcY",
+    "name": "Cítricos",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "4401 Disney's Grand Floridian, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-c-tricos.jpg",
+    "cost": 75.0,
+    "hours": "17h-22h",
+    "distanceFromHotel": 7.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Ravióli de limão siciliano",
+    "dishPhotos": [
+      "/places/dishes/c-tricos-dish-1.jpg",
+      "/places/dishes/c-tricos-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJTxam8_eRwogRbmd1WgkPBF8",
+    "name": "Narcoossee's",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "4401 Floridian Wy, Bay Lake, FL 32830, EUA",
+    "rating": 4.6,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-narcoossee-s.jpg",
+    "cost": 85.0,
+    "hours": "17h-22h",
+    "distanceFromHotel": 7.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Lagosta e filet mignón surf and turf",
+    "dishPhotos": [
+      "/places/dishes/narcoossee-s-dish-1.jpg",
+      "/places/dishes/narcoossee-s-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJU8suRVx_3YgRBw7Y1sekUXY",
+    "name": "Topolino's Terrace – Flavors of the Riviera",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "1080 Esplanade Ave, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.6,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-topolino-s-terrace-flavors-of-the-riviera.jpg",
+    "cost": 80.0,
+    "hours": "8h-13h / 17h-22h",
+    "distanceFromHotel": 5.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.7 ★★★★★",
+    "recommendation": "Café da manhã com personagens",
+    "dishPhotos": [
+      "/places/dishes/topolino-s-terrace-flavors-of-the-riviera-dish-2.jpg",
+      "/places/dishes/topolino-s-terrace-flavors-of-the-riviera-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ10toYa1_3YgR-TiqVAdKvVw",
+    "name": "Yachtsman Steakhouse",
+    "category": "Restaurante",
+    "tag": "🥩 Steakhouse",
+    "address": "1700 Epcot Resorts Blvd, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-yachtsman-steakhouse.jpg",
+    "cost": 70.0,
+    "hours": "17h-21h30",
+    "distanceFromHotel": 4.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★½",
+    "recommendation": "Filet mignón com gratin de batata",
+    "dishPhotos": [
+      "/places/dishes/yachtsman-steakhouse-dish-2.jpg",
+      "/places/dishes/yachtsman-steakhouse-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ_6SiSap_3YgRFzzJ__XFRvQ",
+    "name": "Flying Fish",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "2101 Epcot Resorts Blvd, Orlando, FL 32830, EUA",
+    "rating": 4.4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-flying-fish.jpg",
+    "cost": 75.0,
+    "hours": "17h-22h",
+    "distanceFromHotel": 4.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Flying fish (peixe do dia)",
+    "dishPhotos": [
+      "/places/dishes/flying-fish-dish-1.jpg",
+      "/places/dishes/flying-fish-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ9QJeyQmB3YgRn6Typhv4HJU",
+    "name": "Sanaa",
+    "category": "Restaurante",
+    "tag": "🍣 Japonesa",
+    "address": "3701 Osceola Pkwy, Kissimmee, FL 34747, EUA",
+    "rating": 4.6,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-sanaa.jpg",
+    "cost": 45.0,
+    "hours": "17h-21h30",
+    "distanceFromHotel": 4.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.6 ★★★★★",
+    "recommendation": "Pães indianos com molhos africanos",
+    "dishPhotos": [
+      "/places/dishes/sanaa-dish-2.jpg",
+      "/places/dishes/sanaa-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJJ0zIRyJ-3YgRjXh1Nrxkw_Q",
+    "name": "Chef Mickey's",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "4600 World Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-chef-mickey-s.jpg",
+    "cost": 55.0,
+    "hours": "7h30-11h30 / 17h-21h30",
+    "distanceFromHotel": 6.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "Café com Mickey e amigos",
+    "dishPhotos": [
+      "/places/dishes/chef-mickey-s-dish-2.jpg",
+      "/places/dishes/chef-mickey-s-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJO3vjMIF_3YgRqb3SdwzbyII",
+    "name": "T-Rex Cafe",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "1676 E Buena Vista Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.6,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-t-rex-cafe.jpg",
+    "cost": 40.0,
+    "hours": "11h-22h",
+    "distanceFromHotel": 5.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "3.9 ★★★★☆",
+    "recommendation": "Costelinha de dinossauro",
+    "dishPhotos": [
+      "/places/dishes/t-rex-cafe-dish-1.jpg",
+      "/places/dishes/t-rex-cafe-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJhakY3CmA3YgR93K53atNtV4",
+    "name": "B.B. Wolf's Sausage Co.",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "1660 E Buena Vista Dr A, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.1,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-b-b-wolf-s-sausage-co.jpg",
+    "cost": 15.0,
+    "hours": "11h-22h",
+    "distanceFromHotel": "5 km",
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.0 ★★★★☆",
+    "recommendation": "Salsichas artesanais com molhos exclusivos",
+    "dishPhotos": [
+      "/places/dishes/b-b-wolf-s-sausage-co-dish-1.jpg",
+      "/places/dishes/b-b-wolf-s-sausage-co-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJF2dCZqx_3YgRu9_pA7F0yVU",
+    "name": "Cape May Cafe",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "1800 Epcot Resorts Blvd, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-cape-may-cafe.jpg",
+    "cost": 50.0,
+    "hours": "7h30-11h",
+    "distanceFromHotel": 4.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "Buffet com personagens Disney",
+    "dishPhotos": [
+      "/places/dishes/cape-may-cafe-dish-2.jpg",
+      "/places/dishes/cape-may-cafe-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJC9pvtLN654gR6F0GZH-G-8I",
+    "name": "Gideon's Bakehouse",
+    "category": "Restaurante",
+    "tag": "🥐 Padaria",
+    "address": "3201 Corrine Dr, Orlando, FL 32803, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-gideon-s-bakehouse.jpg",
+    "cost": 10.0,
+    "hours": "10h-23h",
+    "distanceFromHotel": 5.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.6 ★★★★★",
+    "recommendation": "Cookie gigante de chocolate chip",
+    "dishPhotos": [
+      "/places/dishes/gideon-s-bakehouse-dish-1.jpg",
+      "/places/dishes/gideon-s-bakehouse-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJva4JdYl_3YgRONSoO7NXO_0",
+    "name": "Rainforest Cafe",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "1800 E Buena Vista Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.8,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-rainforest-cafe.jpg",
+    "cost": 40.0,
+    "hours": "11h-22h",
+    "distanceFromHotel": 5.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.0 ★★★★☆",
+    "recommendation": "Volcano dessert para compartilhar",
+    "dishPhotos": [
+      "/places/dishes/rainforest-cafe-dish-2.jpg",
+      "/places/dishes/rainforest-cafe-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJvSeXsBN_3YgRcdtcLGPutug",
+    "name": "Salt & Straw",
+    "category": "Restaurante",
+    "tag": "🍦 Sorveteria",
+    "address": "1610 Buena Vista Dr, Orlando, FL 32830, EUA",
+    "rating": 4.6,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-salt-straw.jpg",
+    "cost": 8.0,
+    "hours": "11h-23h",
+    "distanceFromHotel": 5.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.7 ★★★★★",
+    "recommendation": "Sorvetes artesanais com sabores criativos",
+    "dishPhotos": [
+      "/places/dishes/salt-straw-dish-1.jpg",
+      "/places/dishes/salt-straw-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJh8wzxtt_3YgRb_q85P7Mcb0",
+    "name": "Chicken Guy!",
+    "category": "Restaurante",
+    "tag": "🥪 Sanduíche",
+    "address": "1506 E Buena Vista Dr Suite A, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-chicken-guy.jpg",
+    "cost": 18.0,
+    "hours": "11h-23h",
+    "distanceFromHotel": 5.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.0 ★★★★☆",
+    "recommendation": "Tenders crocantes com 22 molhos",
+    "dishPhotos": [
+      "/places/dishes/chicken-guy-dish-1.jpg",
+      "/places/dishes/chicken-guy-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ7aYLEiiA3YgR2vL4rNlQIUM",
+    "name": "Earl of Sandwich",
+    "category": "Restaurante",
+    "tag": "🥪 Sanduíche",
+    "address": "1750 E Buena Vista Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-earl-of-sandwich.jpg",
+    "cost": null,
+    "hours": null,
+    "distanceFromHotel": null,
+    "menuLabel": null,
+    "reviewLabel": null,
+    "recommendation": null,
+    "dishPhotos": [
+      "/places/dishes/earl-of-sandwich-dish-1.jpg",
+      "/places/dishes/earl-of-sandwich-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJVVVVFbNi54gROTg8M1yibTo",
+    "name": "Cinderella's Royal Table",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "1180 Seven Seas Drive, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.2,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-cinderella-s-royal-table.jpg",
+    "cost": 70.0,
+    "hours": "11h-15h",
+    "distanceFromHotel": 7.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.6 ★★★★★",
+    "recommendation": "Jantar no castelo com princesas",
+    "dishPhotos": [
+      "/places/dishes/cinderella-s-royal-table-dish-2.jpg",
+      "/places/dishes/cinderella-s-royal-table-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJp-KiGaKA54gRu93-xkpO62o",
+    "name": "Liberty Tree Tavern",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "1180 Seven Seas Drive, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-liberty-tree-tavern.jpg",
+    "cost": 45.0,
+    "hours": "11h30-21h",
+    "distanceFromHotel": 7.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "Frango assado patriota",
+    "dishPhotos": [
+      "/places/dishes/liberty-tree-tavern-dish-1.jpg",
+      "/places/dishes/liberty-tree-tavern-dish-2.jpg"
+    ]
+  },
+  {
+    "id": "ChIJx3W2iZiA54gRAVmRr5RcmwQ",
+    "name": "Be Our Guest Restaurant",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "Golden Oak, FL 32836, EUA",
+    "rating": 4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-be-our-guest-restaurant.jpg",
+    "cost": 45.0,
+    "hours": "8h-22h",
+    "distanceFromHotel": 7.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.3 ★★★★☆",
+    "recommendation": "Grey Stuff e Master's Cupcake",
+    "dishPhotos": [
+      "/places/dishes/be-our-guest-restaurant-dish-2.jpg",
+      "/places/dishes/be-our-guest-restaurant-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJiXxP-aGA54gREUwPAoQlDIg",
+    "name": "The Crystal Palace",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "1180 Seven Seas Drive, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.1,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-the-crystal-palace.jpg",
+    "cost": 45.0,
+    "hours": "8h-14h30",
+    "distanceFromHotel": 7.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "Buffet café com Pooh e amigos",
+    "dishPhotos": [
+      "/places/dishes/the-crystal-palace-dish-1.jpg",
+      "/places/dishes/the-crystal-palace-dish-2.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ5akowpiA54gRMSaa5vrormI",
+    "name": "Cosmic Ray's Starlight Café",
+    "category": "Restaurante",
+    "tag": "☕ Café",
+    "address": "1180 Seven Seas Drive, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-cosmic-ray-s-starlight-caf.jpg",
+    "cost": 15.0,
+    "hours": "10h30-22h",
+    "distanceFromHotel": 7.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.0 ★★★★☆",
+    "recommendation": "Hambúrguer com cosmic fries",
+    "dishPhotos": [
+      "/places/dishes/cosmic-ray-s-starlight-caf-dish-1.jpg",
+      "/places/dishes/cosmic-ray-s-starlight-caf-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJX_lB7hh-3YgRjuOSn_dxtiw",
+    "name": "Le Cellier Steakhouse",
+    "category": "Restaurante",
+    "tag": "🥩 Steakhouse",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-le-cellier-steakhouse.jpg",
+    "cost": 70.0,
+    "hours": "11h30-21h",
+    "distanceFromHotel": 4.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Filé mignon canadense com queijo cheddar derretido",
+    "dishPhotos": [
+      "/places/dishes/le-cellier-steakhouse-dish-1.jpg",
+      "/places/dishes/le-cellier-steakhouse-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ_6SiSap_3YgRtawjgCn9o58",
+    "name": "Coral Reef Restaurant",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.1,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-coral-reef-restaurant.jpg",
+    "cost": 50.0,
+    "hours": "11h-21h",
+    "distanceFromHotel": 4.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.0 ★★★★☆",
+    "recommendation": "Lagosta e camarão em aquário gigante",
+    "dishPhotos": [
+      "/places/dishes/coral-reef-restaurant-dish-1.jpg",
+      "/places/dishes/coral-reef-restaurant-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJX_lB7hh-3YgRsxm9CPjGCuE",
+    "name": "Via Napoli Ristorante e Pizzeria",
+    "category": "Restaurante",
+    "tag": "🍝 Italiano",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.8,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-via-napoli-ristorante-e-pizzeria.jpg",
+    "cost": 30.0,
+    "hours": "11h-21h",
+    "distanceFromHotel": 4.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.3 ★★★★☆",
+    "recommendation": "Pizza napolitana em forno a lenha",
+    "dishPhotos": [
+      "/places/dishes/via-napoli-ristorante-e-pizzeria-dish-2.jpg",
+      "/places/dishes/via-napoli-ristorante-e-pizzeria-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJKY2BH4h_3YgRflOlFV4uL9s",
+    "name": "Biergarten Restaurant",
+    "category": "Restaurante",
+    "tag": "🍺 Alemã",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-biergarten-restaurant.jpg",
+    "cost": 45.0,
+    "hours": "11h-20h30",
+    "distanceFromHotel": 4.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "Buffet alemão com chope e música ao vivo",
+    "dishPhotos": [
+      "/places/dishes/biergarten-restaurant-dish-1.jpg",
+      "/places/dishes/biergarten-restaurant-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJvUT2aa5_3YgRPksfqsXb1XE",
+    "name": "Garden Grill Restaurant",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.3,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-garden-grill-restaurant.jpg",
+    "cost": 50.0,
+    "hours": "8h-20h",
+    "distanceFromHotel": 4.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Café giratório com personagens",
+    "dishPhotos": [
+      "/places/dishes/garden-grill-restaurant-dish-1.jpg",
+      "/places/dishes/garden-grill-restaurant-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJCWkQaQ9_3YgRrPmTayzd6SE",
+    "name": "Space 220 Restaurant",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "1382 Avenue of the Stars, Orlando, FL 32836, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-space-220-restaurant.jpg",
+    "cost": 80.0,
+    "hours": "11h30-21h30",
+    "distanceFromHotel": "4 km",
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.7 ★★★★★",
+    "recommendation": "Vista espacial e vieira de Saint-Jacques",
+    "dishPhotos": [
+      "/places/dishes/space-220-restaurant-dish-1.jpg",
+      "/places/dishes/space-220-restaurant-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJH9KuP6l_3YgRMgBm4WCmS_g",
+    "name": "Chefs de France",
+    "category": "Restaurante",
+    "tag": "🥖 Francesa",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.3,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-chefs-de-france.jpg",
+    "cost": 50.0,
+    "hours": "12h-21h",
+    "distanceFromHotel": "4 km",
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "Filé com batata gratinada à francesa",
+    "dishPhotos": [
+      "/places/dishes/chefs-de-france-dish-1.jpg",
+      "/places/dishes/chefs-de-france-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ5en0aal_3YgRoAyvmFbprrU",
+    "name": "Monsieur Paul",
+    "category": "Restaurante",
+    "tag": "🥖 Francesa",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.2,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-monsieur-paul.jpg",
+    "cost": 90.0,
+    "hours": "17h30-21h",
+    "distanceFromHotel": "4 km",
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.6 ★★★★★",
+    "recommendation": "Soufflé de queijo e magret de pato",
+    "dishPhotos": [
+      "/places/dishes/monsieur-paul-dish-1.jpg",
+      "/places/dishes/monsieur-paul-dish-2.jpg"
+    ]
+  },
+  {
+    "id": "ChIJYc0a-qh_3YgRdT5xq7FVSBo",
+    "name": "Teppan Edo",
+    "category": "Restaurante",
+    "tag": "🍣 Japonesa",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-teppan-edo.jpg",
+    "cost": 50.0,
+    "hours": "12h-21h",
+    "distanceFromHotel": "4 km",
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Show teppanyaki com filé e camarão",
+    "dishPhotos": [
+      "/places/dishes/teppan-edo-dish-3.jpg",
+      "/places/dishes/teppan-edo-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "xlsx-tokyo-dining",
+    "name": "Tokyo Dining",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "EPCOT",
+    "rating": null,
+    "googleMapsUri": null,
+    "photo": null,
+    "cost": 40.0,
+    "hours": "12h-21h",
+    "distanceFromHotel": "4 km",
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "Sushi e tempurá com vista do showcase"
+  },
+  {
+    "id": "ChIJhUcstKV_3YgRbdpKlF8OIa8",
+    "name": "San Angel Inn Restaurante",
+    "category": "Restaurante",
+    "tag": "🌮 Mexicana",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.1,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-san-angel-inn-restaurante.jpg",
+    "cost": 45.0,
+    "hours": "11h-21h30",
+    "distanceFromHotel": "4 km",
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.3 ★★★★☆",
+    "recommendation": "Mole poblano em ambiente noturno",
+    "dishPhotos": [
+      "/places/dishes/san-angel-inn-restaurante-dish-2.jpg",
+      "/places/dishes/san-angel-inn-restaurante-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ5WCvL6Z_3YgR3xsWp_ku00o",
+    "name": "Rose & Crown Dining Room",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-rose-crown-dining-room.jpg",
+    "cost": 40.0,
+    "hours": "11h30-21h",
+    "distanceFromHotel": "4 km",
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "Fish and chips e Guinness no pub",
+    "dishPhotos": [
+      "/places/dishes/rose-crown-dining-room-dish-1.jpg",
+      "/places/dishes/rose-crown-dining-room-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ5WCvL6Z_3YgRoSsXgYDE3ro",
+    "name": "Akershus Royal Banquet Hall",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.1,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-akershus-royal-banquet-hall.jpg",
+    "cost": 60.0,
+    "hours": "8h30-20h30",
+    "distanceFromHotel": "4 km",
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.3 ★★★★☆",
+    "recommendation": "Café com princesas da Disney",
+    "dishPhotos": [
+      "/places/dishes/akershus-royal-banquet-hall-dish-1.jpg",
+      "/places/dishes/akershus-royal-banquet-hall-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ32DEHql_3YgRxK88M8p4k6A",
+    "name": "Spice Road Table",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.3,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-spice-road-table.jpg",
+    "cost": 40.0,
+    "hours": "11h30-21h30",
+    "distanceFromHotel": "4 km",
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "Mezze marroquino com vista do showcase",
+    "dishPhotos": [
+      "/places/dishes/spice-road-table-dish-1.jpg",
+      "/places/dishes/spice-road-table-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJVVVVFbNi54gRksjcgRiTEHA",
+    "name": "Regal Eagle Smokehouse: Craft Drafts & Barbecue",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "200 Epcot Center Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.3,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-regal-eagle-smokehouse-craft-drafts-barbecue.jpg",
+    "cost": 20.0,
+    "hours": "11h-21h",
+    "distanceFromHotel": "4 km",
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "BBQ regional americano",
+    "dishPhotos": [
+      "/places/dishes/regal-eagle-smokehouse-craft-drafts-barbecue-dish-2.jpg",
+      "/places/dishes/regal-eagle-smokehouse-craft-drafts-barbecue-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJFwJVZKx_3YgRXwl9isXYRbc",
+    "name": "Sci-Fi Dine-In Theater Restaurant",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "351 S Studio Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.1,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-sci-fi-dine-in-theater-restaurant.jpg",
+    "cost": 45.0,
+    "hours": "11h-21h",
+    "distanceFromHotel": 3.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "Hambúrguer assistindo filmes B",
+    "dishPhotos": [
+      "/places/dishes/sci-fi-dine-in-theater-restaurant-dish-4.jpg",
+      "/places/dishes/sci-fi-dine-in-theater-restaurant-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJMZbzcgJ_3YgRUBUY-3of3N8",
+    "name": "50's Prime Time Café",
+    "category": "Restaurante",
+    "tag": "☕ Café",
+    "address": "351 S Studio Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.3,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-50-s-prime-time-caf.jpg",
+    "cost": 40.0,
+    "hours": "11h-20h",
+    "distanceFromHotel": 3.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Meatloaf como da vovó",
+    "dishPhotos": [
+      "/places/dishes/50-s-prime-time-caf-dish-2.jpg",
+      "/places/dishes/50-s-prime-time-caf-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJX_lB7hh-3YgRYMnxh9bZW-E",
+    "name": "The Hollywood Brown Derby",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "351 S Studio Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.1,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-the-hollywood-brown-derby.jpg",
+    "cost": 70.0,
+    "hours": "12h-20h30",
+    "distanceFromHotel": 3.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.3 ★★★★☆",
+    "recommendation": "Cobb salad e steak premium",
+    "dishPhotos": [
+      "/places/dishes/the-hollywood-brown-derby-dish-1.jpg",
+      "/places/dishes/the-hollywood-brown-derby-dish-2.jpg"
+    ]
+  },
+  {
+    "id": "ChIJy_RnrzR_3YgReG9dCinu5JQ",
+    "name": "Oga's Cantina",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "351 S Studio Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 3.8,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-oga-s-cantina.jpg",
+    "cost": 25.0,
+    "hours": "11h-21h30",
+    "distanceFromHotel": 3.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "Blue milk e drinks de Star Wars",
+    "dishPhotos": [
+      "/places/dishes/oga-s-cantina-dish-1.jpg",
+      "/places/dishes/oga-s-cantina-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJHyr-XPp_3YgRU9WnC5fhoxg",
+    "name": "Docking Bay 7 Food and Cargo",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "351 S Studio Dr, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.2,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-docking-bay-7-food-and-cargo.jpg",
+    "cost": 15.0,
+    "hours": "10h30-21h",
+    "distanceFromHotel": 3.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.3 ★★★★☆",
+    "recommendation": "Wraps espaciais Galaxy's Edge",
+    "dishPhotos": [
+      "/places/dishes/docking-bay-7-food-and-cargo-dish-4.jpg",
+      "/places/dishes/docking-bay-7-food-and-cargo-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ17kpLIR_3YgRM32JLbww294",
+    "name": "Tusker House Restaurant",
+    "category": "Restaurante",
+    "tag": "🍽️ Africana",
+    "address": "2901 Osceola Pkwy, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.3,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-tusker-house-restaurant.jpg",
+    "cost": 50.0,
+    "hours": "8h-15h30",
+    "distanceFromHotel": 3.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "\n",
+    "dishPhotos": [
+      "/places/dishes/tusker-house-restaurant-dish-1.jpg",
+      "/places/dishes/tusker-house-restaurant-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ_d7qfyZ754gRyOqj54Qin6s",
+    "name": "Yak & Yeti Restaurant",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "Disney's Animal Kingdom, 775 Werikhe Way, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.9,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-yak-yeti-restaurant.jpg",
+    "cost": 30.0,
+    "hours": "11h-21h",
+    "distanceFromHotel": 3.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "Lo mein e ribs himalayan",
+    "dishPhotos": [
+      "/places/dishes/yak-yeti-restaurant-dish-2.jpg",
+      "/places/dishes/yak-yeti-restaurant-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJt2UT7Y9-3YgRr9YRjT1WK8w",
+    "name": "Tiffins Restaurant",
+    "category": "Restaurante",
+    "tag": "🍽️ Africana",
+    "address": "2901 Osceola Pkwy, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.2,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-tiffins-restaurant.jpg",
+    "cost": 70.0,
+    "hours": "11h30-20h30",
+    "distanceFromHotel": 3.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Menú fixo de carnes nobres",
+    "dishPhotos": [
+      "/places/dishes/tiffins-restaurant-dish-1.jpg",
+      "/places/dishes/tiffins-restaurant-dish-2.jpg"
+    ]
+  },
+  {
+    "id": "ChIJn9gufSd83YgRMxXp76pFxp4",
+    "name": "Satu'li Canteen",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "2901 Osceola Pkwy, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-satu-li-canteen.jpg",
+    "cost": 15.0,
+    "hours": "10h30-20h",
+    "distanceFromHotel": 3.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Bowl de Pandora estilo Avatar",
+    "dishPhotos": [
+      "/places/dishes/satu-li-canteen-dish-1.jpg",
+      "/places/dishes/satu-li-canteen-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ6U_9Uo5-3YgRrENWwfgdAKQ",
+    "name": "Flame Tree Barbecue",
+    "category": "Restaurante",
+    "tag": "🍖 Churrasco",
+    "address": "2901 Osceola Pkwy, Lake Buena Vista, FL 32830, EUA",
+    "rating": 4.2,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-flame-tree-barbecue.jpg",
+    "cost": 15.0,
+    "hours": "10h30-19h",
+    "distanceFromHotel": 3.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "Costela defumada e pão de milho",
+    "dishPhotos": [
+      "/places/dishes/flame-tree-barbecue-dish-1.jpg",
+      "/places/dishes/flame-tree-barbecue-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJz7rRyx9_54gRJsfs_1a81Os",
+    "name": "Leaky Cauldron™",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-leaky-cauldron.jpg",
+    "cost": 25.0,
+    "hours": "9h-22h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "Fish and chips com cerveja amanteigada",
+    "dishPhotos": [
+      "/places/dishes/leaky-cauldron-dish-1.jpg",
+      "/places/dishes/leaky-cauldron-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJwZ_GK-d-54gREQTOPCYY5rI",
+    "name": "Lombard's Seafood Grille",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-lombard-s-seafood-grille.jpg",
+    "cost": 30.0,
+    "hours": "11h-21h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "Camarões com massa e Lobster Bisque",
+    "dishPhotos": [
+      "/places/dishes/lombard-s-seafood-grille-dish-1.jpg",
+      "/places/dishes/lombard-s-seafood-grille-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJPSLvP95-54gRyRc31GofKfQ",
+    "name": "Mel's Drive-In",
+    "category": "Restaurante",
+    "tag": "🍳 Breakfast",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 3.6,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-mel-s-drive-in.jpg",
+    "cost": 15.0,
+    "hours": "10h-22h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.0 ★★★★☆",
+    "recommendation": "Classic burger anos 50",
+    "dishPhotos": [
+      "/places/dishes/mel-s-drive-in-dish-2.jpg",
+      "/places/dishes/mel-s-drive-in-dish-0.jpg"
+    ]
+  },
+  {
+    "id": "ChIJvRasyt9-54gRjyd03znV3Eg",
+    "name": "Finnegan's Bar & Grill",
+    "category": "Restaurante",
+    "tag": "🍹 Bar",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 4.4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-finnegan-s-bar-grill.jpg",
+    "cost": 25.0,
+    "hours": "11h-22h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "Irish stew e Shepherd's pie",
+    "dishPhotos": [
+      "/places/dishes/finnegan-s-bar-grill-dish-1.jpg",
+      "/places/dishes/finnegan-s-bar-grill-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJBfB78t5-54gRvh_nr7tvewY",
+    "name": "Krusty Burger",
+    "category": "Restaurante",
+    "tag": "🍔 Hambúrguer",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 3.7,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-krusty-burger.jpg",
+    "cost": 12.0,
+    "hours": "10h-21h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "3.8 ★★★★☆",
+    "recommendation": "Krabby Patty estilo Bart Simpson",
+    "dishPhotos": [
+      "/places/dishes/krusty-burger-dish-2.jpg",
+      "/places/dishes/krusty-burger-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ_xIoyLN_54gRQwj7rVi1R8A",
+    "name": "Three Broomsticks",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 3.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-three-broomsticks.jpg",
+    "cost": 25.0,
+    "hours": "9h-22h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.3 ★★★★☆",
+    "recommendation": "Fish and chips com cerveja amanteigada de Hogwarts",
+    "dishPhotos": [
+      "/places/dishes/three-broomsticks-dish-1.jpg",
+      "/places/dishes/three-broomsticks-dish-2.jpg"
+    ]
+  },
+  {
+    "id": "ChIJvRBCrN9-54gR7FjxbRlZyvc",
+    "name": "Mythos Restaurant",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 4.2,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-mythos-restaurant.jpg",
+    "cost": 35.0,
+    "hours": "11h-21h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "Pad thai com camarão gourmet",
+    "dishPhotos": [
+      "/places/dishes/mythos-restaurant-dish-1.jpg",
+      "/places/dishes/mythos-restaurant-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJmY6Nq-F-54gRKR6hg20pOiI",
+    "name": "Confisco Grille",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 4.1,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-confisco-grille.jpg",
+    "cost": 25.0,
+    "hours": "11h-21h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "St. Louis ribs e Pad Thai",
+    "dishPhotos": [
+      "/places/dishes/confisco-grille-dish-3.jpg",
+      "/places/dishes/confisco-grille-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJp85u3x1_54gRTio4RBGwhZo",
+    "name": "Thunder Falls Terrace",
+    "category": "Restaurante",
+    "tag": "🍖 Churrasco",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 3.9,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-thunder-falls-terrace.jpg",
+    "cost": 15.0,
+    "hours": "11h-20h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.3 ★★★★☆",
+    "recommendation": "Frango grelhado com molho jerk",
+    "dishPhotos": [
+      "/places/dishes/thunder-falls-terrace-dish-1.jpg",
+      "/places/dishes/thunder-falls-terrace-dish-5.jpg"
+    ]
+  },
+  {
+    "id": "ChIJccxO6OB-54gRAJgvkHyOQDs",
+    "name": "The Toothsome Chocolate Emporium & Savory Feast Kitchen™",
+    "category": "Restaurante",
+    "tag": "🍽️ Americano",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-the-toothsome-chocolate-emporium-savory-feast-kitchen.jpg",
+    "cost": 40.0,
+    "hours": "11h-23h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Milkshakes gigantes e brownie sundae",
+    "dishPhotos": [
+      "/places/dishes/the-toothsome-chocolate-emporium-savory-feast-kitchen-dish-3.jpg",
+      "/places/dishes/the-toothsome-chocolate-emporium-savory-feast-kitchen-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJwZ_GK-d-54gRLBNUdr8UIDo",
+    "name": "Bubba Gump Shrimp Co.",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "6000 Universal Blvd Ste 735, Orlando, FL 32819, EUA",
+    "rating": 4.8,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-bubba-gump-shrimp-co.jpg",
+    "cost": 35.0,
+    "hours": "11h-23h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "Camarão à milanesa do Forrest",
+    "dishPhotos": [
+      "/places/dishes/bubba-gump-shrimp-co-dish-2.jpg",
+      "/places/dishes/bubba-gump-shrimp-co-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJcUYRsd1-54gRCs-DHwnVg5s",
+    "name": "Hard Rock Live",
+    "category": "Restaurante",
+    "tag": "☕ Café",
+    "address": "6050 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-hard-rock-live.jpg",
+    "cost": 30.0,
+    "hours": "11h-24h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "Classic burger e nachos rocker",
+    "dishPhotos": [
+      "/places/dishes/hard-rock-live-dish-1.jpg",
+      "/places/dishes/hard-rock-live-dish-2.jpg"
+    ]
+  },
+  {
+    "id": "ChIJwfBmOud-54gRj5KL4tzYYCg",
+    "name": "VIVO Italian Kitchen™",
+    "category": "Restaurante",
+    "tag": "🍝 Italiano",
+    "address": "6000 Universal Blvd, Orlando, FL 32819, EUA",
+    "rating": 4.1,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-vivo-italian-kitchen.jpg",
+    "cost": 30.0,
+    "hours": "11h-23h",
+    "distanceFromHotel": 14.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.4 ★★★★☆",
+    "recommendation": "Massas frescas e pizza nápolis",
+    "dishPhotos": [
+      "/places/dishes/vivo-italian-kitchen-dish-1.jpg",
+      "/places/dishes/vivo-italian-kitchen-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJj6oRJIW02YgRfEfd0Rxq2sA",
+    "name": "PAUL Miami Beach",
+    "category": "Restaurante",
+    "tag": "🥐 Padaria",
+    "address": "450 Lincoln Rd, Miami Beach, FL 33139, EUA",
+    "rating": 4.1,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-paul-miami-beach.jpg",
+    "cost": 15.0,
+    "hours": "7h-22h",
+    "distanceFromHotel": 370.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.3 ★★★★☆",
+    "recommendation": "Croissant amanteigado francês",
+    "dishPhotos": [
+      "/places/dishes/paul-miami-beach-dish-1.jpg",
+      "/places/dishes/paul-miami-beach-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJuaPYo6XH2YgRgyVGLZJdY4A",
+    "name": "Shorty's BBQ South Miami",
+    "category": "Restaurante",
+    "tag": "🍽️ Restaurante",
+    "address": "9200 S Dixie Hwy, Miami, FL 33156, EUA",
+    "rating": 4.4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-shorty-s-bbq-south-miami.jpg",
+    "cost": 20.0,
+    "hours": "11h-22h",
+    "distanceFromHotel": 370.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Costelinha defumada",
+    "dishPhotos": [
+      "/places/dishes/shorty-s-bbq-south-miami-dish-2.jpg",
+      "/places/dishes/shorty-s-bbq-south-miami-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ5Xezn4202YgRcx9NTyuGQPo",
+    "name": "Pizza Rustica South Beach",
+    "category": "Restaurante",
+    "tag": "🍕 Pizza",
+    "address": "863 Washington Ave, Miami Beach, FL 33139, EUA",
+    "rating": 4.4,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-pizza-rustica-south-beach.jpg",
+    "cost": 10.0,
+    "hours": "11h-5h",
+    "distanceFromHotel": 370.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.0 ★★★★☆",
+    "recommendation": "Pizza por fatia estilo NY",
+    "dishPhotos": [
+      "/places/dishes/pizza-rustica-south-beach-dish-1.jpg",
+      "/places/dishes/pizza-rustica-south-beach-dish-3.jpg"
+    ]
+  },
+  {
+    "id": "ChIJgYZ4DvG02YgR6zxax8FTfHo",
+    "name": "Joe's Stone Crab",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "11 Washington Ave, Miami Beach, FL 33139, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-joe-s-stone-crab.jpg",
+    "cost": 80.0,
+    "hours": "11h30-22h",
+    "distanceFromHotel": 370.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Garras de stone crab com mostarda",
+    "dishPhotos": [
+      "/places/dishes/joe-s-stone-crab-dish-2.jpg",
+      "/places/dishes/joe-s-stone-crab-dish-4.jpg"
+    ]
+  },
+  {
+    "id": "ChIJ4d3Xn4S22YgRsWCLocwOej4",
+    "name": "Luke's Lobster Brickell City Centre",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "701 S Miami Ave, Miami, FL 33131, EUA",
+    "rating": 4.5,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-luke-s-lobster-brickell-city-centre.jpg",
+    "cost": 25.0,
+    "hours": "11h-22h",
+    "distanceFromHotel": 370.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.5 ★★★★½",
+    "recommendation": "Lobster roll estilo Maine",
+    "dishPhotos": [
+      "/places/dishes/luke-s-lobster-brickell-city-centre-dish-1.jpg",
+      "/places/dishes/luke-s-lobster-brickell-city-centre-dish-2.jpg"
+    ]
+  },
+  {
+    "id": "ChIJc2PcMM612YgR_kdEdDDuTrQ",
+    "name": "Rusty Pelican Miami",
+    "category": "Restaurante",
+    "tag": "🦐 Frutos do mar",
+    "address": "3201 Rickenbacker Cwy, Key Biscayne, FL 33149, EUA",
+    "rating": 4.7,
+    "googleMapsUri": null,
+    "photo": "/places/xlsx-rusty-pelican-miami.jpg",
+    "cost": 60.0,
+    "hours": "17h-22h",
+    "distanceFromHotel": 370.0,
+    "menuLabel": "Ver menu",
+    "reviewLabel": "4.2 ★★★★☆",
+    "recommendation": "Vista de Miami e peixe grelhado",
+    "dishPhotos": [
+      "/places/dishes/rusty-pelican-miami-dish-1.jpg",
+      "/places/dishes/rusty-pelican-miami-dish-4.jpg"
+    ]
+  }
+]

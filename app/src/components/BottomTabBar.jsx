@@ -1,6 +1,8 @@
+import { useNavigate, useLocation } from 'react-router-dom';
+
 const TABS = [
-  { key: 'roteiro', label: 'Roteiro', icon: 'map' },
-  { key: 'lugares', label: 'Lugares', icon: 'store' },
+  { key: 'roteiro', label: 'Roteiro', icon: 'map', path: '/' },
+  { key: 'lugares', label: 'Lugares', icon: 'store', path: '/lugares' },
 ];
 
 function MapIcon({ color }) {
@@ -25,13 +27,17 @@ function StoreIcon({ color }) {
   );
 }
 
-export default function BottomTabBar({ active, onSelect }) {
+export default function BottomTabBar() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   return (
     <div
       style={{
-        position: 'absolute',
-        left: 22,
-        right: 22,
+        position: 'fixed',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: 'min(calc(100% - 44px), 436px)',
         bottom: 20,
         display: 'flex',
         alignItems: 'center',
@@ -43,13 +49,13 @@ export default function BottomTabBar({ active, onSelect }) {
         zIndex: 3,
       }}
     >
-      {TABS.map((tab, i) => {
-        const isActive = i === active;
+      {TABS.map((tab) => {
+        const isActive = location.pathname === tab.path;
         const color = isActive ? '#1c1a17' : '#c9c2b6';
         return (
           <div
             key={tab.key}
-            onClick={() => onSelect(i)}
+            onClick={() => navigate(tab.path)}
             style={{
               display: 'flex',
               flexDirection: 'column',

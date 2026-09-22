@@ -5,8 +5,10 @@ export function useItinerary() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
+  // silent=true evita voltar ao estado de skeleton em recargas depois de uma
+  // edição — só o loading inicial (days === null) deve mostrar o skeleton.
+  const reload = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await fetch('/api/itinerary');
       if (!res.ok) throw new Error('Falha ao carregar roteiro');
@@ -16,7 +18,7 @@ export function useItinerary() {
     } catch (e) {
       setError(e.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 

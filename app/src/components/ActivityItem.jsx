@@ -1,36 +1,20 @@
-function TrashIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b3453f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 6h18" />
-      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-    </svg>
-  );
-}
-
-function ArrowIcon({ dir }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1c1a17" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d={dir === 'up' ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} />
-    </svg>
-  );
-}
-
-function LinkIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1c1a17" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
-      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-    </svg>
-  );
-}
+import { TrashBinTrashIcon } from '@solar-icons/react/linear/trash-bin-trash';
+import { AltArrowUpIcon } from '@solar-icons/react/linear/alt-arrow-up';
+import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
+import { PointOnMapIcon } from '@solar-icons/react/linear/point-on-map';
+import { CloseIcon } from '@solar-icons/react/linear/close';
+import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
+import DebouncedInput, { FieldLabel } from './DebouncedInput.jsx';
 
 export default function ActivityItem({
   activity,
   editing,
+  cancelToken,
   onEditTime,
   onEditTitle,
+  onEditSubtitle,
   onSelectPlace,
+  onUnlinkPlace,
   onDelete,
   onMoveUp,
   onMoveDown,
@@ -42,108 +26,198 @@ export default function ActivityItem({
   return (
     <div
       style={{
+        position: 'relative',
         display: 'flex',
-        gap: 12,
-        alignItems: place ? 'stretch' : 'center',
-        padding: place ? 8 : 14,
+        gap: editing ? 12 : 0,
+        flexDirection: editing ? 'row' : 'column',
+        alignItems: editing ? 'flex-start' : 'stretch',
+        padding: 14,
         marginBottom: 10,
         background: '#fff',
+        border: '1px solid #ececec',
         borderRadius: 18,
-        boxShadow: '0 2px 10px rgba(28,26,23,0.06)',
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 56, flex: 'none', justifyContent: 'center' }}>
-        {editing ? (
-          <input
+      {editing && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', width: 64, flex: 'none', paddingTop: 2 }}>
+          <FieldLabel>Horário</FieldLabel>
+          <DebouncedInput
             value={activity.time}
-            onChange={(e) => onEditTime(e.target.value)}
-            style={{
-              width: '100%',
-              border: '1px solid #eee9df',
-              borderRadius: 8,
-              padding: '4px 2px',
-              fontSize: 12,
-              fontWeight: 700,
-              textAlign: 'center',
-              color: '#1c1a17',
-            }}
+            onCommit={onEditTime}
+            cancelToken={cancelToken}
+            style={{ marginTop: 3, padding: '4px 2px', fontSize: 12, fontWeight: 700, textAlign: 'center' }}
           />
-        ) : (
-          <div style={{ color: '#1c1a17', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>{activity.time}</div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {!place && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#1c1a17', flex: 'none' }} />}
+      {!editing && activity.time && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            padding: '4px 10px',
+            borderRadius: 8,
+            background: '#f9f7f2',
+            color: '#1c1a17',
+            fontSize: 11.5,
+            fontWeight: 700,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {activity.time}
+        </div>
+      )}
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        {place ? (
-          <div
-            onClick={editing ? onSelectPlace : undefined}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: 8,
-              borderRadius: 12,
-              background: '#f7f5f1',
-              cursor: editing ? 'pointer' : 'default',
-            }}
-          >
-            <div style={{ width: 44, height: 44, borderRadius: 10, flex: 'none', overflow: 'hidden', background: '#eee9df' }}>
-              {place.photo && (
-                <img src={place.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        {editing ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div>
+              <FieldLabel>Título</FieldLabel>
+              <DebouncedInput
+                value={activity.title}
+                onCommit={onEditTitle}
+                cancelToken={cancelToken}
+                placeholder="Título"
+                style={{ marginTop: 3, fontSize: 14, fontWeight: 700 }}
+              />
+            </div>
+
+            <div>
+              <FieldLabel>Descrição</FieldLabel>
+              <DebouncedInput
+                value={activity.subtitle || ''}
+                onCommit={onEditSubtitle}
+                cancelToken={cancelToken}
+                placeholder="Descrição (opcional)"
+                style={{ marginTop: 3 }}
+              />
+            </div>
+
+            <div>
+              <FieldLabel>Lugar</FieldLabel>
+              {place ? (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  marginTop: 5,
+                  padding: 8,
+                  borderRadius: 12,
+                  background: '#f9f7f2',
+                }}
+              >
+                <div
+                  onClick={onSelectPlace}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, cursor: 'pointer' }}
+                >
+                  <div style={{ width: 40, height: 40, borderRadius: 10, flex: 'none', overflow: 'hidden', background: '#eee9df' }}>
+                    {place.photo && (
+                      <img src={place.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ color: '#1c1a17', fontSize: 13, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {place.name}
+                    </div>
+                    <div style={{ color: '#9a9186', fontSize: 11, fontWeight: 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {place.address ? place.address.split(',')[0].trim() : ''}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onUnlinkPlace}
+                  style={{
+                    flex: 'none',
+                    width: 22,
+                    height: 22,
+                    borderRadius: 11,
+                    border: 0,
+                    background: '#b3453f',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <CloseIcon size={12} color="#fff" />
+                </button>
+              </div>
+              ) : (
+                <div
+                  onClick={onSelectPlace}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginTop: 5,
+                    padding: '6px 10px',
+                    borderRadius: 8,
+                    background: '#f9f7f2',
+                    color: '#1c1a17',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    alignSelf: 'flex-start',
+                  }}
+                >
+                  <PointOnMapIcon size={14} color="#1c1a17" />
+                  Selecionar lugar
+                </div>
               )}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: '#1c1a17', fontSize: 14, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {place.name}
-              </div>
-              <div style={{ color: '#9a9186', fontSize: 11.5, fontWeight: 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {place.address ? place.address.split(',')[0].trim() : ''}
-              </div>
-            </div>
-          </div>
-        ) : editing ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <input
-              value={activity.title}
-              onChange={(e) => onEditTitle(e.target.value)}
-              placeholder="Título"
-              style={{
-                border: '1px solid #eee9df',
-                borderRadius: 8,
-                padding: '6px 8px',
-                fontSize: 14,
-                fontWeight: 700,
-                color: '#1c1a17',
-              }}
-            />
-            <div
-              onClick={onSelectPlace}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 10px',
-                borderRadius: 8,
-                background: '#f7f5f1',
-                color: '#1c1a17',
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-                alignSelf: 'flex-start',
-              }}
-            >
-              <LinkIcon />
-              Selecionar lugar
             </div>
           </div>
         ) : (
           <>
-            <div style={{ color: '#1c1a17', fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>{activity.title}</div>
+            <div style={{ paddingRight: activity.time ? 64 : 0 }}>
+              <div style={{ color: '#1c1a17', fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>{activity.title}</div>
+            </div>
             {activity.subtitle && (
               <div style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 500, marginTop: 2, lineHeight: 1.3 }}>
                 {activity.subtitle}
+              </div>
+            )}
+            {place && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  marginTop: 10,
+                  padding: 10,
+                  borderRadius: 16,
+                  background: '#f9f7f2',
+                }}
+              >
+                <div style={{ width: 46, height: 46, borderRadius: 12, flex: 'none', overflow: 'hidden', background: '#eee9df' }}>
+                  {place.photo && (
+                    <img src={place.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: '#1c1a17', fontSize: 14.5, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {place.name}
+                  </div>
+                  <div style={{ color: '#9a9186', fontSize: 11.5, fontWeight: 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {place.address ? place.address.split(',')[0].trim() : ''}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    flex: 'none',
+                    width: 34,
+                    height: 34,
+                    borderRadius: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#1c1a17',
+                  }}
+                >
+                  <AltArrowRightIcon size={14} color="#fff" />
+                </div>
               </div>
             )}
           </>
@@ -151,14 +225,14 @@ export default function ActivityItem({
       </div>
 
       {editing && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 'none', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 'none', paddingTop: 2 }}>
           <button
             type="button"
             onClick={onMoveUp}
             disabled={isFirst}
             style={{ border: 0, background: 'none', padding: 2, cursor: isFirst ? 'default' : 'pointer', opacity: isFirst ? 0.3 : 1 }}
           >
-            <ArrowIcon dir="up" />
+            <AltArrowUpIcon size={16} color="#1c1a17" />
           </button>
           <button
             type="button"
@@ -166,10 +240,10 @@ export default function ActivityItem({
             disabled={isLast}
             style={{ border: 0, background: 'none', padding: 2, cursor: isLast ? 'default' : 'pointer', opacity: isLast ? 0.3 : 1 }}
           >
-            <ArrowIcon dir="down" />
+            <AltArrowDownIcon size={16} color="#1c1a17" />
           </button>
           <button type="button" onClick={onDelete} style={{ border: 0, background: 'none', padding: 2, cursor: 'pointer' }}>
-            <TrashIcon />
+            <TrashBinTrashIcon size={16} color="#b3453f" />
           </button>
         </div>
       )}

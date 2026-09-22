@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useDragScroll } from '../hooks/useDragScroll.js';
 
 const bubbleBase = {
   flex: 'none',
@@ -9,6 +9,7 @@ const bubbleBase = {
   gap: 2,
   width: 48,
   height: 58,
+  border: '1px solid #f0ede5',
   borderRadius: 18,
   cursor: 'pointer',
   transition: 'background .2s, border-color .2s',
@@ -16,30 +17,25 @@ const bubbleBase = {
 };
 
 export default function DayTabs({ days, selected, onSelect }) {
-  const scrollerRef = useRef(null);
-  const dragRef = useRef(null);
+  const { scrollerRef, dragRef, dragHandlers } = useDragScroll();
 
-  const onMouseDown = (e) => {
-    dragRef.current = { startX: e.clientX, startScroll: scrollerRef.current.scrollLeft, moved: false };
-  };
-  const onMouseMove = (e) => {
-    const drag = dragRef.current;
-    if (!drag) return;
-    const dx = e.clientX - drag.startX;
-    if (Math.abs(dx) > 3) drag.moved = true;
-    scrollerRef.current.scrollLeft = drag.startScroll - dx;
-  };
-  const onMouseUp = () => {
-    dragRef.current = null;
-  };
+  if (!days) {
+    return (
+      <div style={{ display: 'flex', gap: 10, marginTop: 14, padding: '2px 2px 6px' }}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            style={{ ...bubbleBase, background: '#f9f7f2', animation: 'pulse 1.2s ease-in-out infinite' }}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div
       ref={scrollerRef}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onMouseLeave={onMouseUp}
+      {...dragHandlers}
       style={{
         display: 'flex',
         gap: 10,
@@ -61,7 +57,8 @@ export default function DayTabs({ days, selected, onSelect }) {
             }}
             style={{
               ...bubbleBase,
-              background: active ? '#1c1a17' : '#eee9df',
+              background: active ? '#1c1a17' : '#f9f7f2',
+              borderColor: active ? '#1c1a17' : '#f0ede5',
             }}
           >
             <div

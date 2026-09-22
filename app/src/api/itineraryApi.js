@@ -38,3 +38,31 @@ export function reorderActivities(items) {
 export function fetchPlaces() {
   return request('/api/places');
 }
+
+export function updatePlace(id, fields) {
+  return request(`/api/places/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(fields),
+  });
+}
+
+export function deletePlace(id) {
+  return request(`/api/places/${id}`, { method: 'DELETE' });
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+export async function uploadPlacePhoto(file) {
+  const base64 = await fileToBase64(file);
+  return request('/api/places/upload', {
+    method: 'POST',
+    body: JSON.stringify({ filename: file.name, contentType: file.type || 'image/jpeg', base64 }),
+  });
+}

@@ -6,8 +6,8 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     const { dayId, time, title, subtitle, address, placeId } = req.body || {};
-    if (!dayId || !time || !title) {
-      return res.status(400).json({ error: 'dayId, time e title são obrigatórios' });
+    if (!dayId) {
+      return res.status(400).json({ error: 'dayId é obrigatório' });
     }
 
     const [{ next_order }] = await sql.query(
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     const [row] = await sql.query(
       `INSERT INTO activities (day_id, time, title, subtitle, address, place_id, sort_order)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-      [dayId, time, title, subtitle || '', address || null, placeId || null, next_order]
+      [dayId, time || '', title || '', subtitle || '', address || null, placeId || null, next_order]
     );
 
     return res.status(201).json({ id: row.id });

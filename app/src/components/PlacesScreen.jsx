@@ -2,14 +2,31 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PlaceCard from './PlaceCard.jsx';
 import { fetchPlaces } from '../api/itineraryApi.js';
+import { CATEGORY_ICON_MAP } from '../data/placeTags.js';
+import { useDragScroll } from '../hooks/useDragScroll.js';
 
-const CATEGORIES = ['Restaurante', 'Mercado', 'Loja', 'Parque', 'Outro'];
+const CATEGORIES = ['Restaurante', 'Mercado', 'Loja', 'Parque', 'Hotel', 'Outro'];
+
+function PlaceCardSkeleton() {
+  return (
+    <div
+      style={{
+        height: 300,
+        marginBottom: 16,
+        borderRadius: 20,
+        background: '#f9f7f2',
+        animation: 'pulse 1.2s ease-in-out infinite',
+      }}
+    />
+  );
+}
 
 export default function PlacesScreen() {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState(CATEGORIES[0]);
   const navigate = useNavigate();
+  const { scrollerRef, dragRef, dragHandlers } = useDragScroll();
 
   useEffect(() => {
     fetchPlaces()
@@ -22,16 +39,15 @@ export default function PlacesScreen() {
   }, [places, category]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#151210', boxSizing: 'border-box' }}>
+    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box' }}>
       <div style={{ padding: '22px 22px 0' }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: 0.4, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase' }}>
-          Orlando, Disney
-        </div>
-        <div style={{ fontSize: 22, fontWeight: 800, marginTop: 3, letterSpacing: -0.2, color: '#fff' }}>
+        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.3, color: '#1c1a17' }}>
           Lugares
         </div>
 
         <div
+          ref={scrollerRef}
+          {...dragHandlers}
           style={{
             display: 'flex',
             gap: 8,
@@ -39,26 +55,35 @@ export default function PlacesScreen() {
             marginTop: 16,
             padding: '2px 2px 6px',
             WebkitOverflowScrolling: 'touch',
+            cursor: 'grab',
+            userSelect: 'none',
           }}
         >
           {CATEGORIES.map((cat) => {
             const active = cat === category;
+            const { icon: CatIcon, color: iconColor } = CATEGORY_ICON_MAP[cat];
             return (
               <div
                 key={cat}
-                onClick={() => setCategory(cat)}
+                onClick={() => {
+                  if (!dragRef.current || !dragRef.current.moved) setCategory(cat);
+                }}
                 style={{
                   flex: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
                   padding: '8px 16px',
                   borderRadius: 14,
                   fontSize: 12.5,
                   fontWeight: 700,
                   cursor: 'pointer',
                   userSelect: 'none',
-                  background: active ? '#fff' : 'rgba(255,255,255,0.12)',
-                  color: active ? '#1c1a17' : 'rgba(255,255,255,0.75)',
+                  background: active ? '#1c1a17' : '#f9f7f2',
+                  color: active ? '#fff' : '#6b6459',
                 }}
               >
+                <CatIcon size={15} color={active ? '#fff' : iconColor} />
                 {cat}
               </div>
             );
@@ -69,9 +94,6 @@ export default function PlacesScreen() {
       <div
         style={{
           marginTop: 18,
-          background: '#f7f5f1',
-          borderRadius: '28px 28px 0 0',
-          minHeight: 'calc(100dvh - 170px)',
           boxSizing: 'border-box',
           padding: '20px 22px 120px',
         }}
@@ -80,7 +102,9 @@ export default function PlacesScreen() {
           {loading ? 'Carregando…' : filtered.length === 1 ? '1 lugar' : `${filtered.length} lugares`}
         </div>
 
-        {filtered.map((place) => (
+        {loading && Array.from({ length: 3 }).map((_, i) => <PlaceCardSkeleton key={i} />)}
+
+        {!loading && filtered.map((place) => (
           <PlaceCard key={place.id} place={place} onAction={() => navigate(`/lugares/${place.id}`)} />
         ))}
 

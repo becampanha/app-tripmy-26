@@ -1,30 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
+import { CloseIcon } from '@solar-icons/react/linear/close';
 import PlaceCard from './PlaceCard.jsx';
 import { fetchPlaces } from '../api/itineraryApi.js';
+import { CATEGORY_ICON_MAP } from '../data/placeTags.js';
+import { useDragScroll } from '../hooks/useDragScroll.js';
 
-const CATEGORIES = ['Restaurante', 'Mercado', 'Loja', 'Parque', 'Outro'];
-
-function CheckIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1a17" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 6 6 18" />
-      <path d="M6 6l12 12" />
-    </svg>
-  );
-}
+const CATEGORIES = ['Restaurante', 'Mercado', 'Loja', 'Parque', 'Hotel', 'Outro'];
 
 export default function PlaceSelectorModal({ onSelect, onClose }) {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState(CATEGORIES[0]);
+  const { scrollerRef, dragRef, dragHandlers } = useDragScroll();
 
   useEffect(() => {
     fetchPlaces()
@@ -38,34 +25,41 @@ export default function PlaceSelectorModal({ onSelect, onClose }) {
     <div
       style={{
         position: 'fixed',
-        inset: 0,
+        top: 0,
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: 480,
         zIndex: 20,
-        background: '#151210',
+        background: '#fff',
         overflowY: 'auto',
         boxSizing: 'border-box',
       }}
     >
       <div style={{ padding: '22px 22px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>Selecionar lugar</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#1c1a17' }}>Selecionar lugar</div>
           <div
             onClick={onClose}
             style={{
               width: 34,
               height: 34,
               borderRadius: 12,
-              background: '#fff',
+              background: '#1c1a17',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
             }}
           >
-            <CloseIcon />
+            <CloseIcon size={18} color="#fff" />
           </div>
         </div>
 
         <div
+          ref={scrollerRef}
+          {...dragHandlers}
           style={{
             display: 'flex',
             gap: 8,
@@ -73,26 +67,35 @@ export default function PlaceSelectorModal({ onSelect, onClose }) {
             marginTop: 16,
             padding: '2px 2px 6px',
             WebkitOverflowScrolling: 'touch',
+            cursor: 'grab',
+            userSelect: 'none',
           }}
         >
           {CATEGORIES.map((cat) => {
             const active = cat === category;
+            const { icon: CatIcon, color: iconColor } = CATEGORY_ICON_MAP[cat];
             return (
               <div
                 key={cat}
-                onClick={() => setCategory(cat)}
+                onClick={() => {
+                  if (!dragRef.current || !dragRef.current.moved) setCategory(cat);
+                }}
                 style={{
                   flex: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
                   padding: '8px 16px',
                   borderRadius: 14,
                   fontSize: 12.5,
                   fontWeight: 700,
                   cursor: 'pointer',
                   userSelect: 'none',
-                  background: active ? '#fff' : 'rgba(255,255,255,0.12)',
-                  color: active ? '#1c1a17' : 'rgba(255,255,255,0.75)',
+                  background: active ? '#1c1a17' : '#f9f7f2',
+                  color: active ? '#fff' : '#6b6459',
                 }}
               >
+                <CatIcon size={15} color={active ? '#fff' : iconColor} />
                 {cat}
               </div>
             );
@@ -103,9 +106,6 @@ export default function PlaceSelectorModal({ onSelect, onClose }) {
       <div
         style={{
           marginTop: 18,
-          background: '#f7f5f1',
-          borderRadius: '28px 28px 0 0',
-          minHeight: 'calc(100dvh - 170px)',
           boxSizing: 'border-box',
           padding: '20px 22px 60px',
         }}
@@ -119,7 +119,6 @@ export default function PlaceSelectorModal({ onSelect, onClose }) {
             key={place.id}
             place={place}
             onAction={() => onSelect(place)}
-            actionIcon={<CheckIcon />}
           />
         ))}
 

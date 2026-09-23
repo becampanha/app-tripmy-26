@@ -92,7 +92,7 @@ function Shell() {
           </Routes>
         </Screen>
       </AnimatePresence>
-      <BottomTabBar />
+      {currentDepth === 0 && <BottomTabBar />}
     </>
   );
 }

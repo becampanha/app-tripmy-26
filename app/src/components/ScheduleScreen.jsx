@@ -324,11 +324,11 @@ export default function ScheduleScreen() {
                 onMoveUp={() => handleMove(i, -1)}
                 onMoveDown={() => handleMove(i, 1)}
               />
-              {!editing && next && act.place && next.place ? (
-                <DistanceBetween from={act.place} to={next.place} />
-              ) : (
-                <div style={{ marginBottom: 10 }} />
-              )}
+              <div style={{ marginBottom: 10 }}>
+                {!editing && next && act.place && next.place && (
+                  <DistanceBetween from={act.place} to={next.place} />
+                )}
+              </div>
             </div>
           );
         })}

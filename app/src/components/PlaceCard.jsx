@@ -33,8 +33,6 @@ export default function PlaceCard({ place, onAction, inItinerary }) {
         />
       )}
 
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.06)', pointerEvents: 'none' }} />
-
       <div
         style={{
           position: 'absolute',

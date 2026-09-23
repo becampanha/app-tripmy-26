@@ -20,7 +20,10 @@ export default function DistanceBetween({ from, to }) {
   const toCoords = useGeocode(to.address);
   const result = useDistance(from.id, fromCoords, to.id, toCoords);
 
-  if (!result) return null;
+  // Defesa contra resposta malformada da API de distância (ex: dois itens
+  // consecutivos no mesmo lugar, onde o Google pode devolver um resultado
+  // degenerado) — nunca deixar um dado inesperado derrubar a tela inteira.
+  if (!result || typeof result.distanceKm !== 'number' || typeof result.durationMin !== 'number') return null;
 
   return (
     <div

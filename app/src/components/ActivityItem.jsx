@@ -162,7 +162,7 @@ export default function ActivityItem({
               )}
               <div style={{ color: '#1c1a17', fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>{activity.title}</div>
               {activity.subtitle && (
-                <div style={{ color: '#9a9186', fontSize: 14, fontWeight: 500, marginTop: 2, lineHeight: 1.35 }}>
+                <div style={{ color: '#1c1a17', fontSize: 14, fontWeight: 500, marginTop: 2, lineHeight: 1.35 }}>
                   {activity.subtitle}
                 </div>
               )}

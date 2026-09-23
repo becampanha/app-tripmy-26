@@ -15,7 +15,6 @@ import {
 } from '../api/itineraryApi.js';
 import { FieldLabel, inputStyle } from './DebouncedInput.jsx';
 import Select from './Select.jsx';
-import { useDragScroll } from '../hooks/useDragScroll.js';
 import { useGeocode } from '../hooks/useGeocode.js';
 import { usePlaceOccurrences } from '../hooks/usePlaceOccurrences.js';
 import { subcategoriesFor } from '../data/subcategories.js';
@@ -25,8 +24,8 @@ import { getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
 const EDITABLE_FIELDS = [
-  'name', 'category', 'subcategory', 'tag', 'address', 'rating', 'reviewLabel',
-  'cost', 'hours', 'recommendation', 'menuLabel', 'googleMapsUri',
+  'name', 'category', 'subcategory', 'tag', 'address',
+  'cost', 'hours', 'recommendation', 'googleMapsUri',
 ];
 
 function placeFields(place) {
@@ -65,7 +64,6 @@ function GoogleSearchPanel({ onSelect }) {
         id: place.id,
         name: place.displayName?.text || '',
         address: place.formattedAddress || '',
-        rating: place.rating ?? '',
         googleMapsUri: place.googleMapsUri || '',
         photo: photos.photo,
         dishPhotos: photos.dishPhotos || [],
@@ -79,7 +77,7 @@ function GoogleSearchPanel({ onSelect }) {
   return (
     <div style={{ padding: '20px 22px' }}>
       <div style={{ color: '#1c1a17', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Novo lugar</div>
-      <div style={{ color: '#9a9186', fontSize: 13, fontWeight: 500, marginBottom: 16 }}>
+      <div style={{ color: '#1c1a17', fontSize: 13, fontWeight: 500, marginBottom: 16 }}>
         Busque o lugar no Google para preencher os dados automaticamente.
       </div>
 
@@ -166,6 +164,324 @@ function GoogleSearchPanel({ onSelect }) {
   );
 }
 
+// Carrossel do header: rola de verdade (arrastar com o dedo/mouse, com
+// scroll-snap), mas um toque/clique sem arrasto abre a foto em tela cheia.
+// A foto principal (fachada) sempre vem primeiro em `photos` — ver
+// `allPhotos` no componente pai — então ela é sempre a capa inicial.
+function PhotoCarousel({ photos, photoIndex, onIndexChange, onOpenLightbox }) {
+  const scrollerRef = useRef(null);
+  const dragRef = useRef(null);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTo({ left: photoIndex * el.clientWidth, behavior: 'instant' in document.documentElement.style ? 'instant' : 'auto' });
+  }, []);
+
+  const handleScroll = () => {
+    const el = scrollerRef.current;
+    if (!el || el.clientWidth === 0) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (i !== photoIndex) onIndexChange(i);
+  };
+
+  // Touch já é nativamente arrastável pelo navegador (overflowX: auto) — só
+  // precisamos rastrear o gesto para diferenciar toque de arrasto. Mouse,
+  // porém, não gera scroll nativo por arrastar: precisamos mover o
+  // scrollLeft manualmente a cada mousemove (mesmo padrão de useDragScroll).
+  const startDrag = (x) => {
+    dragRef.current = { startX: x, startScroll: scrollerRef.current.scrollLeft, moved: false };
+  };
+  const moveDrag = (x, isMouse) => {
+    if (!dragRef.current) return;
+    const dx = x - dragRef.current.startX;
+    if (Math.abs(dx) > 6) dragRef.current.moved = true;
+    if (isMouse) scrollerRef.current.scrollLeft = dragRef.current.startScroll - dx;
+  };
+  const endDrag = () => {
+    const moved = dragRef.current?.moved;
+    dragRef.current = null;
+    if (!moved) onOpenLightbox();
+  };
+
+  return (
+    <div
+      ref={scrollerRef}
+      onScroll={handleScroll}
+      onTouchStart={(e) => startDrag(e.touches[0].clientX)}
+      onTouchMove={(e) => moveDrag(e.touches[0].clientX, false)}
+      onTouchEnd={endDrag}
+      onMouseDown={(e) => startDrag(e.clientX)}
+      onMouseMove={(e) => moveDrag(e.clientX, true)}
+      onMouseUp={endDrag}
+      onMouseLeave={() => { dragRef.current = null; }}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        overflowX: 'auto',
+        scrollSnapType: 'x mandatory',
+        WebkitOverflowScrolling: 'touch',
+        cursor: 'grab',
+        userSelect: 'none',
+      }}
+    >
+      {photos.map((src, i) => (
+        <img
+          key={i}
+          src={src}
+          alt=""
+          draggable={false}
+          style={{ flex: 'none', width: '100%', height: '100%', objectFit: 'cover', scrollSnapAlign: 'start', pointerEvents: 'none' }}
+        />
+      ))}
+
+      {photos.length > 1 && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 34,
+            right: 14,
+            padding: '4px 10px',
+            borderRadius: 8,
+            background: 'rgba(0,0,0,0.55)',
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 700,
+            pointerEvents: 'none',
+          }}
+        >
+          {photoIndex + 1}/{photos.length}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Visualização em tela cheia de uma foto do carrossel, com o mesmo gesto de
+// arrastar pra navegar entre fotos. Fecha pelo X ou arrastando pra baixo.
+function PhotoLightbox({ photos, photoIndex, onIndexChange, onClose }) {
+  const scrollerRef = useRef(null);
+  const dragRef = useRef(null);
+  const [dragY, setDragY] = useState(0);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollLeft = photoIndex * el.clientWidth;
+  }, []);
+
+  const handleScroll = () => {
+    const el = scrollerRef.current;
+    if (!el || el.clientWidth === 0) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (i !== photoIndex) onIndexChange(i);
+  };
+
+  const startDrag = (x, y) => {
+    dragRef.current = { startX: x, startY: y, startScroll: scrollerRef.current.scrollLeft, axis: null };
+  };
+  // Mouse não gera scroll nativo por arrastar (diferente de touch, que o
+  // navegador já rola sozinho via overflowX: auto) — quando o gesto é
+  // identificado como horizontal E veio do mouse, movemos scrollLeft à mão.
+  const moveDrag = (x, y, isMouse) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const dx = x - drag.startX;
+    const dy = y - drag.startY;
+    if (!drag.axis && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      drag.axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
+    }
+    if (drag.axis === 'y') setDragY(Math.max(0, dy));
+    else if (drag.axis === 'x' && isMouse) scrollerRef.current.scrollLeft = drag.startScroll - dx;
+  };
+  const endDrag = () => {
+    if (dragY > 100) {
+      onClose();
+    } else {
+      setDragY(0);
+    }
+    dragRef.current = null;
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: 480,
+        zIndex: 50,
+        background: `rgba(0,0,0,${Math.max(0.4, 1 - dragY / 300)})`,
+      }}
+    >
+      <div
+        ref={scrollerRef}
+        onScroll={handleScroll}
+        onTouchStart={(e) => startDrag(e.touches[0].clientX, e.touches[0].clientY)}
+        onTouchMove={(e) => moveDrag(e.touches[0].clientX, e.touches[0].clientY, false)}
+        onTouchEnd={endDrag}
+        onMouseDown={(e) => startDrag(e.clientX, e.clientY)}
+        onMouseMove={(e) => moveDrag(e.clientX, e.clientY, true)}
+        onMouseUp={endDrag}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          overflowX: dragY > 0 ? 'hidden' : 'auto',
+          scrollSnapType: 'x mandatory',
+          transform: `translateY(${dragY}px)`,
+          transition: dragY === 0 ? 'transform 0.2s' : 'none',
+        }}
+      >
+        {photos.map((src, i) => (
+          <div
+            key={i}
+            style={{
+              flex: 'none',
+              width: '100%',
+              height: '100%',
+              scrollSnapAlign: 'start',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <img src={src} alt="" draggable={false} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+          </div>
+        ))}
+      </div>
+
+      <div
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: 18,
+          right: 18,
+          width: 38,
+          height: 38,
+          borderRadius: 19,
+          background: 'rgba(255,255,255,0.22)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+        }}
+      >
+        <CloseIcon size={18} color="#fff" />
+      </div>
+
+      {photos.length > 1 && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '4px 10px',
+            borderRadius: 8,
+            background: 'rgba(255,255,255,0.22)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 700,
+          }}
+        >
+          {photoIndex + 1}/{photos.length}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Mapa em tela cheia, aberto ao tocar no mapa estático da tela de detalhe.
+// Iframe interativo real (arrastar, zoom) via proxy do Maps Embed (api ação
+// "embed" — a chave do Google nunca chega ao client). Footer flutuante fixo
+// com miniatura do lugar, ocupando toda a largura, imitando o "cartão de
+// destino" que apps de mapa mostram embaixo ao focar um local.
+function MapFullscreen({ coords, name, address, photo, onClose }) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: 480,
+        zIndex: 50,
+        background: '#eee9df',
+      }}
+    >
+      <iframe
+        title="Mapa"
+        src={`https://www.google.com/maps/embed/v1/view?key=${import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY}&center=${coords.lat},${coords.lng}&zoom=16`}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
+        loading="lazy"
+      />
+
+      <div
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: 18,
+          left: 18,
+          width: 38,
+          height: 38,
+          borderRadius: 19,
+          background: 'rgba(255,255,255,0.85)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(28,26,23,0.18)',
+        }}
+      >
+        <AltArrowLeftIcon size={20} color="#1c1a17" />
+      </div>
+
+      <div
+        style={{
+          position: 'absolute',
+          left: 14,
+          right: 14,
+          bottom: 20,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: 10,
+          borderRadius: 18,
+          background: 'rgba(255,255,255,0.9)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          boxShadow: '0 8px 24px rgba(28,26,23,0.22)',
+        }}
+      >
+        <div style={{ width: 46, height: 46, borderRadius: 12, flex: 'none', overflow: 'hidden', background: '#eee9df' }}>
+          {photo && <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: '#1c1a17', fontSize: 14, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {name}
+          </div>
+          <div style={{ color: '#9a9186', fontSize: 12, fontWeight: 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {address}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Skeleton({ width, height, radius = 6, style }) {
   return (
     <div
@@ -205,8 +521,9 @@ export default function PlaceDetailScreen() {
   // EDITABLE_FIELDS (não fazem parte do diff do handleSave), mas precisam
   // ser state (não ref) para aparecer no carrossel assim que definidas.
   const [newPlacePhotos, setNewPlacePhotos] = useState({ id: null, photo: null, dishPhotos: [] });
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [mapFullscreen, setMapFullscreen] = useState(false);
   const originalRef = useRef(null);
-  const { scrollerRef: dishScrollerRef, dragHandlers: dishDragHandlers } = useDragScroll();
   const coords = useGeocode(place?.address ?? draft?.address);
   const occurrences = usePlaceOccurrences(id);
 
@@ -226,21 +543,20 @@ export default function PlaceDetailScreen() {
   }, [id]);
 
   const dishPhotos = isNew ? newPlacePhotos.dishPhotos : place ? place.dishPhotos || [] : [];
-  // Fotos do carrossel principal — hoje só a fachada, mas preparado pra crescer
-  // (ex: quando o lugar tiver mais de uma foto de capa no futuro). No fluxo
-  // de criação, vem da importação automática do Google, não de `place`.
-  const mainPhotos = useMemo(() => {
-    if (isNew) return newPlacePhotos.photo ? [newPlacePhotos.photo] : [];
-    return place && place.photo ? [place.photo] : [];
-  }, [place, isNew, newPlacePhotos.photo]);
+  const facadePhoto = isNew ? newPlacePhotos.photo : place ? place.photo : null;
+  // Carrossel do header: foto principal (fachada) seguida das demais fotos
+  // do lugar, todas juntas — sem separar "foto de capa" de "fotos extras".
+  const allPhotos = useMemo(() => {
+    return [facadePhoto, ...dishPhotos].filter(Boolean);
+  }, [facadePhoto, dishPhotos]);
 
   useEffect(() => {
     setPhotoIndex(0);
   }, [id]);
 
   const goToPhoto = (delta) => {
-    if (mainPhotos.length === 0) return;
-    setPhotoIndex((i) => (i + delta + mainPhotos.length) % mainPhotos.length);
+    if (allPhotos.length === 0) return;
+    setPhotoIndex((i) => (i + delta + allPhotos.length) % allPhotos.length);
   };
 
   // Upload de foto é uma ação imediata (escolher arquivo já sobe pro Blob),
@@ -269,8 +585,8 @@ export default function PlaceDetailScreen() {
   };
 
   // Chamado ao escolher um resultado da busca do Google no fluxo de criação:
-  // monta o rascunho já preenchido (nome, endereço, avaliação, recomendação,
-  // link do Maps), com categoria em branco para o usuário decidir.
+  // monta o rascunho já preenchido (nome, endereço, recomendação, link do
+  // Maps), com categoria em branco para o usuário decidir.
   const handleGooglePick = (picked) => {
     setNewPlacePhotos({ id: picked.id, photo: picked.photo, dishPhotos: picked.dishPhotos });
     const snapshot = {
@@ -279,12 +595,9 @@ export default function PlaceDetailScreen() {
       subcategory: '',
       tag: '',
       address: picked.address,
-      rating: picked.rating,
-      reviewLabel: '',
       cost: '',
       hours: '',
       recommendation: picked.recommendation || '',
-      menuLabel: '',
       googleMapsUri: picked.googleMapsUri,
     };
     originalRef.current = snapshot;
@@ -318,7 +631,7 @@ export default function PlaceDetailScreen() {
       try {
         const fields = {};
         for (const f of EDITABLE_FIELDS) {
-          fields[f] = ['rating', 'cost'].includes(f) && draft[f] !== ''
+          fields[f] = f === 'cost' && draft[f] !== ''
             ? Number(draft[f])
             : draft[f] || null;
         }
@@ -340,7 +653,7 @@ export default function PlaceDetailScreen() {
       if (changed) {
         const fields = {};
         for (const f of EDITABLE_FIELDS) {
-          fields[f] = ['rating', 'cost'].includes(f) && draft[f] !== ''
+          fields[f] = f === 'cost' && draft[f] !== ''
             ? Number(draft[f])
             : draft[f] || null;
         }
@@ -393,48 +706,15 @@ export default function PlaceDetailScreen() {
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box', paddingBottom: 120 }}>
+    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box', paddingBottom: 40 }}>
       <div style={{ position: 'relative', width: '100%', height: 320, background: '#eee9df', overflow: 'hidden' }}>
-        {!loading && mainPhotos[photoIndex] && (
-          <img
-            src={mainPhotos[photoIndex]}
-            alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        {!loading && allPhotos.length > 0 && (
+          <PhotoCarousel
+            photos={allPhotos}
+            photoIndex={photoIndex}
+            onIndexChange={setPhotoIndex}
+            onOpenLightbox={() => setLightboxOpen(true)}
           />
-        )}
-
-        {/* Zonas de clique para navegar o carrossel: esquerda volta, direita avança, com loop */}
-        {mainPhotos.length > 1 && (
-          <>
-            <div
-              onClick={() => goToPhoto(-1)}
-              style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '50%', zIndex: 1, cursor: 'pointer' }}
-            />
-            <div
-              onClick={() => goToPhoto(1)}
-              style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '50%', zIndex: 1, cursor: 'pointer' }}
-            />
-          </>
-        )}
-
-        {mainPhotos.length > 0 && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 34,
-              right: 14,
-              padding: '4px 10px',
-              borderRadius: 8,
-              background: 'rgba(0,0,0,0.55)',
-              color: '#fff',
-              fontSize: 12,
-              fontWeight: 700,
-              zIndex: 2,
-              pointerEvents: 'none',
-            }}
-          >
-            {photoIndex + 1}/{mainPhotos.length}
-          </div>
         )}
 
         <div
@@ -577,24 +857,6 @@ export default function PlaceDetailScreen() {
 
       <div style={{ position: 'relative', background: '#fff' }}>
         <div style={{ padding: '10px 22px 20px' }}>
-        {loading ? (
-          <Skeleton width={90} height={22} radius={8} style={{ marginBottom: 10 }} />
-        ) : !editing ? (
-          <div
-            style={{
-              display: 'inline-block',
-              padding: '4px 10px',
-              borderRadius: 8,
-              background: 'rgba(28,26,23,0.72)',
-              color: '#fff',
-              fontSize: 12,
-              fontWeight: 700,
-              marginBottom: 10,
-            }}
-          >
-            {place ? place.tag || place.category : ''}
-          </div>
-        ) : null}
 
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -644,10 +906,10 @@ export default function PlaceDetailScreen() {
 
             {subcategoriesFor(draft.category).length > 0 && (
               <div>
-                <FieldLabel>Subcategoria</FieldLabel>
+                <FieldLabel>Área</FieldLabel>
                 <div style={{ marginTop: 3 }}>
                   <Select
-                    label="Subcategoria"
+                    label="Área"
                     placeholder="Nenhuma"
                     value={draft.subcategory || ''}
                     onChange={setDraftField('subcategory')}
@@ -661,17 +923,6 @@ export default function PlaceDetailScreen() {
             <div>
               <FieldLabel>Endereço</FieldLabel>
               <input value={draft.address || ''} onChange={(e) => setDraftField('address')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} />
-            </div>
-
-            <div style={{ display: 'flex', gap: 10 }}>
-              <div style={{ flex: 1 }}>
-                <FieldLabel>Avaliação (nota)</FieldLabel>
-                <input value={draft.rating ?? ''} onChange={(e) => setDraftField('rating')(e.target.value)} type="number" step="0.1" style={{ ...inputStyle, marginTop: 3 }} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <FieldLabel>Avaliação (rótulo)</FieldLabel>
-                <input value={draft.reviewLabel || ''} onChange={(e) => setDraftField('reviewLabel')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} placeholder="ex: 4.6 ★★★★★" />
-              </div>
             </div>
 
             <div>
@@ -744,11 +995,6 @@ export default function PlaceDetailScreen() {
             </div>
 
             <div>
-              <FieldLabel>Rótulo do menu</FieldLabel>
-              <input value={draft.menuLabel || ''} onChange={(e) => setDraftField('menuLabel')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} placeholder="ex: Ver menu" />
-            </div>
-
-            <div>
               <FieldLabel>Link do Google Maps</FieldLabel>
               <input value={draft.googleMapsUri || ''} onChange={(e) => setDraftField('googleMapsUri')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} />
             </div>
@@ -782,9 +1028,11 @@ export default function PlaceDetailScreen() {
               <div style={{ color: '#1c1a17', fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>
                 {place.name}
               </div>
-              <div style={{ color: '#9a9186', fontSize: 13, fontWeight: 500, marginTop: 3, lineHeight: 1.3 }}>
-                {place.address}
-              </div>
+              {place.recommendation && (
+                <div style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 500, marginTop: 3, lineHeight: 1.35 }}>
+                  {place.recommendation}
+                </div>
+              )}
             </div>
 
             <div
@@ -824,108 +1072,47 @@ export default function PlaceDetailScreen() {
               </div>
             </div>
 
-            {dishPhotos.length > 0 && (
+            {(place.tag || place.cost != null || place.hours) && (
+              <div style={{ marginTop: 16 }}>
+                {(() => {
+                  const rows = [];
+                  if (place.tag) {
+                    rows.push({ label: 'Tipo', value: place.tag });
+                  }
+                  if (place.cost != null) rows.push({ label: 'Custo', value: `US$ ${place.cost}` });
+                  if (place.hours) rows.push({ label: 'Horário', value: place.hours });
+                  return rows.map((row, i) => (
+                    <InfoRow key={row.label} label={row.label} value={row.value} isLast={i === rows.length - 1} />
+                  ));
+                })()}
+              </div>
+            )}
+
+            {place.address && (
               <div style={{ marginTop: 22 }}>
                 <div style={{ borderTop: '1px solid #ececec', paddingTop: 16 }}>
-                  <div style={{ color: '#9a9186', fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.3 }}>
-                    Fotos do lugar
+                  <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1 }}>
+                    Endereço do local
                   </div>
-
-                  <div
-                    ref={dishScrollerRef}
-                    {...dishDragHandlers}
-                    style={{ display: 'flex', gap: 10, marginTop: 10, overflowX: 'auto', WebkitOverflowScrolling: 'touch', cursor: 'grab', userSelect: 'none' }}
-                  >
-                    {dishPhotos.map((src, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          width: 144,
-                          height: 144,
-                          borderRadius: 20,
-                          flex: 'none',
-                          overflow: 'hidden',
-                          background: '#eee9df',
-                        }}
-                      >
-                        <img
-                          src={src}
-                          alt=""
-                          loading="lazy"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                        />
-                      </div>
-                    ))}
+                  <div style={{ color: '#9a9186', fontSize: 13.5, fontWeight: 500, marginTop: 4, lineHeight: 1.4 }}>
+                    {place.address}
                   </div>
                 </div>
-              </div>
-            )}
-
-            {(place.reviewLabel || place.cost != null || place.hours) && (
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 10,
-                  marginTop: 16,
-                }}
-              >
-                {place.reviewLabel && <InfoPill label={place.reviewLabel} />}
-                {place.cost != null && <InfoPill label={`💵 US$ ${place.cost}`} />}
-                {place.hours && <InfoPill label={`🕒 ${place.hours}`} />}
-              </div>
-            )}
-
-            {place.recommendation && (
-              <div
-                style={{
-                  marginTop: 18,
-                  padding: 14,
-                  borderRadius: 16,
-                  background: '#fff',
-                  border: '1px solid #ececec',
-                }}
-              >
-                <div style={{ color: '#9a9186', fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.3 }}>
-                  Recomendação
-                </div>
-                <div style={{ color: '#1c1a17', fontSize: 14.5, fontWeight: 600, marginTop: 4, lineHeight: 1.4 }}>
-                  {place.recommendation}
-                </div>
-              </div>
-            )}
-
-            {place.menuLabel && (
-              <div
-                style={{
-                  marginTop: 16,
-                  padding: '14px 18px',
-                  borderRadius: 16,
-                  background: '#f9f7f2',
-                  border: '1px solid #ececec',
-                  color: '#1c1a17',
-                  fontSize: 14.5,
-                  fontWeight: 700,
-                  textAlign: 'center',
-                }}
-              >
-                🍽️ {place.menuLabel}
               </div>
             )}
 
             {coords && (
-              <a
-                href={place.googleMapsUri || `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`}
-                target="_blank"
-                rel="noreferrer"
+              <div
+                onClick={() => setMapFullscreen(true)}
                 style={{
                   display: 'block',
                   position: 'relative',
-                  marginTop: 18,
+                  marginTop: 10,
                   borderRadius: 20,
                   overflow: 'hidden',
                   background: '#eee9df',
                   height: 160,
+                  cursor: 'pointer',
                 }}
               >
                 <img
@@ -952,7 +1139,7 @@ export default function PlaceDetailScreen() {
                 >
                   <PointOnMapIcon size={19} color="#fff" />
                 </div>
-              </a>
+              </div>
             )}
 
             {place.googleMapsUri && (
@@ -980,24 +1167,46 @@ export default function PlaceDetailScreen() {
         )}
         </div>
       </div>
+
+      {lightboxOpen && (
+        <PhotoLightbox
+          photos={allPhotos}
+          photoIndex={photoIndex}
+          onIndexChange={setPhotoIndex}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
+
+      {mapFullscreen && coords && (
+        <MapFullscreen
+          coords={coords}
+          name={place?.name || draft?.name}
+          address={place?.address || draft?.address}
+          photo={facadePhoto}
+          onClose={() => setMapFullscreen(false)}
+        />
+      )}
     </div>
   );
 }
 
-function InfoPill({ label }) {
+// Uma linha de "ficha técnica": rótulo à esquerda, valor à direita, com
+// linha divisória embaixo — usado para Tipo, Custo, Horário etc.
+function InfoRow({ label, value, isLast }) {
   return (
     <div
       style={{
-        padding: '6px 12px',
-        borderRadius: 10,
-        background: '#fff',
-        border: '1px solid #ececec',
-        color: '#1c1a17',
-        fontSize: 12.5,
-        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        padding: '12px 0',
+        borderBottom: isLast ? 'none' : '1px solid #ececec',
       }}
     >
-      {label}
+      <span style={{ color: '#9a9186', fontSize: 13.5, fontWeight: 600 }}>{label}</span>
+      <span style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 700, textAlign: 'right' }}>{value}</span>
     </div>
   );
 }
+

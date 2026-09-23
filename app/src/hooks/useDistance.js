@@ -32,7 +32,9 @@ export function useDistance(originId, originCoords, destId, destCoords) {
 
     const cacheKey = `distance:${originId}:${destId}`;
     const cached = cacheGet(cacheKey);
-    if (cached) {
+    // Ignora cache malformado (ex: salvo antes de uma correção de bug —
+    // como o caso de origem = destino que antes gerava distanceKm: null).
+    if (cached && typeof cached.distanceKm === 'number' && typeof cached.durationMin === 'number') {
       setResult(cached);
       return;
     }
@@ -48,7 +50,11 @@ export function useDistance(originId, originCoords, destId, destCoords) {
     fetch(`/api/places/google?${params}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (cancelled || !data) return;
+        // Não cacheia nem seta resultado em caso de falha (res não-ok, ou
+        // corpo sem os campos esperados) — assim, na próxima montagem deste
+        // par (ex: reabrir o dia), tenta de novo em vez de ficar "vazio"
+        // permanentemente por causa de uma falha de rede passageira.
+        if (cancelled || !data || typeof data.distanceKm !== 'number' || typeof data.durationMin !== 'number') return;
         cacheSet(cacheKey, data);
         setResult(data);
       })

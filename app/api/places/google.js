@@ -147,6 +147,14 @@ async function distance(req, res, apiKey) {
     return res.status(400).json({ error: 'Parâmetros "originLat", "originLng", "destLat" e "destLng" são obrigatórios' });
   }
 
+  // Mesmo ponto de origem e destino (dois itens do roteiro no mesmo lugar,
+  // ex: hotel duas vezes seguidas): a Routes API retorna uma rota degenerada
+  // sem distanceMeters — resolve direto sem chamar a API.
+  if (originLat === destLat && originLng === destLng) {
+    res.setHeader('Cache-Control', 'public, max-age=2592000');
+    return res.status(200).json({ distanceKm: 0, durationMin: 0 });
+  }
+
   const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
     method: 'POST',
     headers: {
@@ -168,7 +176,7 @@ async function distance(req, res, apiKey) {
 
   const data = await response.json();
   const route = data.routes?.[0];
-  if (!route) {
+  if (!route || typeof route.distanceMeters !== 'number') {
     return res.status(404).json({ error: 'Rota não encontrada' });
   }
 

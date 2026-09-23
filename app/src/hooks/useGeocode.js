@@ -39,7 +39,7 @@ export function useGeocode(address) {
     }
 
     let cancelled = false;
-    fetch(`/api/geocode?address=${encodeURIComponent(address)}`)
+    fetch(`/api/places/google?action=geocode&address=${encodeURIComponent(address)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (cancelled || !data) return;

@@ -57,7 +57,7 @@ async function resolveCoords(dayAddress) {
   if (cached) return cached;
 
   try {
-    const res = await fetch(`/api/geocode?address=${encodeURIComponent(dayAddress)}`);
+    const res = await fetch(`/api/places/google?action=geocode&address=${encodeURIComponent(dayAddress)}`);
     if (!res.ok) return ORLANDO;
     const coords = await res.json();
     cacheSet(cacheKey, coords);

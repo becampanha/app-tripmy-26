@@ -676,7 +676,7 @@ export default function PlaceDetailScreen() {
                 }}
               >
                 <img
-                  src={`/api/places/map?lat=${coords.lat}&lng=${coords.lng}&width=600&height=320`}
+                  src={`/api/places/google?action=map&lat=${coords.lat}&lng=${coords.lng}&width=600&height=320`}
                   alt=""
                   loading="lazy"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}

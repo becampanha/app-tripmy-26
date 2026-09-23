@@ -5,7 +5,7 @@ import { fetchPlaces } from '../api/itineraryApi.js';
 import { CATEGORY_ICON_MAP } from '../data/placeTags.js';
 import { useDragScroll } from '../hooks/useDragScroll.js';
 
-const CATEGORIES = ['Restaurante', 'Mercado', 'Loja', 'Parque', 'Hotel', 'Outro'];
+const CATEGORIES = ['Restaurante', 'Mercado', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
 export default function PlaceSelectorModal({ onSelect, onClose }) {
   const [places, setPlaces] = useState([]);

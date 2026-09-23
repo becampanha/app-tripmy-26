@@ -1,11 +1,12 @@
 import { PointOnMapIcon } from '@solar-icons/react/linear/point-on-map';
+import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
 
 function shortAddress(address) {
   if (!address) return '';
   return address.split(',')[0].trim();
 }
 
-export default function PlaceCard({ place, onAction }) {
+export default function PlaceCard({ place, onAction, inItinerary }) {
   const facadePhoto = place.photo;
   const dishPhotos = place.dishPhotos || [];
 
@@ -100,6 +101,22 @@ export default function PlaceCard({ place, onAction }) {
         }}
       >
         <div style={{ flex: 1, minWidth: 0 }}>
+          {inItinerary && (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '3px 8px 3px 6px',
+                borderRadius: 7,
+                background: '#3fa35a',
+                marginBottom: 5,
+              }}
+            >
+              <CheckCircleIcon size={12} color="#fff" />
+              <span style={{ color: '#fff', fontSize: 10.5, fontWeight: 700 }}>Está no roteiro</span>
+            </div>
+          )}
           <div style={{ color: '#fff', fontSize: 14.5, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textShadow: '0 1px 4px rgba(0,0,0,0.35)' }}>
             {place.name}
           </div>

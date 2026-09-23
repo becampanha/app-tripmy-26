@@ -7,7 +7,10 @@ import DayTabs from './DayTabs.jsx';
 import ActivityItem from './ActivityItem.jsx';
 import PlaceSelectorModal from './PlaceSelectorModal.jsx';
 import { useItinerary } from '../hooks/useItinerary.js';
-import { createActivity, updateActivity, deleteActivity, reorderActivities } from '../api/itineraryApi.js';
+import { useDayWeather } from '../hooks/useDayWeather.js';
+import { createActivity, updateActivity, deleteActivity, reorderActivities, updateDay } from '../api/itineraryApi.js';
+import DebouncedInput from './DebouncedInput.jsx';
+import { weatherEmoji } from '../data/weatherCodes.js';
 
 const EDITABLE_FIELDS = ['time', 'title', 'subtitle', 'placeId'];
 
@@ -55,13 +58,19 @@ export default function ScheduleScreen() {
   const { days, loading, reload } = useItinerary();
   const snapshotRef = useRef(null); // { dayId, activities: [{id, ...fields}] } ao entrar em edição
   const [cancelToken, setCancelToken] = useState(0); // muda a cada Cancelar, mata debounces pendentes nos inputs
+  const weatherByDay = useDayWeather(days);
 
   const currentDay = days ? days[selectedDay] : null;
+  const currentWeather = currentDay ? weatherByDay[currentDay.id] : null;
   const n = currentDay ? currentDay.activities.length : 0;
-  const activityCountLabel = n === 0 ? '' : n === 1 ? '1 atividade' : `${n} atividades`;
 
   const patchActivity = async (id, fields) => {
     await updateActivity(id, fields);
+    await reload(true);
+  };
+
+  const patchDay = async (fields) => {
+    await updateDay(currentDay.id, fields);
     await reload(true);
   };
 
@@ -103,6 +112,7 @@ export default function ScheduleScreen() {
   const startEditing = () => {
     snapshotRef.current = {
       dayId: currentDay.id,
+      theme: currentDay.theme,
       activities: currentDay.activities.map((act) => ({ id: act.id, ...activityFields(act) })),
     };
     setEditing(true);
@@ -132,6 +142,10 @@ export default function ScheduleScreen() {
     const res = await fetch('/api/itinerary');
     const freshDays = await res.json();
     const freshDay = freshDays.find((d) => d.id === snapshot.dayId);
+
+    if (freshDay.theme !== snapshot.theme) {
+      await updateDay(snapshot.dayId, { theme: snapshot.theme });
+    }
 
     const before = snapshot.activities;
     const after = freshDay.activities.map((act) => ({ id: act.id, ...activityFields(act) }));
@@ -238,11 +252,35 @@ export default function ScheduleScreen() {
           padding: '20px 22px 120px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1 }}>
-            {currentDay ? currentDay.theme : <Skeleton width={120} height={17} />}
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, gap: 10 }}>
+          {currentDay && editing ? (
+            <DebouncedInput
+              value={currentDay.theme || ''}
+              onCommit={(theme) => patchDay({ theme })}
+              cancelToken={cancelToken}
+              style={{ fontSize: 17, fontWeight: 800, letterSpacing: -0.1, flex: 1 }}
+              placeholder="Título do dia"
+            />
+          ) : (
+            <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1 }}>
+              {currentDay ? currentDay.theme : <Skeleton width={120} height={17} />}
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 'none' }}>
+            {currentWeather ? (
+              <>
+                <span style={{ fontSize: 15 }}>{weatherEmoji(currentWeather.code)}</span>
+                <span style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 600 }}>
+                  {Math.round(currentWeather.min)}°–{Math.round(currentWeather.max)}°
+                  {currentWeather.isHistoricalAverage && (
+                    <span style={{ color: '#c9c2b6' }}> (méd.)</span>
+                  )}
+                </span>
+              </>
+            ) : (
+              <Skeleton width={60} height={14} />
+            )}
           </div>
-          <div style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 600 }}>{activityCountLabel}</div>
         </div>
 
         {!currentDay && Array.from({ length: 4 }).map((_, i) => <ActivitySkeleton key={i} />)}

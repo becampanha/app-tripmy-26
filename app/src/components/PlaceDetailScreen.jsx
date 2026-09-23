@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
@@ -7,12 +7,18 @@ import { CloseIcon } from '@solar-icons/react/linear/close';
 import { TrashBinTrashIcon } from '@solar-icons/react/linear/trash-bin-trash';
 import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimalistic';
 import { AddCircleIcon } from '@solar-icons/react/linear/add-circle';
+import { PointOnMapIcon } from '@solar-icons/react/bold/point-on-map';
+import { CalendarMarkIcon } from '@solar-icons/react/bold/calendar-mark';
 import { fetchPlaces, updatePlace, deletePlace, uploadPlacePhoto } from '../api/itineraryApi.js';
 import DebouncedInput, { FieldLabel } from './DebouncedInput.jsx';
+import Select from './Select.jsx';
 import { useDragScroll } from '../hooks/useDragScroll.js';
+import { useGeocode } from '../hooks/useGeocode.js';
+import { usePlaceOccurrences } from '../hooks/usePlaceOccurrences.js';
+import { subcategoriesFor } from '../data/subcategories.js';
 
 const EDITABLE_FIELDS = [
-  'name', 'category', 'tag', 'address', 'rating', 'reviewLabel',
+  'name', 'category', 'subcategory', 'tag', 'address', 'rating', 'reviewLabel',
   'cost', 'hours', 'distanceFromHotel', 'recommendation', 'menuLabel', 'googleMapsUri',
 ];
 
@@ -44,8 +50,11 @@ export default function PlaceDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [cancelToken, setCancelToken] = useState(0);
+  const [photoIndex, setPhotoIndex] = useState(0);
   const snapshotRef = useRef(null);
   const { scrollerRef: dishScrollerRef, dragHandlers: dishDragHandlers } = useDragScroll();
+  const coords = useGeocode(place?.address);
+  const occurrences = usePlaceOccurrences(id);
 
   const reload = (silent) => {
     if (!silent) setLoading(true);
@@ -58,8 +67,19 @@ export default function PlaceDetailScreen() {
     reload();
   }, [id]);
 
-  const mainPhoto = place ? place.photo : null;
   const dishPhotos = place ? place.dishPhotos || [] : [];
+  // Fotos do carrossel principal — hoje só a fachada, mas preparado pra crescer
+  // (ex: quando o lugar tiver mais de uma foto de capa no futuro).
+  const mainPhotos = useMemo(() => (place && place.photo ? [place.photo] : []), [place]);
+
+  useEffect(() => {
+    setPhotoIndex(0);
+  }, [id]);
+
+  const goToPhoto = (delta) => {
+    if (mainPhotos.length === 0) return;
+    setPhotoIndex((i) => (i + delta + mainPhotos.length) % mainPhotos.length);
+  };
 
   const patchPlace = async (fields) => {
     await updatePlace(id, fields);
@@ -139,12 +159,46 @@ export default function PlaceDetailScreen() {
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box', paddingBottom: 120 }}>
       <div style={{ position: 'relative', width: '100%', height: 320, background: '#eee9df', overflow: 'hidden' }}>
-        {!loading && mainPhoto && (
+        {!loading && mainPhotos[photoIndex] && (
           <img
-            src={mainPhoto}
+            src={mainPhotos[photoIndex]}
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
+        )}
+
+        {/* Zonas de clique para navegar o carrossel: esquerda volta, direita avança, com loop */}
+        {mainPhotos.length > 1 && (
+          <>
+            <div
+              onClick={() => goToPhoto(-1)}
+              style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '50%', zIndex: 1, cursor: 'pointer' }}
+            />
+            <div
+              onClick={() => goToPhoto(1)}
+              style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '50%', zIndex: 1, cursor: 'pointer' }}
+            />
+          </>
+        )}
+
+        {mainPhotos.length > 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 34,
+              right: 14,
+              padding: '4px 10px',
+              borderRadius: 8,
+              background: 'rgba(0,0,0,0.55)',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 700,
+              zIndex: 2,
+              pointerEvents: 'none',
+            }}
+          >
+            {photoIndex + 1}/{mainPhotos.length}
+          </div>
         )}
 
         <div
@@ -165,7 +219,9 @@ export default function PlaceDetailScreen() {
             width: 38,
             height: 38,
             borderRadius: 19,
-            background: 'rgba(255,255,255,0.92)',
+            background: 'rgba(255,255,255,0.22)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -174,7 +230,7 @@ export default function PlaceDetailScreen() {
             zIndex: 2,
           }}
         >
-          <AltArrowLeftIcon size={20} color="#1c1a17" />
+          <AltArrowLeftIcon size={20} color="#fff" />
         </div>
 
         {place && (
@@ -187,7 +243,9 @@ export default function PlaceDetailScreen() {
                   height: 38,
                   padding: '0 14px',
                   borderRadius: 19,
-                  background: 'rgba(255,255,255,0.92)',
+                  background: 'rgba(255,255,255,0.22)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -196,8 +254,8 @@ export default function PlaceDetailScreen() {
                   boxShadow: '0 4px 12px rgba(28,26,23,0.18)',
                 }}
               >
-                <CloseIcon size={15} color="#1c1a17" />
-                <span style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 700 }}>Cancelar</span>
+                <CloseIcon size={15} color="#fff" />
+                <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>Cancelar</span>
               </div>
             )}
 
@@ -208,7 +266,9 @@ export default function PlaceDetailScreen() {
                 padding: editing ? '0 14px' : 0,
                 width: editing ? 'auto' : 38,
                 borderRadius: 19,
-                background: editing ? '#1c1a17' : 'rgba(255,255,255,0.92)',
+                background: editing ? '#1c1a17' : 'rgba(255,255,255,0.22)',
+                backdropFilter: editing ? undefined : 'blur(10px)',
+                WebkitBackdropFilter: editing ? undefined : 'blur(10px)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -220,7 +280,7 @@ export default function PlaceDetailScreen() {
               {editing ? (
                 <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>Salvar</span>
               ) : (
-                <PenIcon size={17} color="#1c1a17" />
+                <PenIcon size={17} color="#fff" />
               )}
             </div>
           </div>
@@ -256,9 +316,27 @@ export default function PlaceDetailScreen() {
             />
           </label>
         )}
+
+        {/* Barra branca sobreposta à base da foto, com cantos superiores
+            arredondados — cria o efeito de "moldura subindo por cima da
+            imagem" sem depender de recortes/gradientes no elemento seguinte. */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 24,
+            background: '#fff',
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            zIndex: 2,
+          }}
+        />
       </div>
 
-      <div style={{ padding: '20px 22px' }}>
+      <div style={{ position: 'relative', background: '#fff' }}>
+        <div style={{ padding: '10px 22px 20px' }}>
         {loading ? (
           <Skeleton width={90} height={22} radius={8} style={{ marginBottom: 10 }} />
         ) : !editing ? (
@@ -305,6 +383,22 @@ export default function PlaceDetailScreen() {
                 <DebouncedInput value={place.tag || ''} onCommit={textCommit('tag')} cancelToken={cancelToken} style={{ marginTop: 3 }} placeholder="ex: 🍕 Pizza" />
               </div>
             </div>
+
+            {subcategoriesFor(place.category).length > 0 && (
+              <div>
+                <FieldLabel>Subcategoria</FieldLabel>
+                <div style={{ marginTop: 3 }}>
+                  <Select
+                    label="Subcategoria"
+                    placeholder="Nenhuma"
+                    value={place.subcategory || ''}
+                    onChange={textCommit('subcategory')}
+                    options={subcategoriesFor(place.category)}
+                    fullWidth
+                  />
+                </div>
+              </div>
+            )}
 
             <div>
               <FieldLabel>Endereço</FieldLabel>
@@ -439,6 +533,43 @@ export default function PlaceDetailScreen() {
               </div>
             </div>
 
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                marginTop: 12,
+                padding: '10px 12px',
+                borderRadius: 14,
+                background: occurrences && occurrences.length > 0 ? '#eef6ee' : '#f9f7f2',
+              }}
+            >
+              <CalendarMarkIcon
+                size={16}
+                color={occurrences && occurrences.length > 0 ? '#4d8a5c' : '#b3ab9c'}
+                style={{ marginTop: 1, flex: 'none' }}
+              />
+              <div style={{ minWidth: 0 }}>
+                {!occurrences ? (
+                  <Skeleton width={120} height={13} />
+                ) : occurrences.length === 0 ? (
+                  <div style={{ color: '#9a9186', fontSize: 13, fontWeight: 600 }}>Fora do roteiro</div>
+                ) : occurrences.length <= 3 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {occurrences.map((occ, i) => (
+                      <div key={i} style={{ color: '#3f6b48', fontSize: 13, fontWeight: 600 }}>
+                        {occ.date} ({occ.weekday}){occ.time ? ` · ${occ.time}` : ''}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ color: '#3f6b48', fontSize: 13, fontWeight: 600 }}>
+                    No roteiro em {occurrences.length} horários
+                  </div>
+                )}
+              </div>
+            </div>
+
             {dishPhotos.length > 0 && (
               <div style={{ marginTop: 22 }}>
                 <div style={{ borderTop: '1px solid #ececec', paddingTop: 16 }}>
@@ -529,6 +660,48 @@ export default function PlaceDetailScreen() {
               </div>
             )}
 
+            {coords && (
+              <a
+                href={place.googleMapsUri || `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'block',
+                  position: 'relative',
+                  marginTop: 18,
+                  borderRadius: 20,
+                  overflow: 'hidden',
+                  background: '#eee9df',
+                  height: 160,
+                }}
+              >
+                <img
+                  src={`/api/places/map?lat=${coords.lat}&lng=${coords.lng}&width=600&height=320`}
+                  alt=""
+                  loading="lazy"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '50%',
+                    top: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    background: '#1c1a17',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(28,26,23,0.35)',
+                  }}
+                >
+                  <PointOnMapIcon size={19} color="#fff" />
+                </div>
+              </a>
+            )}
+
             {place.googleMapsUri && (
               <a
                 href={place.googleMapsUri}
@@ -552,6 +725,7 @@ export default function PlaceDetailScreen() {
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );

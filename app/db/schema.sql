@@ -2,7 +2,8 @@
 CREATE TABLE IF NOT EXISTS places (
   id TEXT PRIMARY KEY,               -- place_id do Google, ou "xlsx-<slug>" para fallback
   name TEXT NOT NULL,
-  category TEXT NOT NULL,            -- Restaurante | Mercado | Loja | Parque | Outro
+  category TEXT NOT NULL,            -- Restaurante | Mercado | Loja | Parque | Hotel | Aeroporto | Outro
+  subcategory TEXT,                  -- opcional; lista de opções varia por category (ex: área/zona para Restaurante)
   tag TEXT,                          -- ex: "🍕 Pizza"
   address TEXT,
   rating REAL,

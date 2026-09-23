@@ -4,6 +4,7 @@ import { Shop2Icon } from '@solar-icons/react/bold/shop-2';
 import { CartLarge2Icon } from '@solar-icons/react/bold/cart-large-2';
 import { FerrisWheelIcon } from '@solar-icons/react/bold/ferris-wheel';
 import { BedIcon } from '@solar-icons/react/bold/bed';
+import { PlaneIcon } from '@solar-icons/react/bold/plane';
 import { StarsMinimalisticIcon } from '@solar-icons/react/bold/stars-minimalistic';
 
 // Categorias do topo (chips de filtro da tela de Lugares e do seletor).
@@ -16,5 +17,6 @@ export const CATEGORY_ICON_MAP = {
   'Loja': { icon: BagIcon, color: '#5f8fc9' },
   'Parque': { icon: FerrisWheelIcon, color: '#c9985c' },
   'Hotel': { icon: BedIcon, color: '#a9714a' },
+  'Aeroporto': { icon: PlaneIcon, color: '#5c8ab3' },
   'Outro': { icon: StarsMinimalisticIcon, color: '#8f5aa3' },
 };

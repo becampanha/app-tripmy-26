@@ -3,6 +3,7 @@ import { getSql } from '../_db.js';
 const FIELD_MAP = {
   name: 'name',
   category: 'category',
+  subcategory: 'subcategory',
   tag: 'tag',
   address: 'address',
   rating: 'rating',

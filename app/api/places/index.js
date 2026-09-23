@@ -13,6 +13,7 @@ export default async function handler(req, res) {
     id: r.id,
     name: r.name,
     category: r.category,
+    subcategory: r.subcategory,
     tag: r.tag,
     address: r.address,
     rating: r.rating,

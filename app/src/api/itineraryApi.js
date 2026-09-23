@@ -39,6 +39,17 @@ export function fetchPlaces() {
   return request('/api/places');
 }
 
+export function fetchItinerary() {
+  return request('/api/itinerary');
+}
+
+export function updateDay(id, fields) {
+  return request(`/api/days/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(fields),
+  });
+}
+
 export function updatePlace(id, fields) {
   return request(`/api/places/${id}`, {
     method: 'PUT',

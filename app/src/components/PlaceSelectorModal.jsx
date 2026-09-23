@@ -1,17 +1,39 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CloseIcon } from '@solar-icons/react/linear/close';
+import { MagnifierIcon } from '@solar-icons/react/linear/magnifier';
+import { CloseCircleIcon } from '@solar-icons/react/linear/close-circle';
 import PlaceCard from './PlaceCard.jsx';
+import Select from './Select.jsx';
 import { fetchPlaces } from '../api/itineraryApi.js';
 import { CATEGORY_ICON_MAP } from '../data/placeTags.js';
+import { subcategoriesFor } from '../data/subcategories.js';
 import { useDragScroll } from '../hooks/useDragScroll.js';
+import { usePlacesInItinerary } from '../hooks/usePlacesInItinerary.js';
 
-const CATEGORIES = ['Restaurante', 'Mercado', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
+const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
+
+const CATEGORY_LABELS = {
+  Restaurante: 'Restaurantes',
+  Mercado: 'Mercados',
+  Centros: 'Centros',
+  Outlets: 'Outlets',
+  Shopping: 'Shopping',
+  Loja: 'Lojas',
+  Parque: 'Parques',
+  Hotel: 'Hotéis',
+  Aeroporto: 'Aeroportos',
+  Outro: 'Outros',
+};
 
 export default function PlaceSelectorModal({ onSelect, onClose }) {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState(CATEGORIES[0]);
+  const [subcategory, setSubcategory] = useState('');
+  const [onlyInItinerary, setOnlyInItinerary] = useState(false);
+  const [search, setSearch] = useState('');
   const { scrollerRef, dragRef, dragHandlers } = useDragScroll();
+  const placesInItinerary = usePlacesInItinerary();
 
   useEffect(() => {
     fetchPlaces()
@@ -19,7 +41,47 @@ export default function PlaceSelectorModal({ onSelect, onClose }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = useMemo(() => places.filter((p) => p.category === category), [places, category]);
+  const countByCategory = useMemo(() => {
+    const counts = {};
+    for (const p of places) counts[p.category] = (counts[p.category] || 0) + 1;
+    return counts;
+  }, [places]);
+
+  const subcategoryOptions = subcategoriesFor(category);
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return places.filter((p) =>
+      p.category === category &&
+      (!subcategory || p.subcategory === subcategory) &&
+      (!onlyInItinerary || (placesInItinerary && placesInItinerary.has(p.id))) &&
+      (!query || p.name.toLowerCase().includes(query))
+    );
+  }, [places, category, subcategory, onlyInItinerary, placesInItinerary, search]);
+
+  const groupedSections = useMemo(() => {
+    if (subcategory || subcategoryOptions.length === 0) return null;
+
+    const byArea = new Map();
+    for (const area of subcategoryOptions) byArea.set(area, []);
+    const noArea = [];
+
+    for (const p of filtered) {
+      if (p.subcategory && byArea.has(p.subcategory)) {
+        byArea.get(p.subcategory).push(p);
+      } else {
+        noArea.push(p);
+      }
+    }
+
+    const sections = subcategoryOptions
+      .map((area) => ({ title: area, items: byArea.get(area) }))
+      .filter((s) => s.items.length > 0);
+
+    if (noArea.length > 0) sections.push({ title: 'Sem área definida', items: noArea });
+
+    return sections;
+  }, [filtered, subcategory, subcategoryOptions]);
 
   return (
     <div
@@ -78,7 +140,9 @@ export default function PlaceSelectorModal({ onSelect, onClose }) {
               <div
                 key={cat}
                 onClick={() => {
-                  if (!dragRef.current || !dragRef.current.moved) setCategory(cat);
+                  if (dragRef.current && dragRef.current.moved) return;
+                  setCategory(cat);
+                  setSubcategory('');
                 }}
                 style={{
                   flex: 'none',
@@ -96,7 +160,10 @@ export default function PlaceSelectorModal({ onSelect, onClose }) {
                 }}
               >
                 <CatIcon size={15} color={active ? '#fff' : iconColor} />
-                {cat}
+                {CATEGORY_LABELS[cat] || cat}
+                {countByCategory[cat] != null && (
+                  <span style={{ opacity: 0.7 }}>({countByCategory[cat]})</span>
+                )}
               </div>
             );
           })}
@@ -105,20 +172,135 @@ export default function PlaceSelectorModal({ onSelect, onClose }) {
 
       <div
         style={{
-          marginTop: 18,
+          marginTop: 16,
           boxSizing: 'border-box',
-          padding: '20px 22px 60px',
+          padding: '2px 22px 60px',
         }}
       >
-        <div style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 600, marginBottom: 14 }}>
-          {loading ? 'Carregando…' : filtered.length === 1 ? '1 lugar' : `${filtered.length} lugares`}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '9px 14px',
+            borderRadius: 12,
+            border: '1px solid #ececec',
+            background: '#fff',
+            marginBottom: 16,
+          }}
+        >
+          <MagnifierIcon size={14} color="#b3ab9c" style={{ flex: 'none' }} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nome"
+            style={{
+              flex: 1,
+              minWidth: 0,
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              color: '#1c1a17',
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          />
+          {search && (
+            <div onClick={() => setSearch('')} style={{ flex: 'none', cursor: 'pointer', display: 'flex' }}>
+              <CloseCircleIcon size={14} color="#b3ab9c" />
+            </div>
+          )}
         </div>
 
-        {filtered.map((place) => (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
+          <div
+            onClick={() => setOnlyInItinerary((v) => !v)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              userSelect: 'none',
+              flex: 'none',
+            }}
+          >
+            <div
+              style={{
+                position: 'relative',
+                width: 38,
+                height: 22,
+                borderRadius: 11,
+                background: onlyInItinerary ? '#3fa35a' : '#e2ddd2',
+                transition: 'background .2s',
+                flex: 'none',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 2,
+                  left: onlyInItinerary ? 18 : 2,
+                  width: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  background: '#fff',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                  transition: 'left .2s',
+                }}
+              />
+            </div>
+            <span style={{ color: onlyInItinerary ? '#1c1a17' : '#9a9186', fontSize: 12.5, fontWeight: 600 }}>
+              Lugares que estão no roteiro
+            </span>
+          </div>
+
+          {subcategoryOptions.length > 0 && (
+            <Select
+              label="Área"
+              placeholder="Todas as áreas"
+              value={subcategory}
+              onChange={setSubcategory}
+              options={subcategoryOptions}
+              buttonStyle={{ padding: '7px 12px', fontSize: 12.5 }}
+            />
+          )}
+        </div>
+
+        {groupedSections && groupedSections.map((section) => (
+          <div key={section.title}>
+            <div
+              style={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 5,
+                background: '#fff',
+                padding: '10px 0',
+                marginBottom: 4,
+                color: '#1c1a17',
+                fontSize: 17,
+                fontWeight: 800,
+                letterSpacing: -0.1,
+              }}
+            >
+              {section.title}
+            </div>
+            {section.items.map((place) => (
+              <PlaceCard
+                key={place.id}
+                place={place}
+                onAction={() => onSelect(place)}
+                inItinerary={placesInItinerary ? placesInItinerary.has(place.id) : false}
+              />
+            ))}
+          </div>
+        ))}
+
+        {!groupedSections && filtered.map((place) => (
           <PlaceCard
             key={place.id}
             place={place}
             onAction={() => onSelect(place)}
+            inItinerary={placesInItinerary ? placesInItinerary.has(place.id) : false}
           />
         ))}
 

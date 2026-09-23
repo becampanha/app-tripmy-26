@@ -50,6 +50,23 @@ export function updateDay(id, fields) {
   });
 }
 
+export function createPlace(fields) {
+  return request('/api/places', {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  });
+}
+
+export function searchGooglePlaces(query) {
+  return request(`/api/places/google?action=search&q=${encodeURIComponent(query)}`).then(
+    (data) => data.places || []
+  );
+}
+
+export function importGooglePlacePhotos(placeId) {
+  return request(`/api/places/google?action=importPhotos&placeId=${encodeURIComponent(placeId)}`);
+}
+
 export function updatePlace(id, fields) {
   return request(`/api/places/${id}`, {
     method: 'PUT',

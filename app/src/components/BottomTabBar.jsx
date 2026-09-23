@@ -21,11 +21,13 @@ export default function BottomTabBar() {
         bottom: 20,
         display: 'flex',
         alignItems: 'stretch',
-        background: '#ffffff',
-        border: '1px solid #ececec',
-        borderRadius: 22,
+        background: 'rgba(255,255,255,0.35)',
+        backdropFilter: 'blur(28px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+        borderRadius: 34,
         padding: 8,
         zIndex: 3,
+        boxShadow: '0 4px 12px rgba(28,26,23,0.18)',
       }}
     >
       {TABS.map((tab) => {
@@ -33,7 +35,7 @@ export default function BottomTabBar() {
           tab.path === '/'
             ? location.pathname === '/'
             : location.pathname.startsWith(tab.path);
-        const color = isActive ? '#1c1a17' : '#c9c2b6';
+        const color = isActive ? '#fff' : '#1c1a17';
         const Icon = tab.icon;
         return (
           <div
@@ -47,8 +49,9 @@ export default function BottomTabBar() {
               justifyContent: 'center',
               gap: 4,
               padding: '6px 0',
-              borderRadius: 14,
-              background: isActive ? '#f9f7f2' : 'transparent',
+              borderRadius: 26,
+              background: isActive ? '#1c1a17' : 'transparent',
+              boxShadow: isActive ? '0 3px 8px rgba(28,26,23,0.35)' : 'none',
               cursor: 'pointer',
             }}
           >

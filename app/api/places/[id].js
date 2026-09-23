@@ -1,22 +1,5 @@
 import { getSql } from '../_db.js';
-
-const FIELD_MAP = {
-  name: 'name',
-  category: 'category',
-  subcategory: 'subcategory',
-  tag: 'tag',
-  address: 'address',
-  rating: 'rating',
-  googleMapsUri: 'google_maps_uri',
-  cost: 'cost',
-  hours: 'hours',
-  distanceFromHotel: 'distance_from_hotel',
-  menuLabel: 'menu_label',
-  reviewLabel: 'review_label',
-  recommendation: 'recommendation',
-  photo: 'photo',
-  dishPhotos: 'dish_photos',
-};
+import { FIELD_MAP } from './_fields.js';
 
 // PUT /api/places/:id — edita campos de um lugar
 // DELETE /api/places/:id — remove um lugar (desvincula de atividades que o referenciam)

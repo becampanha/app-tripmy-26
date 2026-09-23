@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { PenIcon } from '@solar-icons/react/linear/pen';
@@ -7,25 +6,164 @@ import { CloseIcon } from '@solar-icons/react/linear/close';
 import { TrashBinTrashIcon } from '@solar-icons/react/linear/trash-bin-trash';
 import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimalistic';
 import { AddCircleIcon } from '@solar-icons/react/linear/add-circle';
+import { MagnifierIcon } from '@solar-icons/react/linear/magnifier';
 import { PointOnMapIcon } from '@solar-icons/react/bold/point-on-map';
 import { CalendarMarkIcon } from '@solar-icons/react/bold/calendar-mark';
-import { fetchPlaces, updatePlace, deletePlace, uploadPlacePhoto } from '../api/itineraryApi.js';
-import DebouncedInput, { FieldLabel } from './DebouncedInput.jsx';
+import {
+  fetchPlaces, createPlace, updatePlace, deletePlace, uploadPlacePhoto,
+  searchGooglePlaces, importGooglePlacePhotos,
+} from '../api/itineraryApi.js';
+import { FieldLabel, inputStyle } from './DebouncedInput.jsx';
 import Select from './Select.jsx';
 import { useDragScroll } from '../hooks/useDragScroll.js';
 import { useGeocode } from '../hooks/useGeocode.js';
 import { usePlaceOccurrences } from '../hooks/usePlaceOccurrences.js';
 import { subcategoriesFor } from '../data/subcategories.js';
+import { tagOptionsFor } from '../data/placeTagOptions.js';
+import { getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
+
+const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
 const EDITABLE_FIELDS = [
   'name', 'category', 'subcategory', 'tag', 'address', 'rating', 'reviewLabel',
-  'cost', 'hours', 'distanceFromHotel', 'recommendation', 'menuLabel', 'googleMapsUri',
+  'cost', 'hours', 'recommendation', 'menuLabel', 'googleMapsUri',
 ];
 
 function placeFields(place) {
   const out = {};
   for (const f of EDITABLE_FIELDS) out[f] = place[f] ?? '';
   return out;
+}
+
+// Painel de busca no Google Places para o fluxo de criação de um novo
+// lugar (rota /lugares/novo). Ao escolher um resultado, o pai monta o
+// rascunho de edição já pré-preenchido com nome/endereço/avaliação/fotos.
+function GoogleSearchPanel({ onSelect }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [importingId, setImportingId] = useState(null);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!query.trim() || searching) return;
+    setSearching(true);
+    try {
+      const places = await searchGooglePlaces(query.trim());
+      setResults(places);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handlePick = async (place) => {
+    if (importingId) return;
+    setImportingId(place.id);
+    try {
+      const photos = await importGooglePlacePhotos(place.id).catch(() => ({ photo: null, dishPhotos: [], recommendation: null }));
+      onSelect({
+        id: place.id,
+        name: place.displayName?.text || '',
+        address: place.formattedAddress || '',
+        rating: place.rating ?? '',
+        googleMapsUri: place.googleMapsUri || '',
+        photo: photos.photo,
+        dishPhotos: photos.dishPhotos || [],
+        recommendation: photos.recommendation,
+      });
+    } finally {
+      setImportingId(null);
+    }
+  };
+
+  return (
+    <div style={{ padding: '20px 22px' }}>
+      <div style={{ color: '#1c1a17', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Novo lugar</div>
+      <div style={{ color: '#9a9186', fontSize: 13, fontWeight: 500, marginBottom: 16 }}>
+        Busque o lugar no Google para preencher os dados automaticamente.
+      </div>
+
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8 }}>
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '9px 14px',
+            borderRadius: 12,
+            border: '1px solid #ececec',
+            background: '#fff',
+          }}
+        >
+          <MagnifierIcon size={14} color="#b3ab9c" style={{ flex: 'none' }} />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Nome do lugar"
+            style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', color: '#1c1a17', fontSize: 13, fontWeight: 600 }}
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={searching}
+          style={{
+            flex: 'none',
+            padding: '0 18px',
+            borderRadius: 12,
+            border: 0,
+            background: '#1c1a17',
+            color: '#fff',
+            fontSize: 13.5,
+            fontWeight: 700,
+            cursor: searching ? 'default' : 'pointer',
+            opacity: searching ? 0.7 : 1,
+          }}
+        >
+          {searching ? 'Buscando...' : 'Buscar'}
+        </button>
+      </form>
+
+      {results && results.length === 0 && (
+        <div style={{ marginTop: 20, textAlign: 'center', color: '#b6ae9f', fontSize: 13.5, fontWeight: 600 }}>
+          Nenhum resultado encontrado.
+        </div>
+      )}
+
+      {results && results.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+          {results.map((place) => (
+            <div
+              key={place.id}
+              onClick={() => handlePick(place)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: 12,
+                borderRadius: 14,
+                border: '1px solid #ececec',
+                cursor: importingId ? 'default' : 'pointer',
+                opacity: importingId && importingId !== place.id ? 0.5 : 1,
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ color: '#1c1a17', fontSize: 14, fontWeight: 700, lineHeight: 1.25 }}>
+                  {place.displayName?.text}
+                </div>
+                <div style={{ color: '#9a9186', fontSize: 12, fontWeight: 500, marginTop: 2, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {place.formattedAddress}
+                </div>
+              </div>
+              {importingId === place.id && (
+                <div style={{ flex: 'none', color: '#9a9186', fontSize: 12, fontWeight: 700 }}>Importando...</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function Skeleton({ width, height, radius = 6, style }) {
@@ -45,32 +183,56 @@ function Skeleton({ width, height, radius = 6, style }) {
 
 export default function PlaceDetailScreen() {
   const { id } = useParams();
+  const isNew = id === undefined;
   const navigate = useNavigate();
-  const [place, setPlace] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const cachedPlace = useMemo(() => {
+    if (isNew) return null;
+    const cached = getCachedPlaces();
+    return cached ? cached.find((p) => p.id === id) || null : null;
+  }, [id, isNew]);
+  const [place, setPlace] = useState(cachedPlace);
+  const [loading, setLoading] = useState(!isNew && cachedPlace === null);
   const [editing, setEditing] = useState(false);
-  const [cancelToken, setCancelToken] = useState(0);
+  const [saving, setSaving] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
-  const snapshotRef = useRef(null);
+  // Enquanto editing=true, os campos de texto/número só mexem neste estado
+  // local — nada de PUT a cada tecla. Só ao clicar Salvar (handleSave) é que
+  // manda pra API, e só os campos que de fato mudaram. No fluxo de criação
+  // (isNew), draft nasce assim que um resultado do Google é escolhido — ver
+  // handleGooglePick — e o formulário sempre aparece "em edição".
+  const [draft, setDraft] = useState(null);
+  // Fotos escolhidas automaticamente do Google no fluxo de criação — fora de
+  // EDITABLE_FIELDS (não fazem parte do diff do handleSave), mas precisam
+  // ser state (não ref) para aparecer no carrossel assim que definidas.
+  const [newPlacePhotos, setNewPlacePhotos] = useState({ id: null, photo: null, dishPhotos: [] });
+  const originalRef = useRef(null);
   const { scrollerRef: dishScrollerRef, dragHandlers: dishDragHandlers } = useDragScroll();
-  const coords = useGeocode(place?.address);
+  const coords = useGeocode(place?.address ?? draft?.address);
   const occurrences = usePlaceOccurrences(id);
 
   const reload = (silent) => {
     if (!silent) setLoading(true);
     return fetchPlaces()
-      .then((places) => setPlace(places.find((p) => p.id === id) || null))
+      .then((places) => {
+        setCachedPlaces(places);
+        setPlace(places.find((p) => p.id === id) || null);
+      })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    reload();
+    if (isNew) return;
+    reload(cachedPlace !== null);
   }, [id]);
 
-  const dishPhotos = place ? place.dishPhotos || [] : [];
+  const dishPhotos = isNew ? newPlacePhotos.dishPhotos : place ? place.dishPhotos || [] : [];
   // Fotos do carrossel principal — hoje só a fachada, mas preparado pra crescer
-  // (ex: quando o lugar tiver mais de uma foto de capa no futuro).
-  const mainPhotos = useMemo(() => (place && place.photo ? [place.photo] : []), [place]);
+  // (ex: quando o lugar tiver mais de uma foto de capa no futuro). No fluxo
+  // de criação, vem da importação automática do Google, não de `place`.
+  const mainPhotos = useMemo(() => {
+    if (isNew) return newPlacePhotos.photo ? [newPlacePhotos.photo] : [];
+    return place && place.photo ? [place.photo] : [];
+  }, [place, isNew, newPlacePhotos.photo]);
 
   useEffect(() => {
     setPhotoIndex(0);
@@ -81,6 +243,9 @@ export default function PlaceDetailScreen() {
     setPhotoIndex((i) => (i + delta + mainPhotos.length) % mainPhotos.length);
   };
 
+  // Upload de foto é uma ação imediata (escolher arquivo já sobe pro Blob),
+  // não faz sentido ficar "rascunhada" esperando o Salvar — continua
+  // persistindo na hora, independente do draft dos campos de texto.
   const patchPlace = async (fields) => {
     await updatePlace(id, fields);
     await reload(true);
@@ -103,45 +268,91 @@ export default function PlaceDetailScreen() {
     await patchPlace({ dishPhotos: next });
   };
 
-  const startEditing = () => {
-    snapshotRef.current = placeFields(place);
+  // Chamado ao escolher um resultado da busca do Google no fluxo de criação:
+  // monta o rascunho já preenchido (nome, endereço, avaliação, recomendação,
+  // link do Maps), com categoria em branco para o usuário decidir.
+  const handleGooglePick = (picked) => {
+    setNewPlacePhotos({ id: picked.id, photo: picked.photo, dishPhotos: picked.dishPhotos });
+    const snapshot = {
+      name: picked.name,
+      category: '',
+      subcategory: '',
+      tag: '',
+      address: picked.address,
+      rating: picked.rating,
+      reviewLabel: '',
+      cost: '',
+      hours: '',
+      recommendation: picked.recommendation || '',
+      menuLabel: '',
+      googleMapsUri: picked.googleMapsUri,
+    };
+    originalRef.current = snapshot;
+    setDraft({ ...snapshot });
     setEditing(true);
   };
 
-  const handleCancel = async () => {
-    const snapshot = snapshotRef.current;
-    if (!snapshot) {
-      setEditing(false);
+  const startEditing = () => {
+    const snapshot = placeFields(place);
+    originalRef.current = snapshot;
+    setDraft({ ...snapshot });
+    setEditing(true);
+  };
+
+  const handleCancel = () => {
+    if (isNew) {
+      navigate('/lugares');
+      return;
+    }
+    setEditing(false);
+    setDraft(null);
+    originalRef.current = null;
+  };
+
+  const handleSave = async () => {
+    if (isNew) {
+      if (!draft.name.trim() || !draft.category.trim()) {
+        return;
+      }
+      setSaving(true);
+      try {
+        const fields = {};
+        for (const f of EDITABLE_FIELDS) {
+          fields[f] = ['rating', 'cost'].includes(f) && draft[f] !== ''
+            ? Number(draft[f])
+            : draft[f] || null;
+        }
+        const { photo, dishPhotos, id: newId } = newPlacePhotos;
+        const created = await createPlace({ id: newId, ...fields, photo, dishPhotos });
+        const freshPlaces = await fetchPlaces();
+        setCachedPlaces(freshPlaces);
+        navigate(`/lugares/${created.id}`, { replace: true });
+      } finally {
+        setSaving(false);
+      }
       return;
     }
 
-    // Mata qualquer debounce pendente antes de sair do modo edição — precisa
-    // de flushSync porque, se setEditing(false) fosse batched junto, os
-    // inputs desmontariam no mesmo render sem o efeito de cancelamento
-    // rodar, e o timer (setTimeout solto) dispararia depois.
-    flushSync(() => {
-      setCancelToken((t) => t + 1);
-    });
-    setEditing(false);
-
-    // Lê o estado fresco da API em vez do `place` capturado no closure —
-    // pode estar desatualizado em relação ao banco.
-    const freshPlaces = await fetchPlaces();
-    const freshPlace = freshPlaces.find((p) => p.id === id);
-    const current = placeFields(freshPlace);
-    const changed = EDITABLE_FIELDS.some((f) => String(current[f]) !== String(snapshot[f]));
-    if (changed) {
-      const restore = {};
-      for (const f of EDITABLE_FIELDS) {
-        restore[f] = ['rating', 'cost', 'distanceFromHotel'].includes(f) && snapshot[f] !== ''
-          ? Number(snapshot[f])
-          : snapshot[f] || null;
+    const original = originalRef.current;
+    const changed = EDITABLE_FIELDS.some((f) => String(draft[f]) !== String(original[f]));
+    setSaving(true);
+    try {
+      if (changed) {
+        const fields = {};
+        for (const f of EDITABLE_FIELDS) {
+          fields[f] = ['rating', 'cost'].includes(f) && draft[f] !== ''
+            ? Number(draft[f])
+            : draft[f] || null;
+        }
+        await updatePlace(id, fields);
+        await reload(true);
       }
-      await updatePlace(id, restore);
-      await reload(true);
+      setEditing(false);
+      setDraft(null);
+      originalRef.current = null;
+    } finally {
+      setSaving(false);
     }
-
-    snapshotRef.current = null;
   };
 
   const handleDelete = async () => {
@@ -149,12 +360,37 @@ export default function PlaceDetailScreen() {
     navigate('/lugares');
   };
 
-  const numericCommit = (field) => (value) => {
-    patchPlace({ [field]: value === '' ? null : Number(value) });
+  const setDraftField = (field) => (value) => {
+    setDraft((d) => ({ ...d, [field]: value }));
   };
-  const textCommit = (field) => (value) => {
-    patchPlace({ [field]: value === '' ? null : value });
-  };
+
+  // Fluxo de criação, antes de escolher um resultado do Google: sem foto
+  // pra mostrar ainda, então usa um cabeçalho simples (só botão voltar) em
+  // vez da área de foto de 320px do fluxo normal de visualizar/editar.
+  if (isNew && !draft) {
+    return (
+      <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box', paddingBottom: 40 }}>
+        <div style={{ padding: '18px 22px 0' }}>
+          <div
+            onClick={() => navigate(-1)}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              background: '#f9f7f2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <AltArrowLeftIcon size={20} color="#1c1a17" />
+          </div>
+        </div>
+        <GoogleSearchPanel onSelect={handleGooglePick} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box', paddingBottom: 120 }}>
@@ -233,7 +469,7 @@ export default function PlaceDetailScreen() {
           <AltArrowLeftIcon size={20} color="#fff" />
         </div>
 
-        {place && (
+        {(place || isNew) && (
           <div style={{ position: 'absolute', top: 18, right: 18, display: 'flex', gap: 8, zIndex: 2 }}>
             {editing && (
               <div
@@ -260,7 +496,10 @@ export default function PlaceDetailScreen() {
             )}
 
             <div
-              onClick={() => (editing ? setEditing(false) : startEditing())}
+              onClick={() => {
+                if (saving) return;
+                editing ? handleSave() : startEditing();
+              }}
               style={{
                 height: 38,
                 padding: editing ? '0 14px' : 0,
@@ -273,12 +512,13 @@ export default function PlaceDetailScreen() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
-                cursor: 'pointer',
+                cursor: saving ? 'default' : 'pointer',
+                opacity: saving ? 0.7 : 1,
                 boxShadow: '0 4px 12px rgba(28,26,23,0.18)',
               }}
             >
               {editing ? (
-                <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>Salvar</span>
+                <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>{saving ? 'Salvando...' : 'Salvar'}</span>
               ) : (
                 <PenIcon size={17} color="#fff" />
               )}
@@ -364,36 +604,54 @@ export default function PlaceDetailScreen() {
               <Skeleton width="50%" height={13} style={{ marginTop: 6 }} />
             </div>
           </div>
-        ) : !place ? (
+        ) : !place && !isNew ? (
           <div style={{ color: '#9a9186', fontSize: 15, fontWeight: 600 }}>Lugar não encontrado.</div>
-        ) : editing ? (
+        ) : editing && draft ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
               <FieldLabel>Nome</FieldLabel>
-              <DebouncedInput value={place.name || ''} onCommit={textCommit('name')} cancelToken={cancelToken} style={{ marginTop: 3, fontSize: 16, fontWeight: 700 }} />
+              <input value={draft.name || ''} onChange={(e) => setDraftField('name')(e.target.value)} style={{ ...inputStyle, marginTop: 3, fontSize: 16, fontWeight: 700 }} />
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
               <div style={{ flex: 1 }}>
                 <FieldLabel>Categoria</FieldLabel>
-                <DebouncedInput value={place.category || ''} onCommit={textCommit('category')} cancelToken={cancelToken} style={{ marginTop: 3 }} />
+                <div style={{ marginTop: 3 }}>
+                  <Select
+                    label="Categoria"
+                    placeholder="Selecione"
+                    value={draft.category || ''}
+                    onChange={(value) => setDraft((d) => ({ ...d, category: value, tag: '' }))}
+                    options={CATEGORIES}
+                    fullWidth
+                  />
+                </div>
               </div>
               <div style={{ flex: 1 }}>
                 <FieldLabel>Tag</FieldLabel>
-                <DebouncedInput value={place.tag || ''} onCommit={textCommit('tag')} cancelToken={cancelToken} style={{ marginTop: 3 }} placeholder="ex: 🍕 Pizza" />
+                <div style={{ marginTop: 3 }}>
+                  <Select
+                    label="Tag"
+                    placeholder={draft.category ? 'Selecione' : 'Escolha a categoria'}
+                    value={draft.tag || ''}
+                    onChange={setDraftField('tag')}
+                    options={tagOptionsFor(draft.category)}
+                    fullWidth
+                  />
+                </div>
               </div>
             </div>
 
-            {subcategoriesFor(place.category).length > 0 && (
+            {subcategoriesFor(draft.category).length > 0 && (
               <div>
                 <FieldLabel>Subcategoria</FieldLabel>
                 <div style={{ marginTop: 3 }}>
                   <Select
                     label="Subcategoria"
                     placeholder="Nenhuma"
-                    value={place.subcategory || ''}
-                    onChange={textCommit('subcategory')}
-                    options={subcategoriesFor(place.category)}
+                    value={draft.subcategory || ''}
+                    onChange={setDraftField('subcategory')}
+                    options={subcategoriesFor(draft.category)}
                     fullWidth
                   />
                 </div>
@@ -402,43 +660,37 @@ export default function PlaceDetailScreen() {
 
             <div>
               <FieldLabel>Endereço</FieldLabel>
-              <DebouncedInput value={place.address || ''} onCommit={textCommit('address')} cancelToken={cancelToken} style={{ marginTop: 3 }} />
+              <input value={draft.address || ''} onChange={(e) => setDraftField('address')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} />
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
               <div style={{ flex: 1 }}>
                 <FieldLabel>Avaliação (nota)</FieldLabel>
-                <DebouncedInput value={place.rating ?? ''} onCommit={numericCommit('rating')} cancelToken={cancelToken} type="number" step="0.1" style={{ marginTop: 3 }} />
+                <input value={draft.rating ?? ''} onChange={(e) => setDraftField('rating')(e.target.value)} type="number" step="0.1" style={{ ...inputStyle, marginTop: 3 }} />
               </div>
               <div style={{ flex: 1 }}>
                 <FieldLabel>Avaliação (rótulo)</FieldLabel>
-                <DebouncedInput value={place.reviewLabel || ''} onCommit={textCommit('reviewLabel')} cancelToken={cancelToken} style={{ marginTop: 3 }} placeholder="ex: 4.6 ★★★★★" />
+                <input value={draft.reviewLabel || ''} onChange={(e) => setDraftField('reviewLabel')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} placeholder="ex: 4.6 ★★★★★" />
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 10 }}>
-              <div style={{ flex: 1 }}>
-                <FieldLabel>Custo médio (US$)</FieldLabel>
-                <DebouncedInput value={place.cost ?? ''} onCommit={numericCommit('cost')} cancelToken={cancelToken} type="number" style={{ marginTop: 3 }} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <FieldLabel>Distância do hotel (km)</FieldLabel>
-                <DebouncedInput value={place.distanceFromHotel ?? ''} onCommit={numericCommit('distanceFromHotel')} cancelToken={cancelToken} type="number" step="0.1" style={{ marginTop: 3 }} />
-              </div>
+            <div>
+              <FieldLabel>Custo médio (US$)</FieldLabel>
+              <input value={draft.cost ?? ''} onChange={(e) => setDraftField('cost')(e.target.value)} type="number" style={{ ...inputStyle, marginTop: 3 }} />
             </div>
 
             <div>
               <FieldLabel>Horário</FieldLabel>
-              <DebouncedInput value={place.hours || ''} onCommit={textCommit('hours')} cancelToken={cancelToken} style={{ marginTop: 3 }} placeholder="ex: 11h-22h" />
+              <input value={draft.hours || ''} onChange={(e) => setDraftField('hours')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} placeholder="ex: 11h-22h" />
             </div>
 
             <div>
               <FieldLabel>Recomendação</FieldLabel>
-              <DebouncedInput value={place.recommendation || ''} onCommit={textCommit('recommendation')} cancelToken={cancelToken} style={{ marginTop: 3 }} />
+              <input value={draft.recommendation || ''} onChange={(e) => setDraftField('recommendation')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} />
             </div>
 
             <div>
-              <FieldLabel>Fotos dos pratos</FieldLabel>
+              <FieldLabel>Fotos do lugar</FieldLabel>
               <div style={{ display: 'flex', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
                 {dishPhotos.map((src, i) => (
                   <div key={i} style={{ position: 'relative', width: 72, height: 72, flex: 'none' }}>
@@ -493,34 +745,36 @@ export default function PlaceDetailScreen() {
 
             <div>
               <FieldLabel>Rótulo do menu</FieldLabel>
-              <DebouncedInput value={place.menuLabel || ''} onCommit={textCommit('menuLabel')} cancelToken={cancelToken} style={{ marginTop: 3 }} placeholder="ex: Ver menu" />
+              <input value={draft.menuLabel || ''} onChange={(e) => setDraftField('menuLabel')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} placeholder="ex: Ver menu" />
             </div>
 
             <div>
               <FieldLabel>Link do Google Maps</FieldLabel>
-              <DebouncedInput value={place.googleMapsUri || ''} onCommit={textCommit('googleMapsUri')} cancelToken={cancelToken} style={{ marginTop: 3 }} />
+              <input value={draft.googleMapsUri || ''} onChange={(e) => setDraftField('googleMapsUri')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} />
             </div>
 
-            <div
-              onClick={handleDelete}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                marginTop: 10,
-                padding: 14,
-                borderRadius: 16,
-                border: '1.5px solid rgba(179,69,63,0.35)',
-                color: '#b3453f',
-                fontSize: 14,
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              <TrashBinTrashIcon size={16} color="#b3453f" />
-              Remover lugar
-            </div>
+            {!isNew && (
+              <div
+                onClick={handleDelete}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  marginTop: 10,
+                  padding: 14,
+                  borderRadius: 16,
+                  border: '1.5px solid rgba(179,69,63,0.35)',
+                  color: '#b3453f',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                <TrashBinTrashIcon size={16} color="#b3453f" />
+                Remover lugar
+              </div>
+            )}
           </div>
         ) : (
           <>
@@ -574,7 +828,7 @@ export default function PlaceDetailScreen() {
               <div style={{ marginTop: 22 }}>
                 <div style={{ borderTop: '1px solid #ececec', paddingTop: 16 }}>
                   <div style={{ color: '#9a9186', fontSize: 11.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.3 }}>
-                    Pratos Principais
+                    Fotos do lugar
                   </div>
 
                   <div
@@ -607,7 +861,7 @@ export default function PlaceDetailScreen() {
               </div>
             )}
 
-            {(place.reviewLabel || place.cost != null || place.distanceFromHotel != null || place.hours) && (
+            {(place.reviewLabel || place.cost != null || place.hours) && (
               <div
                 style={{
                   display: 'flex',
@@ -618,7 +872,6 @@ export default function PlaceDetailScreen() {
               >
                 {place.reviewLabel && <InfoPill label={place.reviewLabel} />}
                 {place.cost != null && <InfoPill label={`💵 US$ ${place.cost}`} />}
-                {place.distanceFromHotel != null && <InfoPill label={`📍 ${place.distanceFromHotel} km do hotel`} />}
                 {place.hours && <InfoPill label={`🕒 ${place.hours}`} />}
               </div>
             )}

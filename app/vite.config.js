@@ -8,6 +8,37 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
+      devOptions: { enabled: true, type: 'module' },
+      workbox: {
+        runtimeCaching: [
+          {
+            // Fotos dos lugares (fachada/pratos), servidas como estáticos em
+            // /places/: uma vez baixadas quase nunca mudam, então serve
+            // direto do cache assim que a primeira visita as baixar — não
+            // pré-carrega todas de uma vez, só as que você realmente abrir.
+            urlPattern: ({ url }) => url.pathname.startsWith('/places/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'place-photos',
+              expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Dados do roteiro/lugares: tenta buscar atualizado na rede,
+            // mas cai pro cache instantaneamente se a rede estiver lenta ou
+            // offline, e sempre guarda a última resposta boa.
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-data',
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
       manifest: {
         name: 'Cronograma de Viagem',
         short_name: 'Cronograma',

@@ -9,10 +9,9 @@ const bubbleBase = {
   gap: 2,
   width: 48,
   height: 58,
-  border: '1px solid #f0ede5',
   borderRadius: 18,
   cursor: 'pointer',
-  transition: 'background .2s, border-color .2s',
+  transition: 'background .2s',
   userSelect: 'none',
 };
 
@@ -58,7 +57,6 @@ export default function DayTabs({ days, selected, onSelect }) {
             style={{
               ...bubbleBase,
               background: active ? '#1c1a17' : '#f9f7f2',
-              borderColor: active ? '#1c1a17' : '#f0ede5',
             }}
           >
             <div

@@ -1,15 +1,14 @@
 import { useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { AddIcon } from '@solar-icons/react/linear/add';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import DayTabs from './DayTabs.jsx';
 import ActivityItem from './ActivityItem.jsx';
+import DistanceBetween from './DistanceBetween.jsx';
 import PlaceSelectorModal from './PlaceSelectorModal.jsx';
 import { useItinerary } from '../hooks/useItinerary.js';
 import { useDayWeather } from '../hooks/useDayWeather.js';
 import { createActivity, updateActivity, deleteActivity, reorderActivities, updateDay } from '../api/itineraryApi.js';
-import DebouncedInput from './DebouncedInput.jsx';
 import { weatherEmoji } from '../data/weatherCodes.js';
 
 const EDITABLE_FIELDS = ['time', 'title', 'subtitle', 'placeId'];
@@ -20,8 +19,11 @@ function activityFields(act) {
     title: act.title || '',
     subtitle: act.subtitle || '',
     placeId: act.place ? act.place.id : null,
+    place: act.place || null,
   };
 }
+
+let nextDraftId = -1;
 
 function Skeleton({ width, height, radius = 6, style }) {
   return (
@@ -54,138 +56,143 @@ function ActivitySkeleton() {
 export default function ScheduleScreen() {
   const [selectedDay, setSelectedDay] = useState(1);
   const [editing, setEditing] = useState(false);
-  const [selectorFor, setSelectorFor] = useState(null); // activity id, ou 'new'
+  const [saving, setSaving] = useState(false);
+  const [selectorFor, setSelectorFor] = useState(null); // activity id (ou id negativo temporário de item recém-criado)
   const { days, loading, reload } = useItinerary();
-  const snapshotRef = useRef(null); // { dayId, activities: [{id, ...fields}] } ao entrar em edição
-  const [cancelToken, setCancelToken] = useState(0); // muda a cada Cancelar, mata debounces pendentes nos inputs
-  const weatherByDay = useDayWeather(days);
+  // Enquanto editing=true, toda mutação (digitar, mover, excluir, adicionar,
+  // vincular lugar) só mexe neste estado local — nada de chamada de rede a
+  // cada tecla. As chamadas de API só acontecem de uma vez, em lote, quando
+  // o usuário clica em Salvar (handleSave). Isso evita a lentidão de um
+  // PUT + reload a cada campo editado que existia antes.
+  const [draft, setDraft] = useState(null); // { dayId, theme, activities: [...] }
+  const originalRef = useRef(null); // snapshot pré-edição, para diff no Salvar
 
   const currentDay = days ? days[selectedDay] : null;
+  const weatherByDay = useDayWeather(days);
   const currentWeather = currentDay ? weatherByDay[currentDay.id] : null;
-  const n = currentDay ? currentDay.activities.length : 0;
 
-  const patchActivity = async (id, fields) => {
-    await updateActivity(id, fields);
-    await reload(true);
-  };
-
-  const patchDay = async (fields) => {
-    await updateDay(currentDay.id, fields);
-    await reload(true);
-  };
-
-  const handleDelete = async (id) => {
-    await deleteActivity(id);
-    await reload(true);
-  };
-
-  const handleUnlinkPlace = async (id) => {
-    await updateActivity(id, { placeId: null });
-    await reload(true);
-  };
-
-  const handleMove = async (index, delta) => {
-    const activities = currentDay.activities;
-    const targetIndex = index + delta;
-    if (targetIndex < 0 || targetIndex >= activities.length) return;
-
-    const a = activities[index];
-    const b = activities[targetIndex];
-    await reorderActivities([
-      { id: a.id, dayId: currentDay.id, sortOrder: targetIndex },
-      { id: b.id, dayId: currentDay.id, sortOrder: index },
-    ]);
-    await reload(true);
-  };
-
-  const handleAddActivity = async () => {
-    await createActivity({ dayId: currentDay.id, time: '', title: '' });
-    await reload(true);
-  };
-
-  const handleSelectPlace = async (place) => {
-    await updateActivity(selectorFor, { placeId: place.id });
-    setSelectorFor(null);
-    await reload(true);
-  };
+  const displayDay = editing && draft ? draft : currentDay;
+  const n = displayDay ? displayDay.activities.length : 0;
 
   const startEditing = () => {
-    snapshotRef.current = {
+    const snapshot = {
       dayId: currentDay.id,
       theme: currentDay.theme,
       activities: currentDay.activities.map((act) => ({ id: act.id, ...activityFields(act) })),
     };
+    originalRef.current = snapshot;
+    setDraft({
+      dayId: snapshot.dayId,
+      theme: snapshot.theme,
+      activities: snapshot.activities.map((a) => ({ ...a })),
+    });
     setEditing(true);
   };
 
-  const handleCancel = async () => {
-    const snapshot = snapshotRef.current;
-    if (!snapshot) {
-      setEditing(false);
-      return;
-    }
+  const patchDraftActivity = (id, fields) => {
+    setDraft((d) => ({
+      ...d,
+      activities: d.activities.map((a) => (a.id === id ? { ...a, ...fields } : a)),
+    }));
+  };
 
-    // Mata qualquer debounce pendente nos DebouncedInput (mudar cancelToken
-    // dispara o useEffect de cada input, que cancela o timer sem commitar).
-    // Precisa de flushSync + commit síncrono antes de sair do modo edição:
-    // se setEditing(false) fosse batched junto, os inputs desmontariam no
-    // mesmo render sem o efeito de cancelamento chegar a rodar para eles,
-    // e o timer (setTimeout solto, sobrevive ao unmount) dispararia depois.
-    flushSync(() => {
-      setCancelToken((t) => t + 1);
+  const handleDelete = (id) => {
+    setDraft((d) => ({ ...d, activities: d.activities.filter((a) => a.id !== id) }));
+  };
+
+  const handleUnlinkPlace = (id) => {
+    patchDraftActivity(id, { placeId: null, place: null });
+  };
+
+  const handleMove = (index, delta) => {
+    setDraft((d) => {
+      const activities = d.activities.slice();
+      const targetIndex = index + delta;
+      if (targetIndex < 0 || targetIndex >= activities.length) return d;
+      [activities[index], activities[targetIndex]] = [activities[targetIndex], activities[index]];
+      return { ...d, activities };
     });
+  };
+
+  const handleAddActivity = () => {
+    const id = nextDraftId--;
+    setDraft((d) => ({
+      ...d,
+      activities: [...d.activities, { id, time: '', title: '', subtitle: '', placeId: null, place: null }],
+    }));
+  };
+
+  const handleSelectPlace = (place) => {
+    patchDraftActivity(selectorFor, { placeId: place.id, place });
+    setSelectorFor(null);
+  };
+
+  const handleCancel = () => {
     setEditing(false);
+    setDraft(null);
+    originalRef.current = null;
+  };
 
-    // Lê o estado direto da API em vez do `currentDay` capturado no closure
-    // deste handler — closure pode estar desatualizado em relação ao banco
-    // se houve mutações (add/edit/delete) entre a criação do handler e o clique.
-    const res = await fetch('/api/itinerary');
-    const freshDays = await res.json();
-    const freshDay = freshDays.find((d) => d.id === snapshot.dayId);
-
-    if (freshDay.theme !== snapshot.theme) {
-      await updateDay(snapshot.dayId, { theme: snapshot.theme });
-    }
-
-    const before = snapshot.activities;
-    const after = freshDay.activities.map((act) => ({ id: act.id, ...activityFields(act) }));
+  const handleSave = async () => {
+    const before = originalRef.current.activities;
+    const after = draft.activities;
     const beforeIds = new Set(before.map((a) => a.id));
-    const afterIds = new Set(after.map((a) => a.id));
 
-    // Itens criados durante a edição: remover
-    for (const act of after) {
-      if (!beforeIds.has(act.id)) {
-        await deleteActivity(act.id);
+    setSaving(true);
+    try {
+      if (draft.theme !== originalRef.current.theme) {
+        await updateDay(draft.dayId, { theme: draft.theme });
       }
-    }
 
-    // Itens removidos durante a edição: recriar (ganham novo id)
-    const idMap = {};
-    for (const act of before) {
-      if (!afterIds.has(act.id)) {
-        const created = await createActivity({ dayId: snapshot.dayId, ...act });
-        idMap[act.id] = created.id;
-      }
-    }
-
-    // Itens que continuam existindo: reverter campos alterados
-    for (const act of before) {
-      if (afterIds.has(act.id)) {
-        const current = after.find((a) => a.id === act.id);
-        const changed = EDITABLE_FIELDS.some((f) => current[f] !== act[f]);
-        if (changed) {
-          await updateActivity(act.id, act);
+      // Itens removidos durante a edição.
+      for (const act of before) {
+        if (!after.some((a) => a.id === act.id)) {
+          await deleteActivity(act.id);
         }
       }
+
+      // Itens existentes: só envia PUT para quem de fato mudou algum campo.
+      for (const act of after) {
+        if (!beforeIds.has(act.id)) continue;
+        const original = before.find((a) => a.id === act.id);
+        const changed = EDITABLE_FIELDS.some((f) => act[f] !== original[f]);
+        if (changed) {
+          await updateActivity(act.id, {
+            time: act.time,
+            title: act.title,
+            subtitle: act.subtitle,
+            placeId: act.placeId,
+          });
+        }
+      }
+
+      // Itens novos (criados durante a edição, id temporário negativo).
+      const idMap = {};
+      for (const act of after) {
+        if (act.id < 0) {
+          const created = await createActivity({
+            dayId: draft.dayId,
+            time: act.time,
+            title: act.title,
+            subtitle: act.subtitle,
+            placeId: act.placeId,
+          });
+          idMap[act.id] = created.id;
+        }
+      }
+
+      // Ordem final, já com os ids reais dos itens recém-criados.
+      await reorderActivities(
+        after.map((act, i) => ({ id: idMap[act.id] || act.id, dayId: draft.dayId, sortOrder: i }))
+      );
+
+      setEditing(false);
+      setDraft(null);
+      originalRef.current = null;
+      await reload(true);
+    } finally {
+      setSaving(false);
     }
-
-    // Restaurar ordem original
-    await reorderActivities(
-      before.map((act, i) => ({ id: idMap[act.id] || act.id, dayId: snapshot.dayId, sortOrder: i }))
-    );
-
-    snapshotRef.current = null;
-    await reload(true);
   };
 
   return (
@@ -219,7 +226,10 @@ export default function ScheduleScreen() {
             )}
 
             <div
-              onClick={() => (editing ? setEditing(false) : startEditing())}
+              onClick={() => {
+                if (saving) return;
+                editing ? handleSave() : startEditing();
+              }}
               style={{
                 height: 38,
                 padding: editing ? '0 16px' : 0,
@@ -230,11 +240,12 @@ export default function ScheduleScreen() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
-                cursor: 'pointer',
+                cursor: saving ? 'default' : 'pointer',
+                opacity: saving ? 0.7 : 1,
               }}
             >
               {editing ? (
-                <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>Salvar</span>
+                <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>{saving ? 'Salvando...' : 'Salvar'}</span>
               ) : (
                 <PenIcon size={17} color="#1c1a17" />
               )}
@@ -253,13 +264,23 @@ export default function ScheduleScreen() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, gap: 10 }}>
-          {currentDay && editing ? (
-            <DebouncedInput
-              value={currentDay.theme || ''}
-              onCommit={(theme) => patchDay({ theme })}
-              cancelToken={cancelToken}
-              style={{ fontSize: 17, fontWeight: 800, letterSpacing: -0.1, flex: 1 }}
+          {editing && draft ? (
+            <input
+              value={draft.theme || ''}
+              onChange={(e) => setDraft((d) => ({ ...d, theme: e.target.value }))}
               placeholder="Título do dia"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                border: '1px solid #eee9df',
+                borderRadius: 8,
+                padding: '6px 8px',
+                fontSize: 17,
+                fontWeight: 800,
+                letterSpacing: -0.1,
+                color: '#1c1a17',
+                boxSizing: 'border-box',
+              }}
             />
           ) : (
             <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1 }}>
@@ -283,34 +304,42 @@ export default function ScheduleScreen() {
           </div>
         </div>
 
-        {!currentDay && Array.from({ length: 4 }).map((_, i) => <ActivitySkeleton key={i} />)}
+        {!displayDay && Array.from({ length: 4 }).map((_, i) => <ActivitySkeleton key={i} />)}
 
-        {currentDay && currentDay.activities.map((act, i) => (
-          <ActivityItem
-            key={act.id}
-            activity={act}
-            editing={editing}
-            cancelToken={cancelToken}
-            isFirst={i === 0}
-            isLast={i === currentDay.activities.length - 1}
-            onEditTime={(time) => patchActivity(act.id, { time })}
-            onEditTitle={(title) => patchActivity(act.id, { title })}
-            onEditSubtitle={(subtitle) => patchActivity(act.id, { subtitle })}
-            onSelectPlace={() => setSelectorFor(act.id)}
-            onUnlinkPlace={() => handleUnlinkPlace(act.id)}
-            onDelete={() => handleDelete(act.id)}
-            onMoveUp={() => handleMove(i, -1)}
-            onMoveDown={() => handleMove(i, 1)}
-          />
-        ))}
+        {displayDay && displayDay.activities.map((act, i) => {
+          const next = displayDay.activities[i + 1];
+          return (
+            <div key={act.id}>
+              <ActivityItem
+                activity={act}
+                editing={editing}
+                isFirst={i === 0}
+                isLast={i === displayDay.activities.length - 1}
+                onEditTime={(time) => patchDraftActivity(act.id, { time })}
+                onEditTitle={(title) => patchDraftActivity(act.id, { title })}
+                onEditSubtitle={(subtitle) => patchDraftActivity(act.id, { subtitle })}
+                onSelectPlace={() => setSelectorFor(act.id)}
+                onUnlinkPlace={() => handleUnlinkPlace(act.id)}
+                onDelete={() => handleDelete(act.id)}
+                onMoveUp={() => handleMove(i, -1)}
+                onMoveDown={() => handleMove(i, 1)}
+              />
+              {!editing && next && act.place && next.place ? (
+                <DistanceBetween from={act.place} to={next.place} />
+              ) : (
+                <div style={{ marginBottom: 10 }} />
+              )}
+            </div>
+          );
+        })}
 
-        {currentDay && n === 0 && (
+        {displayDay && n === 0 && (
           <div style={{ padding: '30px 0', textAlign: 'center', color: '#b6ae9f', fontSize: 13.5, fontWeight: 600 }}>
             Sem atividades definidas para este dia.
           </div>
         )}
 
-        {currentDay && editing && (
+        {displayDay && editing && (
           <div
             onClick={handleAddActivity}
             style={{

@@ -1,15 +1,16 @@
+import { useNavigate } from 'react-router-dom';
 import { TrashBinTrashIcon } from '@solar-icons/react/linear/trash-bin-trash';
 import { AltArrowUpIcon } from '@solar-icons/react/linear/alt-arrow-up';
 import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
 import { PointOnMapIcon } from '@solar-icons/react/linear/point-on-map';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
-import DebouncedInput, { FieldLabel } from './DebouncedInput.jsx';
+import { ClockCircleIcon } from '@solar-icons/react/bold/clock-circle';
+import { FieldLabel, inputStyle } from './DebouncedInput.jsx';
 
 export default function ActivityItem({
   activity,
   editing,
-  cancelToken,
   onEditTime,
   onEditTitle,
   onEditSubtitle,
@@ -22,9 +23,12 @@ export default function ActivityItem({
   isLast,
 }) {
   const { place } = activity;
+  const navigate = useNavigate();
+  const clickable = !editing && !!place;
 
   return (
     <div
+      onClick={clickable ? () => navigate(`/lugares/${place.id}`) : undefined}
       style={{
         position: 'relative',
         display: 'flex',
@@ -32,65 +36,43 @@ export default function ActivityItem({
         flexDirection: editing ? 'row' : 'column',
         alignItems: editing ? 'flex-start' : 'stretch',
         padding: 14,
-        marginBottom: 10,
         background: '#fff',
         border: '1px solid #ececec',
         borderRadius: 18,
+        cursor: clickable ? 'pointer' : 'default',
       }}
     >
       {editing && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', width: 64, flex: 'none', paddingTop: 2 }}>
           <FieldLabel>Horário</FieldLabel>
-          <DebouncedInput
+          <input
             value={activity.time}
-            onCommit={onEditTime}
-            cancelToken={cancelToken}
-            style={{ marginTop: 3, padding: '4px 2px', fontSize: 12, fontWeight: 700, textAlign: 'center' }}
+            onChange={(e) => onEditTime(e.target.value)}
+            style={{ ...inputStyle, marginTop: 3, padding: '4px 2px', fontSize: 12, fontWeight: 700, textAlign: 'center' }}
           />
         </div>
       )}
 
-      {!editing && activity.time && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: 12,
-            padding: '4px 10px',
-            borderRadius: 8,
-            background: '#f9f7f2',
-            color: '#1c1a17',
-            fontSize: 11.5,
-            fontWeight: 700,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {activity.time}
-        </div>
-      )}
-
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, display: editing ? 'block' : 'flex', gap: editing ? 0 : 12, alignItems: editing ? undefined : 'stretch' }}>
         {editing ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div>
               <FieldLabel>Título</FieldLabel>
-              <DebouncedInput
+              <input
                 value={activity.title}
-                onCommit={onEditTitle}
-                cancelToken={cancelToken}
+                onChange={(e) => onEditTitle(e.target.value)}
                 placeholder="Título"
-                style={{ marginTop: 3, fontSize: 14, fontWeight: 700 }}
+                style={{ ...inputStyle, marginTop: 3, fontSize: 14, fontWeight: 700 }}
               />
             </div>
 
             <div>
               <FieldLabel>Descrição</FieldLabel>
-              <DebouncedInput
+              <input
                 value={activity.subtitle || ''}
-                onCommit={onEditSubtitle}
-                cancelToken={cancelToken}
+                onChange={(e) => onEditSubtitle(e.target.value)}
                 placeholder="Descrição (opcional)"
-                style={{ marginTop: 3 }}
+                style={{ ...inputStyle, marginTop: 3 }}
               />
             </div>
 
@@ -171,53 +153,62 @@ export default function ActivityItem({
           </div>
         ) : (
           <>
-            <div style={{ paddingRight: activity.time ? 64 : 0 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {activity.time && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#9a9186', fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>
+                  <ClockCircleIcon size={13} color="#9a9186" />
+                  {activity.time}
+                </div>
+              )}
               <div style={{ color: '#1c1a17', fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>{activity.title}</div>
+              {activity.subtitle && (
+                <div style={{ color: '#9a9186', fontSize: 14, fontWeight: 500, marginTop: 2, lineHeight: 1.35 }}>
+                  {activity.subtitle}
+                </div>
+              )}
+              {place && (
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    marginTop: 10,
+                    padding: '4px 8px 4px 10px',
+                    borderRadius: 8,
+                    background: '#f9f7f2',
+                    color: '#1c1a17',
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    maxWidth: '100%',
+                  }}
+                >
+                  {place.tag && <span style={{ flex: 'none' }}>{place.tag.split(' ')[0]}</span>}
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{place.name}</span>
+                  <AltArrowRightIcon size={13} color="#1c1a17" style={{ flex: 'none' }} />
+                </div>
+              )}
             </div>
-            {activity.subtitle && (
-              <div style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 500, marginTop: 2, lineHeight: 1.3 }}>
-                {activity.subtitle}
-              </div>
-            )}
+
             {place && (
               <div
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  marginTop: 10,
-                  padding: 10,
-                  borderRadius: 16,
-                  background: '#f9f7f2',
+                  position: 'relative',
+                  flex: 'none',
+                  width: 96,
+                  minHeight: 84,
+                  alignSelf: 'stretch',
+                  borderRadius: 14,
+                  overflow: 'hidden',
+                  background: '#eee9df',
                 }}
               >
-                <div style={{ width: 46, height: 46, borderRadius: 12, flex: 'none', overflow: 'hidden', background: '#eee9df' }}>
-                  {place.photo && (
-                    <img src={place.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ color: '#1c1a17', fontSize: 14.5, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {place.name}
-                  </div>
-                  <div style={{ color: '#9a9186', fontSize: 11.5, fontWeight: 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {place.address ? place.address.split(',')[0].trim() : ''}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    flex: 'none',
-                    width: 34,
-                    height: 34,
-                    borderRadius: 12,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: '#1c1a17',
-                  }}
-                >
-                  <AltArrowRightIcon size={14} color="#fff" />
-                </div>
+                {place.photo && (
+                  <img
+                    src={place.photo}
+                    alt=""
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                )}
               </div>
             )}
           </>

@@ -1,14 +1,33 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PlaceCard from './PlaceCard.jsx';
 import Select from './Select.jsx';
+import { MagnifierIcon } from '@solar-icons/react/linear/magnifier';
+import { CloseCircleIcon } from '@solar-icons/react/linear/close-circle';
+import { AddIcon } from '@solar-icons/react/linear/add';
 import { fetchPlaces } from '../api/itineraryApi.js';
 import { CATEGORY_ICON_MAP } from '../data/placeTags.js';
 import { subcategoriesFor } from '../data/subcategories.js';
 import { useDragScroll } from '../hooks/useDragScroll.js';
 import { usePlacesInItinerary } from '../hooks/usePlacesInItinerary.js';
+import { getPlacesScreenState, savePlacesScreenState, getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
 
-const CATEGORIES = ['Restaurante', 'Mercado', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
+const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
+
+// Rótulo exibido no chip da categoria — separado do valor usado para
+// filtrar (que precisa continuar batendo com place.category no banco).
+const CATEGORY_LABELS = {
+  Restaurante: 'Restaurantes',
+  Mercado: 'Mercados',
+  Centros: 'Centros',
+  Outlets: 'Outlets',
+  Shopping: 'Shopping',
+  Loja: 'Lojas',
+  Parque: 'Parques',
+  Hotel: 'Hotéis',
+  Aeroporto: 'Aeroportos',
+  Outro: 'Outros',
+};
 
 function PlaceCardSkeleton() {
   return (
@@ -25,18 +44,56 @@ function PlaceCardSkeleton() {
 }
 
 export default function PlacesScreen() {
-  const [places, setPlaces] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState(CATEGORIES[0]);
-  const [subcategory, setSubcategory] = useState('');
-  const [onlyInItinerary, setOnlyInItinerary] = useState(false);
+  const savedState = useRef(getPlacesScreenState()).current;
+  const cachedPlaces = getCachedPlaces();
+  const [places, setPlaces] = useState(cachedPlaces || []);
+  const [loading, setLoading] = useState(cachedPlaces === null);
+  const [category, setCategory] = useState(savedState.category ?? CATEGORIES[0]);
+  const [subcategory, setSubcategory] = useState(savedState.subcategory);
+  const [onlyInItinerary, setOnlyInItinerary] = useState(savedState.onlyInItinerary);
+  const [search, setSearch] = useState(savedState.search);
   const navigate = useNavigate();
   const { scrollerRef, dragRef, dragHandlers } = useDragScroll();
   const placesInItinerary = usePlacesInItinerary();
+  const rootRef = useRef(null);
+
+  // Salva filtros a cada mudança, pra sobreviver à desmontagem ao navegar
+  // para a tela de detalhes e voltar.
+  useEffect(() => {
+    savePlacesScreenState({ category, subcategory, onlyInItinerary, search });
+  }, [category, subcategory, onlyInItinerary, search]);
+
+  // Restaura a posição de scroll salva assim que a lista carrega. O elemento
+  // que rola de fato é o motion.div ancestral (overflowY: auto) definido em
+  // App.jsx, não algo dentro desta tela — por isso sobe a árvore até achá-lo.
+  useLayoutEffect(() => {
+    if (loading) return;
+    const scroller = rootRef.current?.closest('[style*="overflow-y"]');
+    if (scroller && savedState.scrollTop) {
+      scroller.scrollTop = savedState.scrollTop;
+    }
+  }, [loading]);
+
+  // Salva a posição de scroll ao navegar para fora desta tela (clique num
+  // card) — mais confiável que um listener de "scroll" contínuo, que pode
+  // capturar eventos espúrios do motion.div durante a animação de
+  // push/pop entre Lugares e Detalhes.
+  const getScrollTop = () => {
+    const scroller = rootRef.current?.closest('[style*="overflow-y"]');
+    return scroller ? scroller.scrollTop : 0;
+  };
+
+  const goToPlace = (id) => {
+    savePlacesScreenState({ scrollTop: getScrollTop() });
+    navigate(`/lugares/${id}`);
+  };
 
   useEffect(() => {
     fetchPlaces()
-      .then(setPlaces)
+      .then((data) => {
+        setCachedPlaces(data);
+        setPlaces(data);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -49,12 +106,14 @@ export default function PlacesScreen() {
   const subcategoryOptions = subcategoriesFor(category);
 
   const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
     return places.filter((p) =>
       p.category === category &&
       (!subcategory || p.subcategory === subcategory) &&
-      (!onlyInItinerary || (placesInItinerary && placesInItinerary.has(p.id)))
+      (!onlyInItinerary || (placesInItinerary && placesInItinerary.has(p.id))) &&
+      (!query || p.name.toLowerCase().includes(query))
     );
-  }, [places, category, subcategory, onlyInItinerary, placesInItinerary]);
+  }, [places, category, subcategory, onlyInItinerary, placesInItinerary, search]);
 
   // Sem área específica selecionada e a categoria tem subcategorias definidas:
   // agrupa a lista por área, com um mini-título fixo (sticky) por grupo, como
@@ -85,10 +144,29 @@ export default function PlacesScreen() {
   }, [filtered, subcategory, subcategoryOptions]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box' }}>
+    <div ref={rootRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box' }}>
       <div style={{ padding: '22px 22px 0' }}>
-        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.3, color: '#1c1a17' }}>
-          Lugares
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.3, color: '#1c1a17' }}>
+            Lugares
+          </div>
+
+          <div
+            onClick={() => navigate('/lugares/novo')}
+            style={{
+              flex: 'none',
+              height: 38,
+              width: 38,
+              borderRadius: 13,
+              background: '#f9f7f2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <AddIcon size={17} color="#1c1a17" />
+          </div>
         </div>
 
         <div
@@ -132,7 +210,7 @@ export default function PlacesScreen() {
                 }}
               >
                 <CatIcon size={15} color={active ? '#fff' : iconColor} />
-                {cat}
+                {CATEGORY_LABELS[cat] || cat}
                 {countByCategory[cat] != null && (
                   <span style={{ opacity: 0.7 }}>({countByCategory[cat]})</span>
                 )}
@@ -149,6 +227,41 @@ export default function PlacesScreen() {
           padding: '2px 22px 120px',
         }}
       >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '9px 14px',
+            borderRadius: 12,
+            border: '1px solid #ececec',
+            background: '#fff',
+            marginBottom: 16,
+          }}
+        >
+          <MagnifierIcon size={14} color="#b3ab9c" style={{ flex: 'none' }} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nome"
+            style={{
+              flex: 1,
+              minWidth: 0,
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              color: '#1c1a17',
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          />
+          {search && (
+            <div onClick={() => setSearch('')} style={{ flex: 'none', cursor: 'pointer', display: 'flex' }}>
+              <CloseCircleIcon size={14} color="#b3ab9c" />
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
           <div
             onClick={() => setOnlyInItinerary((v) => !v)}
@@ -227,7 +340,7 @@ export default function PlacesScreen() {
               <PlaceCard
                 key={place.id}
                 place={place}
-                onAction={() => navigate(`/lugares/${place.id}`)}
+                onAction={() => goToPlace(place.id)}
                 inItinerary={placesInItinerary ? placesInItinerary.has(place.id) : false}
               />
             ))}
@@ -238,7 +351,7 @@ export default function PlacesScreen() {
           <PlaceCard
             key={place.id}
             place={place}
-            onAction={() => navigate(`/lugares/${place.id}`)}
+            onAction={() => goToPlace(place.id)}
             inItinerary={placesInItinerary ? placesInItinerary.has(place.id) : false}
           />
         ))}

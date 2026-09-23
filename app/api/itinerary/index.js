@@ -14,7 +14,6 @@ function mapPlace(row) {
     dishPhotos: row.place_dish_photos || [],
     cost: row.place_cost,
     hours: row.place_hours,
-    distanceFromHotel: row.place_distance_from_hotel,
     menuLabel: row.place_menu_label,
     reviewLabel: row.place_review_label,
     recommendation: row.place_recommendation,
@@ -32,7 +31,7 @@ export default async function handler(req, res) {
         p.id AS place_id, p.name AS place_name, p.category AS place_category, p.tag AS place_tag,
         p.address AS place_address, p.rating AS place_rating, p.google_maps_uri AS place_google_maps_uri,
         p.photo AS place_photo, p.dish_photos AS place_dish_photos, p.cost AS place_cost,
-        p.hours AS place_hours, p.distance_from_hotel AS place_distance_from_hotel,
+        p.hours AS place_hours,
         p.menu_label AS place_menu_label, p.review_label AS place_review_label,
         p.recommendation AS place_recommendation
       FROM days d

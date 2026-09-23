@@ -1,3 +1,5 @@
+import { put } from '@vercel/blob';
+
 // Proxy consolidado para as APIs do Google usadas no app — mantido num único
 // arquivo (roteado por ?action=) para caber no limite de 12 Serverless
 // Functions do plano Hobby da Vercel. Consolida o que antes eram os
@@ -139,7 +141,102 @@ async function geocode(req, res, apiKey) {
   return res.status(200).json({ lat, lng });
 }
 
-const ACTIONS = { search, details, photo, map, geocode };
+async function distance(req, res, apiKey) {
+  const { originLat, originLng, destLat, destLng } = req.query;
+  if (!originLat || !originLng || !destLat || !destLng) {
+    return res.status(400).json({ error: 'Parâmetros "originLat", "originLng", "destLat" e "destLng" são obrigatórios' });
+  }
+
+  const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+      'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters',
+    },
+    body: JSON.stringify({
+      origin: { location: { latLng: { latitude: Number(originLat), longitude: Number(originLng) } } },
+      destination: { location: { latLng: { latitude: Number(destLat), longitude: Number(destLng) } } },
+      travelMode: 'DRIVE',
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    return res.status(response.status).json({ error: 'Erro na Routes API', details: errorBody });
+  }
+
+  const data = await response.json();
+  const route = data.routes?.[0];
+  if (!route) {
+    return res.status(404).json({ error: 'Rota não encontrada' });
+  }
+
+  res.setHeader('Cache-Control', 'public, max-age=2592000');
+  return res.status(200).json({
+    distanceKm: route.distanceMeters / 1000,
+    durationMin: Math.round(parseInt(route.duration, 10) / 60),
+  });
+}
+
+// Busca até 3 fotos de um lugar no Google Places (a 1ª vira a foto principal,
+// as próximas 2 viram fotos-vitrine) e sobe cada uma pro Vercel Blob, já que
+// Functions são serverless (sem filesystem gravável persistente) — não dá
+// pra salvar em public/places/ como os lugares inseridos manualmente antes
+// do deploy. Usado pela tela de criar lugar, para popular fotos sem exigir
+// escolha manual do usuário.
+async function importPhotos(req, res, apiKey) {
+  const placeId = req.query.placeId;
+  if (!placeId || typeof placeId !== 'string') {
+    return res.status(400).json({ error: 'Parâmetro "placeId" é obrigatório' });
+  }
+
+  const detailsResponse = await fetch(`https://places.googleapis.com/v1/places/${placeId}?languageCode=pt-BR`, {
+    method: 'GET',
+    headers: {
+      'X-Goog-Api-Key': apiKey,
+      'X-Goog-FieldMask': 'photos,editorialSummary',
+    },
+  });
+
+  if (!detailsResponse.ok) {
+    const errorBody = await detailsResponse.text();
+    return res.status(detailsResponse.status).json({ error: 'Erro ao buscar fotos do lugar', details: errorBody });
+  }
+
+  const detailsData = await detailsResponse.json();
+  const recommendation = detailsData.editorialSummary?.text || null;
+  const photoRefs = (detailsData.photos || []).slice(0, 3);
+  if (photoRefs.length === 0) {
+    return res.status(200).json({ photo: null, dishPhotos: [], recommendation });
+  }
+
+  const uploaded = [];
+  for (const ref of photoRefs) {
+    const photoUrl = `https://places.googleapis.com/v1/${ref.name}/media?maxWidthPx=800&key=${apiKey}`;
+    const photoResponse = await fetch(photoUrl, { redirect: 'follow' });
+    if (!photoResponse.ok) continue; // pula fotos individuais que falharem, sem derrubar o import inteiro
+
+    const contentType = photoResponse.headers.get('content-type') || 'image/jpeg';
+    const buffer = Buffer.from(await photoResponse.arrayBuffer());
+    const ext = contentType.includes('png') ? 'png' : 'jpg';
+
+    const blob = await put(`places/${placeId}-${Date.now()}-${uploaded.length}.${ext}`, buffer, {
+      access: 'public',
+      contentType,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    });
+    uploaded.push(blob.url);
+  }
+
+  return res.status(200).json({
+    photo: uploaded[0] || null,
+    dishPhotos: uploaded.slice(1),
+    recommendation,
+  });
+}
+
+const ACTIONS = { search, details, photo, map, geocode, distance, importPhotos };
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

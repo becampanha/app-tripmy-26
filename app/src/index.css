@@ -8,8 +8,12 @@
 
 body {
   margin: 0;
-  background: #e7e2da;
+  background: #fff;
   font-family: 'Nunito', system-ui, sans-serif;
+}
+
+#root {
+  background: #e7e2da;
 }
 
 body,

@@ -1,22 +1,30 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import useEmblaCarousel from 'embla-carousel-react';
 import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { TrashBinTrashIcon } from '@solar-icons/react/linear/trash-bin-trash';
 import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimalistic';
 import { AddCircleIcon } from '@solar-icons/react/linear/add-circle';
+import { AddIcon } from '@solar-icons/react/linear/add';
 import { MagnifierIcon } from '@solar-icons/react/linear/magnifier';
 import { PointOnMapIcon } from '@solar-icons/react/bold/point-on-map';
-import { CalendarMarkIcon } from '@solar-icons/react/bold/calendar-mark';
+import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
+import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
+import { AltArrowUpIcon } from '@solar-icons/react/linear/alt-arrow-up';
 import {
   fetchPlaces, createPlace, updatePlace, deletePlace, uploadPlacePhoto,
   searchGooglePlaces, importGooglePlacePhotos,
+  createRecommendation,
 } from '../api/itineraryApi.js';
 import { FieldLabel, inputStyle } from './DebouncedInput.jsx';
 import Select from './Select.jsx';
+import RecommendationModal from './RecommendationModal.jsx';
 import { useGeocode } from '../hooks/useGeocode.js';
 import { usePlaceOccurrences } from '../hooks/usePlaceOccurrences.js';
+import { usePlaceRecommendations } from '../hooks/usePlaceRecommendations.js';
+import { useDragScroll } from '../hooks/useDragScroll.js';
 import { subcategoriesFor } from '../data/subcategories.js';
 import { tagOptionsFor } from '../data/placeTagOptions.js';
 import { getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
@@ -169,72 +177,77 @@ function GoogleSearchPanel({ onSelect }) {
 // A foto principal (fachada) sempre vem primeiro em `photos` — ver
 // `allPhotos` no componente pai — então ela é sempre a capa inicial.
 function PhotoCarousel({ photos, photoIndex, onIndexChange, onOpenLightbox }) {
-  const scrollerRef = useRef(null);
-  const dragRef = useRef(null);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, startIndex: photoIndex });
+  const pressRef = useRef(null);
 
   useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    el.scrollTo({ left: photoIndex * el.clientWidth, behavior: 'instant' in document.documentElement.style ? 'instant' : 'auto' });
-  }, []);
+    if (!emblaApi) return;
+    const onSelect = () => onIndexChange(emblaApi.selectedScrollSnap());
+    emblaApi.on('select', onSelect);
+    return () => emblaApi.off('select', onSelect);
+  }, [emblaApi, onIndexChange]);
 
-  const handleScroll = () => {
-    const el = scrollerRef.current;
-    if (!el || el.clientWidth === 0) return;
-    const i = Math.round(el.scrollLeft / el.clientWidth);
-    if (i !== photoIndex) onIndexChange(i);
+  // Embla já cuida do arrasto/física do carrossel — só precisamos distinguir
+  // um toque simples (abre lightbox) de um arrasto, olhando o deslocamento
+  // entre pointerdown e pointerup.
+  const handlePointerDown = (e) => {
+    pressRef.current = { x: e.clientX, y: e.clientY };
   };
-
-  // Touch já é nativamente arrastável pelo navegador (overflowX: auto) — só
-  // precisamos rastrear o gesto para diferenciar toque de arrasto. Mouse,
-  // porém, não gera scroll nativo por arrastar: precisamos mover o
-  // scrollLeft manualmente a cada mousemove (mesmo padrão de useDragScroll).
-  const startDrag = (x) => {
-    dragRef.current = { startX: x, startScroll: scrollerRef.current.scrollLeft, moved: false };
-  };
-  const moveDrag = (x, isMouse) => {
-    if (!dragRef.current) return;
-    const dx = x - dragRef.current.startX;
-    if (Math.abs(dx) > 6) dragRef.current.moved = true;
-    if (isMouse) scrollerRef.current.scrollLeft = dragRef.current.startScroll - dx;
-  };
-  const endDrag = () => {
-    const moved = dragRef.current?.moved;
-    dragRef.current = null;
+  const handlePointerUp = (e) => {
+    const start = pressRef.current;
+    pressRef.current = null;
+    if (!start) return;
+    const moved = Math.abs(e.clientX - start.x) > 6 || Math.abs(e.clientY - start.y) > 6;
     if (!moved) onOpenLightbox();
   };
 
   return (
     <div
-      ref={scrollerRef}
-      onScroll={handleScroll}
-      onTouchStart={(e) => startDrag(e.touches[0].clientX)}
-      onTouchMove={(e) => moveDrag(e.touches[0].clientX, false)}
-      onTouchEnd={endDrag}
-      onMouseDown={(e) => startDrag(e.clientX)}
-      onMouseMove={(e) => moveDrag(e.clientX, true)}
-      onMouseUp={endDrag}
-      onMouseLeave={() => { dragRef.current = null; }}
-      style={{
-        position: 'absolute',
-        inset: 0,
-        display: 'flex',
-        overflowX: 'auto',
-        scrollSnapType: 'x mandatory',
-        WebkitOverflowScrolling: 'touch',
-        cursor: 'grab',
-        userSelect: 'none',
-      }}
+      ref={emblaRef}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      style={{ position: 'absolute', inset: 0, overflow: 'hidden', cursor: 'grab' }}
     >
-      {photos.map((src, i) => (
-        <img
-          key={i}
-          src={src}
-          alt=""
-          draggable={false}
-          style={{ flex: 'none', width: '100%', height: '100%', objectFit: 'cover', scrollSnapAlign: 'start', pointerEvents: 'none' }}
-        />
-      ))}
+      <div style={{ display: 'flex', height: '100%' }}>
+        {photos.map((src, i) => (
+          <div key={i} style={{ flex: '0 0 100%', height: '100%', minWidth: 0 }}>
+            <img
+              src={src}
+              alt=""
+              draggable={false}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }}
+            />
+          </div>
+        ))}
+      </div>
+
+      {photos.length > 1 && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 34,
+            left: 0,
+            right: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 5,
+            pointerEvents: 'none',
+          }}
+        >
+          {photos.map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: i === photoIndex ? 16 : 6,
+                height: 6,
+                borderRadius: 3,
+                background: i === photoIndex ? '#fff' : 'rgba(255,255,255,0.45)',
+                transition: 'width 0.25s ease, background 0.25s ease',
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {photos.length > 1 && (
         <div
@@ -261,6 +274,10 @@ function PhotoCarousel({ photos, photoIndex, onIndexChange, onOpenLightbox }) {
 // Visualização em tela cheia de uma foto do carrossel, com o mesmo gesto de
 // arrastar pra navegar entre fotos. Fecha pelo X ou arrastando pra baixo.
 function PhotoLightbox({ photos, photoIndex, onIndexChange, onClose }) {
+  // O Embla foi desenhado pra um único eixo de arrasto — aqui precisamos de
+  // dois gestos concorrentes (arrastar horizontal navega entre fotos,
+  // arrastar vertical fecha o lightbox), então mantemos o controle manual
+  // já testado em vez de lutar contra o motor de drag do Embla.
   const scrollerRef = useRef(null);
   const dragRef = useRef(null);
   const [dragY, setDragY] = useState(0);
@@ -279,7 +296,7 @@ function PhotoLightbox({ photos, photoIndex, onIndexChange, onClose }) {
   };
 
   const startDrag = (x, y) => {
-    dragRef.current = { startX: x, startY: y, startScroll: scrollerRef.current.scrollLeft, axis: null };
+    dragRef.current = { startX: x, startY: y, startScroll: scrollerRef.current.scrollLeft, axis: null, moved: false };
   };
   // Mouse não gera scroll nativo por arrastar (diferente de touch, que o
   // navegador já rola sozinho via overflowX: auto) — quando o gesto é
@@ -291,17 +308,22 @@ function PhotoLightbox({ photos, photoIndex, onIndexChange, onClose }) {
     const dy = y - drag.startY;
     if (!drag.axis && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
       drag.axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
+      drag.moved = true;
     }
     if (drag.axis === 'y') setDragY(Math.max(0, dy));
     else if (drag.axis === 'x' && isMouse) scrollerRef.current.scrollLeft = drag.startScroll - dx;
   };
   const endDrag = () => {
+    const moved = dragRef.current?.moved;
     if (dragY > 100) {
       onClose();
     } else {
       setDragY(0);
     }
     dragRef.current = null;
+    // Toque simples (sem arrastar), fora de uma foto (ver onClick da imagem,
+    // que interrompe a propagação) — clicou no fundo preto, então fecha.
+    if (!moved) onClose();
   };
 
   return (
@@ -381,8 +403,34 @@ function PhotoLightbox({ photos, photoIndex, onIndexChange, onClose }) {
           style={{
             position: 'absolute',
             bottom: 24,
-            left: '50%',
-            transform: 'translateX(-50%)',
+            left: 0,
+            right: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 5,
+          }}
+        >
+          {photos.map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: i === photoIndex ? 16 : 6,
+                height: 6,
+                borderRadius: 3,
+                background: i === photoIndex ? '#fff' : 'rgba(255,255,255,0.45)',
+                transition: 'width 0.25s ease, background 0.25s ease',
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {photos.length > 1 && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 24,
+            right: 18,
             padding: '4px 10px',
             borderRadius: 8,
             background: 'rgba(255,255,255,0.22)',
@@ -523,9 +571,40 @@ export default function PlaceDetailScreen() {
   const [newPlacePhotos, setNewPlacePhotos] = useState({ id: null, photo: null, dishPhotos: [] });
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [mapFullscreen, setMapFullscreen] = useState(false);
+  const [itineraryExpanded, setItineraryExpanded] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const [recommendationModalOpen, setRecommendationModalOpen] = useState(false);
+  const [openRecommendationPhoto, setOpenRecommendationPhoto] = useState(null);
+  const rootRef = useRef(null);
   const originalRef = useRef(null);
   const coords = useGeocode(place?.address ?? draft?.address);
   const occurrences = usePlaceOccurrences(id);
+  const recommendationsScroll = useDragScroll();
+
+  // Controla o efeito parallax (foto fixa atrás do conteúdo) e o surgimento
+  // da nav bar branca flutuante conforme a página rola. Cada tela é seu
+  // próprio container com overflowY: auto (ver App.jsx) — não o window —
+  // por isso subimos até o ancestral marcado com data-scroll-root.
+  useEffect(() => {
+    const scrollRoot = rootRef.current?.closest('[data-scroll-root]');
+    if (!scrollRoot) return;
+    const onScroll = () => setScrollY(scrollRoot.scrollTop);
+    scrollRoot.addEventListener('scroll', onScroll, { passive: true });
+    return () => scrollRoot.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const { recommendations, addRecommendation } = usePlaceRecommendations(!isNew ? id : null);
+
+  const handlePublishRecommendation = async ({ description, photoFile }) => {
+    let photo = null;
+    if (photoFile) {
+      const { url } = await uploadPlacePhoto(photoFile);
+      photo = url;
+    }
+    const created = await createRecommendation({ placeId: id, description, photo });
+    addRecommendation(created);
+    setRecommendationModalOpen(false);
+  };
 
   const reload = (silent) => {
     if (!silent) setLoading(true);
@@ -705,9 +784,30 @@ export default function PlaceDetailScreen() {
     );
   }
 
+  const HEADER_HEIGHT = 320;
+  // Nav bar branca aparece quando o scroll já "engoliu" quase toda a foto —
+  // some 40px antes do fim pra não bater exatamente no limiar do parallax.
+  const navBarVisible = scrollY > HEADER_HEIGHT - 40;
+
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box', paddingBottom: 40 }}>
-      <div style={{ position: 'relative', width: '100%', height: 320, background: '#eee9df', overflow: 'hidden' }}>
+    <div ref={rootRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box', paddingBottom: 40 }}>
+      {/* Foto fixa atrás do conteúdo (efeito parallax): não rola junto com a
+          página — o card de informações desliza por cima dela conforme o
+          usuário arrasta a tela pra cima. */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: 480,
+          height: HEADER_HEIGHT,
+          background: '#eee9df',
+          overflow: 'hidden',
+          zIndex: 0,
+        }}
+      >
         {!loading && allPhotos.length > 0 && (
           <PhotoCarousel
             photos={allPhotos}
@@ -725,86 +825,6 @@ export default function PlaceDetailScreen() {
             pointerEvents: 'none',
           }}
         />
-
-        <div
-          onClick={() => navigate(-1)}
-          style={{
-            position: 'absolute',
-            top: 18,
-            left: 18,
-            width: 38,
-            height: 38,
-            borderRadius: 19,
-            background: 'rgba(255,255,255,0.22)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(28,26,23,0.18)',
-            zIndex: 2,
-          }}
-        >
-          <AltArrowLeftIcon size={20} color="#fff" />
-        </div>
-
-        {(place || isNew) && (
-          <div style={{ position: 'absolute', top: 18, right: 18, display: 'flex', gap: 8, zIndex: 2 }}>
-            {editing && (
-              <div
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={handleCancel}
-                style={{
-                  height: 38,
-                  padding: '0 14px',
-                  borderRadius: 19,
-                  background: 'rgba(255,255,255,0.22)',
-                  backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(28,26,23,0.18)',
-                }}
-              >
-                <CloseIcon size={15} color="#fff" />
-                <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>Cancelar</span>
-              </div>
-            )}
-
-            <div
-              onClick={() => {
-                if (saving) return;
-                editing ? handleSave() : startEditing();
-              }}
-              style={{
-                height: 38,
-                padding: editing ? '0 14px' : 0,
-                width: editing ? 'auto' : 38,
-                borderRadius: 19,
-                background: editing ? '#1c1a17' : 'rgba(255,255,255,0.22)',
-                backdropFilter: editing ? undefined : 'blur(10px)',
-                WebkitBackdropFilter: editing ? undefined : 'blur(10px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                cursor: saving ? 'default' : 'pointer',
-                opacity: saving ? 0.7 : 1,
-                boxShadow: '0 4px 12px rgba(28,26,23,0.18)',
-              }}
-            >
-              {editing ? (
-                <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>{saving ? 'Salvando...' : 'Salvar'}</span>
-              ) : (
-                <PenIcon size={17} color="#fff" />
-              )}
-            </div>
-          </div>
-        )}
 
         {editing && (
           <label
@@ -836,7 +856,131 @@ export default function PlaceDetailScreen() {
             />
           </label>
         )}
+      </div>
 
+      {/* Nav bar branca flutuante: só some quando o scroll ainda não engoliu
+          a foto — surge por cima dela assim que o conteúdo abaixo passa por
+          trás dos botões de voltar/editar. */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: 480,
+          height: 76,
+          background: '#fff',
+          boxShadow: navBarVisible ? '0 2px 10px rgba(28,26,23,0.08)' : 'none',
+          opacity: navBarVisible ? 1 : 0,
+          transition: 'opacity 0.2s ease, box-shadow 0.2s ease',
+          pointerEvents: 'none',
+          zIndex: 1,
+        }}
+      />
+
+      {/* Wrapper de largura travada (mesmo padrão da faixa mobile centralizada
+          usado em toda a tela) — os botões usam left/right simples dentro
+          dele, evitando cálculo de posição via calc() relativo ao viewport. */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: 480,
+          height: 0,
+          zIndex: 2,
+        }}
+      >
+        <div
+          onClick={() => navigate(-1)}
+          style={{
+            position: 'absolute',
+            top: 18,
+            left: 18,
+            width: 38,
+            height: 38,
+            borderRadius: 19,
+            background: navBarVisible ? '#f9f7f2' : 'rgba(255,255,255,0.22)',
+            backdropFilter: navBarVisible ? undefined : 'blur(10px)',
+            WebkitBackdropFilter: navBarVisible ? undefined : 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: navBarVisible ? 'none' : '0 4px 12px rgba(28,26,23,0.18)',
+            transition: 'background 0.2s ease, box-shadow 0.2s ease',
+          }}
+        >
+          <AltArrowLeftIcon size={20} color={navBarVisible ? '#1c1a17' : '#fff'} />
+        </div>
+
+        {(place || isNew) && (
+          <div style={{ position: 'absolute', top: 18, right: 18, display: 'flex', gap: 8 }}>
+            {editing && (
+              <div
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleCancel}
+                style={{
+                  height: 38,
+                  padding: '0 14px',
+                  borderRadius: 19,
+                  background: navBarVisible ? '#f9f7f2' : 'rgba(255,255,255,0.22)',
+                  backdropFilter: navBarVisible ? undefined : 'blur(10px)',
+                  WebkitBackdropFilter: navBarVisible ? undefined : 'blur(10px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  cursor: 'pointer',
+                  boxShadow: navBarVisible ? 'none' : '0 4px 12px rgba(28,26,23,0.18)',
+                  transition: 'background 0.2s ease, box-shadow 0.2s ease',
+                }}
+              >
+                <CloseIcon size={15} color={navBarVisible ? '#1c1a17' : '#fff'} />
+                <span style={{ color: navBarVisible ? '#1c1a17' : '#fff', fontSize: 13.5, fontWeight: 700 }}>Cancelar</span>
+              </div>
+            )}
+
+            <div
+              onClick={() => {
+                if (saving) return;
+                editing ? handleSave() : startEditing();
+              }}
+              style={{
+                height: 38,
+                padding: editing ? '0 14px' : 0,
+                width: editing ? 'auto' : 38,
+                borderRadius: 19,
+                background: editing ? '#1c1a17' : navBarVisible ? '#f9f7f2' : 'rgba(255,255,255,0.22)',
+                backdropFilter: editing || navBarVisible ? undefined : 'blur(10px)',
+                WebkitBackdropFilter: editing || navBarVisible ? undefined : 'blur(10px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                cursor: saving ? 'default' : 'pointer',
+                opacity: saving ? 0.7 : 1,
+                boxShadow: editing || !navBarVisible ? '0 4px 12px rgba(28,26,23,0.18)' : 'none',
+                transition: 'background 0.2s ease, box-shadow 0.2s ease',
+              }}
+            >
+              {editing ? (
+                <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>{saving ? 'Salvando...' : 'Salvar'}</span>
+              ) : (
+                <PenIcon size={17} color={navBarVisible ? '#1c1a17' : '#fff'} />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Espaçador puramente estrutural: reserva a altura da foto fixa no
+          fluxo do documento, mas nunca deve interceptar cliques — senão rouba
+          o toque/arrasto do carrossel, que fica visualmente por trás dele. */}
+      <div style={{ position: 'relative', height: HEADER_HEIGHT, zIndex: 0, pointerEvents: 'none' }}>
         {/* Barra branca sobreposta à base da foto, com cantos superiores
             arredondados — cria o efeito de "moldura subindo por cima da
             imagem" sem depender de recortes/gradientes no elemento seguinte. */}
@@ -1035,66 +1179,190 @@ export default function PlaceDetailScreen() {
               )}
             </div>
 
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 8,
-                marginTop: 12,
-                padding: '10px 12px',
-                borderRadius: 14,
-                background: occurrences && occurrences.length > 0 ? '#eef6ee' : '#f9f7f2',
-              }}
-            >
-              <CalendarMarkIcon
-                size={16}
-                color={occurrences && occurrences.length > 0 ? '#4d8a5c' : '#b3ab9c'}
-                style={{ marginTop: 1, flex: 'none' }}
-              />
-              <div style={{ minWidth: 0 }}>
-                {!occurrences ? (
-                  <Skeleton width={120} height={13} />
-                ) : occurrences.length === 0 ? (
-                  <div style={{ color: '#9a9186', fontSize: 13, fontWeight: 600 }}>Fora do roteiro</div>
-                ) : occurrences.length <= 3 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {occurrences.map((occ, i) => (
-                      <div key={i} style={{ color: '#3f6b48', fontSize: 13, fontWeight: 600 }}>
-                        {occ.date} ({occ.weekday}){occ.time ? ` · ${occ.time}` : ''}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ color: '#3f6b48', fontSize: 13, fontWeight: 600 }}>
-                    No roteiro em {occurrences.length} horários
-                  </div>
-                )}
-              </div>
-            </div>
-
             {(place.tag || place.cost != null || place.hours) && (
-              <div style={{ marginTop: 16 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 10,
+                  marginTop: 16,
+                  overflowX: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                }}
+              >
                 {(() => {
-                  const rows = [];
+                  const cards = [];
                   if (place.tag) {
-                    rows.push({ label: 'Tipo', value: place.tag });
+                    const [emoji, ...rest] = place.tag.split(' ');
+                    cards.push({ key: 'tag', icon: emoji, label: 'Tipo', value: rest.join(' ') || place.tag });
                   }
-                  if (place.cost != null) rows.push({ label: 'Custo', value: `US$ ${place.cost}` });
-                  if (place.hours) rows.push({ label: 'Horário', value: place.hours });
-                  return rows.map((row, i) => (
-                    <InfoRow key={row.label} label={row.label} value={row.value} isLast={i === rows.length - 1} />
-                  ));
+                  if (place.cost != null) cards.push({ key: 'cost', icon: '💵', label: 'Custo', value: `US$ ${place.cost}` });
+                  if (place.hours) cards.push({ key: 'hours', icon: '🕒', label: 'Horário', value: place.hours });
+                  return cards.map(({ key, ...card }) => <InfoCard key={key} {...card} />);
                 })()}
               </div>
             )}
 
+            {!isNew && (
+              <div style={{ marginTop: 22 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1 }}>
+                    Recomendações
+                  </div>
+                  <div
+                    onClick={() => setRecommendationModalOpen(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', padding: 2 }}
+                  >
+                    <AddIcon size={16} color="#1c1a17" />
+                    <span style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 700 }}>Criar</span>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 10 }}>
+                  {!recommendations ? (
+                    <div
+                      style={{
+                        padding: 14,
+                        borderRadius: 16,
+                        border: '1px solid #ececec',
+                      }}
+                    >
+                      <Skeleton width="60%" height={14} />
+                      <Skeleton width="90%" height={12} style={{ marginTop: 8 }} />
+                    </div>
+                  ) : recommendations.length === 0 ? (
+                    <div
+                      style={{
+                        padding: 16,
+                        borderRadius: 16,
+                        border: '1px solid #ececec',
+                        color: '#9a9186',
+                        fontSize: 13.5,
+                        fontWeight: 600,
+                        textAlign: 'center',
+                      }}
+                    >
+                      Nenhuma recomendação no momento.
+                    </div>
+                  ) : (
+                    <div
+                      ref={recommendationsScroll.scrollerRef}
+                      {...recommendationsScroll.dragHandlers}
+                      style={{
+                        display: 'flex',
+                        gap: 10,
+                        overflowX: 'auto',
+                        WebkitOverflowScrolling: 'touch',
+                        cursor: 'grab',
+                        userSelect: 'none',
+                      }}
+                    >
+                      {recommendations.map((rec) => (
+                        <RecommendationCard
+                          key={rec.id}
+                          recommendation={rec}
+                          onOpen={() => {
+                            if (recommendationsScroll.dragRef.current?.moved) return;
+                            if (rec.photo) setOpenRecommendationPhoto(rec.photo);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 22 }}>
+              <div>
+                <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1 }}>
+                  No roteiro
+                </div>
+                <div
+                  style={{
+                    marginTop: 10,
+                    background: '#fff',
+                    border: '1px solid #ececec',
+                    borderRadius: 16,
+                    padding: '4px 14px',
+                  }}
+                >
+                  {!occurrences ? (
+                    <div style={{ padding: '12px 0' }}>
+                      <Skeleton width="100%" height={16} />
+                    </div>
+                  ) : (
+                    <>
+                      <InfoRow
+                        label="No roteiro"
+                        value={
+                          occurrences.length > 0 ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              Sim <CheckCircleIcon size={15} color="#4d8a5c" />
+                            </span>
+                          ) : (
+                            'Não'
+                          )
+                        }
+                        isLast={occurrences.length === 0}
+                      />
+                      {occurrences.length > 0 && (
+                        <div
+                          onClick={() => setItineraryExpanded((v) => !v)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '12px 0',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <span style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 700 }}>
+                            Ver todos os dias
+                          </span>
+                          {itineraryExpanded ? (
+                            <AltArrowUpIcon size={15} color="#1c1a17" />
+                          ) : (
+                            <AltArrowDownIcon size={15} color="#1c1a17" />
+                          )}
+                        </div>
+                      )}
+                      {itineraryExpanded && occurrences.length > 0 && (
+                        <div style={{ paddingBottom: 12 }}>
+                          {occurrences.map((occ, i) => (
+                            <div
+                              key={i}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: 12,
+                                padding: '12px 0',
+                                borderTop: '1px solid #f2efe9',
+                              }}
+                            >
+                              <span style={{ color: '#1c1a17', fontSize: 13, fontWeight: 700 }}>
+                                {occ.date} ({occ.weekday})
+                              </span>
+                              <span style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 600 }}>
+                                {occ.time || '—'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {place.address && (
               <div style={{ marginTop: 22 }}>
-                <div style={{ borderTop: '1px solid #ececec', paddingTop: 16 }}>
+                <div>
                   <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1 }}>
                     Endereço do local
                   </div>
-                  <div style={{ color: '#9a9186', fontSize: 13.5, fontWeight: 500, marginTop: 4, lineHeight: 1.4 }}>
+                  <div style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 500, marginTop: 4, lineHeight: 1.4 }}>
                     {place.address}
                   </div>
                 </div>
@@ -1185,6 +1453,106 @@ export default function PlaceDetailScreen() {
           photo={facadePhoto}
           onClose={() => setMapFullscreen(false)}
         />
+      )}
+
+      {recommendationModalOpen && (
+        <RecommendationModal
+          onSubmit={handlePublishRecommendation}
+          onClose={() => setRecommendationModalOpen(false)}
+        />
+      )}
+
+      {openRecommendationPhoto && (
+        <PhotoLightbox
+          photos={[openRecommendationPhoto]}
+          photoIndex={0}
+          onIndexChange={() => {}}
+          onClose={() => setOpenRecommendationPhoto(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// Card com ícone no topo, label em negrito e valor secundário embaixo —
+// estilo "Where you'll sleep" do Airbnb. Usado para Tipo, Custo, Horário
+// numa fileira com scroll horizontal.
+function InfoCard({ icon, label, value }) {
+  return (
+    <div
+      style={{
+        flex: '0 0 auto',
+        minWidth: 108,
+        padding: 14,
+        borderRadius: 16,
+        border: '1px solid #ececec',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div style={{ fontSize: 20, lineHeight: 1 }}>{icon}</div>
+      <div style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 800, marginTop: 10 }}>{label}</div>
+      <div style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 600, marginTop: 2, whiteSpace: 'nowrap' }}>{value}</div>
+    </div>
+  );
+}
+
+
+// Card no estilo "postagem": foto opcional, título, descrição e um rodapé
+// com quem sugeriu + quando foi publicado.
+// Mesmo padrão visual do PlaceCard (tela de Lugares): foto de fundo cheia,
+// gradiente escuro na base, texto sobreposto no canto inferior esquerdo.
+function RecommendationCard({ recommendation, onOpen }) {
+  return (
+    <div
+      onClick={onOpen}
+      style={{
+        position: 'relative',
+        flex: '0 0 auto',
+        width: 260,
+        height: 220,
+        borderRadius: 18,
+        overflow: 'hidden',
+        background: '#eee9df',
+        cursor: recommendation.photo ? 'pointer' : 'default',
+      }}
+    >
+      {recommendation.photo && (
+        <img
+          src={recommendation.photo}
+          alt=""
+          loading="lazy"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      )}
+
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: '65%',
+          background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 100%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {recommendation.description && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 14,
+            right: 14,
+            bottom: 12,
+            color: '#fff',
+            fontSize: 13.5,
+            fontWeight: 700,
+            lineHeight: 1.35,
+            textShadow: '0 1px 4px rgba(0,0,0,0.4)',
+          }}
+        >
+          {recommendation.description}
+        </div>
       )}
     </div>
   );

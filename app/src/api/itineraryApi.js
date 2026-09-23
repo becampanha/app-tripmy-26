@@ -94,3 +94,14 @@ export async function uploadPlacePhoto(file) {
     body: JSON.stringify({ filename: file.name, contentType: file.type || 'image/jpeg', base64 }),
   });
 }
+
+export function fetchRecommendations(placeId) {
+  return request(`/api/places/recommendations?placeId=${encodeURIComponent(placeId)}`);
+}
+
+export function createRecommendation({ placeId, description, photo }) {
+  return request('/api/places/recommendations', {
+    method: 'POST',
+    body: JSON.stringify({ placeId, description, photo }),
+  });
+}

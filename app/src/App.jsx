@@ -65,6 +65,7 @@ function Screen({ pathname, depth, direction, children }) {
       animate={animate}
       exit={exit}
       transition={direction === null ? { duration: 0 } : TRANSITION}
+      data-scroll-root
       style={{ position: 'absolute', inset: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
     >
       {children}

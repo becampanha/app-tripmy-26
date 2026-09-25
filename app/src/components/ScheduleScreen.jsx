@@ -12,7 +12,7 @@ import { setGlobalEditing } from '../hooks/useEditingState.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { createActivity, updateActivity, deleteActivity, reorderActivities, updateDay } from '../api/itineraryApi.js';
 import { weatherEmoji } from '../data/weatherCodes.js';
-import { Skeleton, color, radius, space, spacing, type } from '../design-system/index.js';
+import { Skeleton, PhotoLightbox, color, radius, space, spacing, type } from '../design-system/index.js';
 
 const EDITABLE_FIELDS = ['time', 'title', 'subtitle', 'placeId'];
 
@@ -46,6 +46,7 @@ export default function ScheduleScreen() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectorFor, setSelectorFor] = useState(null); // activity id (ou id negativo temporário de item recém-criado)
+  const [openPhoto, setOpenPhoto] = useState(null); // url da foto aberta em fullscreen (long-press na thumbnail)
   const { days, loading, reload } = useItinerary();
   // Enquanto editing=true, toda mutação (digitar, mover, excluir, adicionar,
   // vincular lugar) só mexe neste estado local — nada de chamada de rede a
@@ -290,6 +291,7 @@ export default function ScheduleScreen() {
                 onDelete={() => handleDelete(act.id)}
                 onMoveUp={() => handleMove(i, -1)}
                 onMoveDown={() => handleMove(i, 1)}
+                onOpenPhoto={() => setOpenPhoto(act.place.photo)}
               />
               <div style={{ marginBottom: 10 }}>
                 {!editing && next && act.place && next.place && (
@@ -334,6 +336,15 @@ export default function ScheduleScreen() {
         <PlaceSelectorModal
           onSelect={handleSelectPlace}
           onClose={() => setSelectorFor(null)}
+        />
+      )}
+
+      {openPhoto && (
+        <PhotoLightbox
+          photos={[openPhoto]}
+          photoIndex={0}
+          onIndexChange={() => {}}
+          onClose={() => setOpenPhoto(null)}
         />
       )}
 

@@ -105,7 +105,7 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
             WebkitTouchCallout: 'none',
             WebkitUserSelect: 'none',
             userSelect: 'none',
-            touchAction: 'none',
+            touchAction: 'pan-y',
           }}
         >
           <img

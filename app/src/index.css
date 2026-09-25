@@ -9,6 +9,11 @@
 html,
 body {
   overscroll-behavior: none; /* impede o "bounce" elástico do navegador que revela a cor do sistema atrás do app ao puxar rápido além do topo/fim */
+  /* O meta viewport (maximum-scale=1, user-scalable=no) é ignorado pelo
+     Chrome/Android há anos (WCAG) e por versões recentes do Safari — quem
+     de fato bloqueia pinch-to-zoom de forma confiável entre navegadores é
+     touch-action no CSS. pan-x/pan-y mantêm o scroll normal da página. */
+  touch-action: pan-x pan-y;
 }
 
 body {
@@ -47,6 +52,7 @@ select {
   -webkit-touch-callout: default;
   -webkit-user-select: auto;
   user-select: auto;
+  touch-action: auto;
 }
 
 #root {

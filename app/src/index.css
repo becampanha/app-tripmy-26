@@ -22,7 +22,10 @@ body {
 
 body {
   margin: 0;
-  background: #fff;
+  /* Bege: a "moldura" visível na web em telas largas, fora do cartão
+     mobile de 480px (ver App.jsx) — só aparece ali; o cartão em si
+     (#root) é branco, não essa cor. */
+  background: #e7e2da;
   font-family: 'Nunito', system-ui, sans-serif;
   -webkit-touch-callout: none; /* remove o menu de contexto nativo (copiar/compartilhar) ao segurar o dedo */
   -webkit-user-select: none;
@@ -60,10 +63,11 @@ select {
 }
 
 #root {
-  /* Branco em vez do bege original: quando o overscroll ainda vaza por trás
-     da status bar/tab bar (ver comentário abaixo — a causa raiz não foi
-     totalmente eliminada), branco confunde muito menos com o fundo real das
-     telas do que o bege se destacava. */
+  /* Branco (não o bege da moldura web) — é a cor que aparece dentro do
+     cartão mobile de 480px se o overscroll ainda vazar algo por trás da
+     status bar/tab bar no celular; combina com o fundo real das telas, ao
+     contrário do bege, que se destacava ali dentro. Na web isso nunca
+     aparece de qualquer forma (posição fixa, sem overscroll de touch). */
   background: #fff;
 }
 

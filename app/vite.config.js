@@ -10,6 +10,7 @@ export default defineConfig({
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
       devOptions: { enabled: true, type: 'module' },
       workbox: {
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             // Fotos dos lugares (fachada/pratos), servidas como estáticos em

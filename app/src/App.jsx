@@ -5,6 +5,8 @@ import ScheduleScreen from './components/ScheduleScreen.jsx';
 import PlacesScreen from './components/PlacesScreen.jsx';
 import PlaceDetailScreen from './components/PlaceDetailScreen.jsx';
 import AttractionsScreen from './components/AttractionsScreen.jsx';
+import RecommendationsScreen from './components/RecommendationsScreen.jsx';
+import DesignSystemScreen from './components/DesignSystemScreen.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import ToastHost from './components/ToastHost.jsx';
 import { useIsEditingAnywhere } from './hooks/useEditingState.js';
@@ -94,14 +96,18 @@ function Shell() {
         <Screen pathname={location.pathname} depth={currentDepth} direction={direction}>
           <Routes location={location}>
             <Route path="/" element={<ScheduleScreen />} />
+            <Route path="/recomendacoes" element={<RecommendationsScreen />} />
             <Route path="/lugares" element={<PlacesScreen />} />
             <Route path="/lugares/novo" element={<PlaceDetailScreen />} />
             <Route path="/lugares/:id" element={<PlaceDetailScreen />} />
             <Route path="/atracoes" element={<AttractionsScreen />} />
+            {/* Rota oculta de referência interna — não aparece na tab bar,
+                só acessível digitando /design-system na URL. */}
+            <Route path="/design-system" element={<DesignSystemScreen />} />
           </Routes>
         </Screen>
       </AnimatePresence>
-      {currentDepth === 0 && !isEditing && <BottomTabBar />}
+      {currentDepth === 0 && !isEditing && location.pathname !== '/design-system' && <BottomTabBar />}
     </>
   );
 }

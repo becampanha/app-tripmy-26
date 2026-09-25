@@ -99,11 +99,26 @@ export function fetchRecommendations(placeId) {
   return request(`/api/places/recommendations?placeId=${encodeURIComponent(placeId)}`);
 }
 
-export function createRecommendation({ placeId, description, photo }) {
+export function fetchAllRecommendations() {
+  return request('/api/places/recommendations');
+}
+
+export function createRecommendation({ placeId, title, author, description, photo }) {
   return request('/api/places/recommendations', {
     method: 'POST',
-    body: JSON.stringify({ placeId, description, photo }),
+    body: JSON.stringify({ placeId, title, author, description, photo }),
   });
+}
+
+export function updateRecommendation(id, { title, author, description, photo }) {
+  return request(`/api/places/recommendations?id=${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ title, author, description, photo }),
+  });
+}
+
+export function deleteRecommendation(id) {
+  return request(`/api/places/recommendations?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
 export function fetchAttractions() {

@@ -6,7 +6,7 @@ import { PointOnMapIcon } from '@solar-icons/react/linear/point-on-map';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import { ClockCircleIcon } from '@solar-icons/react/bold/clock-circle';
-import { FieldLabel, inputStyle } from './DebouncedInput.jsx';
+import { FieldLabel, inputStyle, color, radius, type } from '../design-system/index.js';
 
 export default function ActivityItem({
   activity,
@@ -36,9 +36,9 @@ export default function ActivityItem({
         flexDirection: editing ? 'row' : 'column',
         alignItems: editing ? 'flex-start' : 'stretch',
         padding: 14,
-        background: '#fff',
-        border: '1px solid #ececec',
-        borderRadius: 18,
+        background: color.bg,
+        border: `1px solid ${color.border}`,
+        borderRadius: radius.card,
         cursor: clickable ? 'pointer' : 'default',
       }}
     >
@@ -86,24 +86,24 @@ export default function ActivityItem({
                   gap: 10,
                   marginTop: 5,
                   padding: 8,
-                  borderRadius: 12,
-                  background: '#f9f7f2',
+                  borderRadius: radius.input,
+                  background: color.surfaceMuted,
                 }}
               >
                 <div
                   onClick={onSelectPlace}
                   style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, cursor: 'pointer' }}
                 >
-                  <div style={{ width: 40, height: 40, borderRadius: 10, flex: 'none', overflow: 'hidden', background: '#eee9df' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, flex: 'none', overflow: 'hidden', background: color.imagePlaceholder }}>
                     {place.photo && (
                       <img src={place.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: '#1c1a17', fontSize: 13, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ color: color.dark, fontSize: 13, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {place.name}
                     </div>
-                    <div style={{ color: '#9a9186', fontSize: 11, fontWeight: 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ color: color.muted, fontSize: 11, fontWeight: 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {place.address ? place.address.split(',')[0].trim() : ''}
                     </div>
                   </div>
@@ -117,14 +117,14 @@ export default function ActivityItem({
                     height: 22,
                     borderRadius: 11,
                     border: 0,
-                    background: '#b3453f',
+                    background: color.danger,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
                   }}
                 >
-                  <CloseIcon size={12} color="#fff" />
+                  <CloseIcon size={12} color={color.white} />
                 </button>
               </div>
               ) : (
@@ -136,16 +136,16 @@ export default function ActivityItem({
                     gap: 6,
                     marginTop: 5,
                     padding: '6px 10px',
-                    borderRadius: 8,
-                    background: '#f9f7f2',
-                    color: '#1c1a17',
+                    borderRadius: radius.badge,
+                    background: color.surfaceMuted,
+                    color: color.dark,
                     fontSize: 12,
                     fontWeight: 700,
                     cursor: 'pointer',
                     alignSelf: 'flex-start',
                   }}
                 >
-                  <PointOnMapIcon size={14} color="#1c1a17" />
+                  <PointOnMapIcon size={14} color={color.dark} />
                   Selecionar lugar
                 </div>
               )}
@@ -155,14 +155,14 @@ export default function ActivityItem({
           <>
             <div style={{ flex: 1, minWidth: 0 }}>
               {activity.time && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#9a9186', fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>
-                  <ClockCircleIcon size={13} color="#9a9186" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: color.muted, ...type.label, marginBottom: 4 }}>
+                  <ClockCircleIcon size={13} color={color.muted} />
                   {activity.time}
                 </div>
               )}
-              <div style={{ color: '#1c1a17', fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>{activity.title}</div>
+              <div style={{ color: color.dark, ...type.itemTitle }}>{activity.title}</div>
               {activity.subtitle && (
-                <div style={{ color: '#1c1a17', fontSize: 14, fontWeight: 500, marginTop: 2, lineHeight: 1.35 }}>
+                <div style={{ color: color.dark, ...type.paragraph, marginTop: 2 }}>
                   {activity.subtitle}
                 </div>
               )}
@@ -174,9 +174,9 @@ export default function ActivityItem({
                     gap: 4,
                     marginTop: 10,
                     padding: '4px 8px 4px 10px',
-                    borderRadius: 8,
-                    background: '#f9f7f2',
-                    color: '#1c1a17',
+                    borderRadius: radius.badge,
+                    background: color.surfaceMuted,
+                    color: color.dark,
                     fontSize: 11.5,
                     fontWeight: 700,
                     maxWidth: '100%',
@@ -184,7 +184,7 @@ export default function ActivityItem({
                 >
                   {place.tag && <span style={{ flex: 'none' }}>{place.tag.split(' ')[0]}</span>}
                   <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{place.name}</span>
-                  <AltArrowRightIcon size={13} color="#1c1a17" style={{ flex: 'none' }} />
+                  <AltArrowRightIcon size={13} color={color.dark} style={{ flex: 'none' }} />
                 </div>
               )}
             </div>
@@ -197,9 +197,9 @@ export default function ActivityItem({
                   width: 96,
                   minHeight: 84,
                   alignSelf: 'stretch',
-                  borderRadius: 14,
+                  borderRadius: radius.chip,
                   overflow: 'hidden',
-                  background: '#eee9df',
+                  background: color.imagePlaceholder,
                 }}
               >
                 {place.photo && (
@@ -223,7 +223,7 @@ export default function ActivityItem({
             disabled={isFirst}
             style={{ border: 0, background: 'none', padding: 2, cursor: isFirst ? 'default' : 'pointer', opacity: isFirst ? 0.3 : 1 }}
           >
-            <AltArrowUpIcon size={16} color="#1c1a17" />
+            <AltArrowUpIcon size={16} color={color.dark} />
           </button>
           <button
             type="button"
@@ -231,10 +231,10 @@ export default function ActivityItem({
             disabled={isLast}
             style={{ border: 0, background: 'none', padding: 2, cursor: isLast ? 'default' : 'pointer', opacity: isLast ? 0.3 : 1 }}
           >
-            <AltArrowDownIcon size={16} color="#1c1a17" />
+            <AltArrowDownIcon size={16} color={color.dark} />
           </button>
           <button type="button" onClick={onDelete} style={{ border: 0, background: 'none', padding: 2, cursor: 'pointer' }}>
-            <TrashBinTrashIcon size={16} color="#b3453f" />
+            <TrashBinTrashIcon size={16} color={color.danger} />
           </button>
         </div>
       )}

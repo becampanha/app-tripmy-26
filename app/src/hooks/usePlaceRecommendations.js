@@ -40,5 +40,21 @@ export function usePlaceRecommendations(placeId) {
     });
   };
 
-  return { recommendations, addRecommendation };
+  const removeRecommendation = (id) => {
+    setRecommendations((prev) => {
+      const next = (prev || []).filter((r) => r.id !== id);
+      writeCache(`recommendations:${placeId}`, next);
+      return next;
+    });
+  };
+
+  const patchRecommendation = (id, fields) => {
+    setRecommendations((prev) => {
+      const next = (prev || []).map((r) => (r.id === id ? { ...r, ...fields } : r));
+      writeCache(`recommendations:${placeId}`, next);
+      return next;
+    });
+  };
+
+  return { recommendations, addRecommendation, removeRecommendation, patchRecommendation };
 }

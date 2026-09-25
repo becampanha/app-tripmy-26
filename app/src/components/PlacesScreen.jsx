@@ -1,16 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PlaceCard from './PlaceCard.jsx';
-import Select from './Select.jsx';
-import { MagnifierIcon } from '@solar-icons/react/linear/magnifier';
-import { CloseCircleIcon } from '@solar-icons/react/linear/close-circle';
 import { AddIcon } from '@solar-icons/react/linear/add';
 import { fetchPlaces } from '../api/itineraryApi.js';
 import { CATEGORY_ICON_MAP } from '../data/placeTags.js';
 import { subcategoriesFor } from '../data/subcategories.js';
-import { useDragScroll } from '../hooks/useDragScroll.js';
 import { usePlacesInItinerary } from '../hooks/usePlacesInItinerary.js';
 import { getPlacesScreenState, savePlacesScreenState, getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
+import { HScrollTabs, SearchInput, Toggle, SectionHeader, Skeleton, Select, color, radius, space, spacing, type } from '../design-system/index.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
@@ -29,20 +26,6 @@ const CATEGORY_LABELS = {
   Outro: 'Outros',
 };
 
-function PlaceCardSkeleton() {
-  return (
-    <div
-      style={{
-        height: 300,
-        marginBottom: 16,
-        borderRadius: 20,
-        background: '#f9f7f2',
-        animation: 'pulse 1.2s ease-in-out infinite',
-      }}
-    />
-  );
-}
-
 export default function PlacesScreen() {
   const savedState = useRef(getPlacesScreenState()).current;
   const cachedPlaces = getCachedPlaces();
@@ -53,7 +36,6 @@ export default function PlacesScreen() {
   const [onlyInItinerary, setOnlyInItinerary] = useState(savedState.onlyInItinerary);
   const [search, setSearch] = useState(savedState.search);
   const navigate = useNavigate();
-  const { scrollerRef, dragRef, dragHandlers } = useDragScroll();
   const placesInItinerary = usePlacesInItinerary();
   const rootRef = useRef(null);
 
@@ -143,11 +125,19 @@ export default function PlacesScreen() {
     return sections;
   }, [filtered, subcategory, subcategoryOptions]);
 
+  const tabItems = CATEGORIES.map((cat) => ({
+    key: cat,
+    label: CATEGORY_LABELS[cat] || cat,
+    icon: CATEGORY_ICON_MAP[cat].icon,
+    iconColor: CATEGORY_ICON_MAP[cat].color,
+    count: countByCategory[cat],
+  }));
+
   return (
-    <div ref={rootRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box' }}>
-      <div style={{ padding: '22px 22px 0' }}>
+    <div ref={rootRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
+      <div style={{ padding: `${space.screenGutter}px ${space.screenGutter}px 0` }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.3, color: '#1c1a17' }}>
+          <div style={{ ...type.screenTitle, color: color.dark }}>
             Lugares
           </div>
 
@@ -158,148 +148,43 @@ export default function PlacesScreen() {
               height: 38,
               width: 38,
               borderRadius: 13,
-              background: '#f9f7f2',
+              background: color.surfaceMuted,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
             }}
           >
-            <AddIcon size={17} color="#1c1a17" />
+            <AddIcon size={17} color={color.dark} />
           </div>
         </div>
 
-        <div
-          ref={scrollerRef}
-          {...dragHandlers}
-          style={{
-            display: 'flex',
-            gap: 8,
-            overflowX: 'auto',
-            marginTop: 16,
-            padding: '2px 2px 6px',
-            WebkitOverflowScrolling: 'touch',
-            cursor: 'grab',
-            userSelect: 'none',
+        <HScrollTabs
+          items={tabItems}
+          activeKey={category}
+          onSelect={(cat) => {
+            setCategory(cat);
+            setSubcategory('');
           }}
-        >
-          {CATEGORIES.map((cat) => {
-            const active = cat === category;
-            const { icon: CatIcon, color: iconColor } = CATEGORY_ICON_MAP[cat];
-            return (
-              <div
-                key={cat}
-                onClick={() => {
-                  if (dragRef.current && dragRef.current.moved) return;
-                  setCategory(cat);
-                  setSubcategory('');
-                }}
-                style={{
-                  flex: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '8px 16px',
-                  borderRadius: 14,
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  background: active ? '#1c1a17' : '#f9f7f2',
-                  color: active ? '#fff' : '#6b6459',
-                }}
-              >
-                <CatIcon size={15} color={active ? '#fff' : iconColor} />
-                {CATEGORY_LABELS[cat] || cat}
-                {countByCategory[cat] != null && (
-                  <span style={{ opacity: 0.7 }}>({countByCategory[cat]})</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        />
       </div>
 
       <div
         style={{
-          marginTop: 16,
+          marginTop: spacing.controlGap,
           boxSizing: 'border-box',
-          padding: '2px 22px 120px',
+          padding: `2px ${space.screenGutter}px 120px`,
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '9px 14px',
-            borderRadius: 12,
-            border: '1px solid #ececec',
-            background: '#fff',
-            marginBottom: 16,
-          }}
-        >
-          <MagnifierIcon size={14} color="#b3ab9c" style={{ flex: 'none' }} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome"
-            style={{
-              flex: 1,
-              minWidth: 0,
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-              color: '#1c1a17',
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          />
-          {search && (
-            <div onClick={() => setSearch('')} style={{ flex: 'none', cursor: 'pointer', display: 'flex' }}>
-              <CloseCircleIcon size={14} color="#b3ab9c" />
-            </div>
-          )}
-        </div>
+        <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nome" />
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spacing.gapLg, marginBottom: 14 }}>
           <div
             onClick={() => setOnlyInItinerary((v) => !v)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              cursor: 'pointer',
-              userSelect: 'none',
-              flex: 'none',
-            }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none', flex: 'none' }}
           >
-            <div
-              style={{
-                position: 'relative',
-                width: 38,
-                height: 22,
-                borderRadius: 11,
-                background: onlyInItinerary ? '#3fa35a' : '#e2ddd2',
-                transition: 'background .2s',
-                flex: 'none',
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 2,
-                  left: onlyInItinerary ? 18 : 2,
-                  width: 18,
-                  height: 18,
-                  borderRadius: 9,
-                  background: '#fff',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
-                  transition: 'left .2s',
-                }}
-              />
-            </div>
-            <span style={{ color: onlyInItinerary ? '#1c1a17' : '#9a9186', fontSize: 12.5, fontWeight: 600 }}>
+            <Toggle checked={onlyInItinerary} onChange={setOnlyInItinerary} />
+            <span style={{ color: onlyInItinerary ? color.dark : color.muted, fontSize: 12.5, fontWeight: 600 }}>
               Lugares que estão no roteiro
             </span>
           </div>
@@ -316,26 +201,13 @@ export default function PlacesScreen() {
           )}
         </div>
 
-        {loading && Array.from({ length: 3 }).map((_, i) => <PlaceCardSkeleton key={i} />)}
+        {loading && Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} height={300} radius={radius.cardPhoto} style={{ marginBottom: 16 }} />
+        ))}
 
         {!loading && groupedSections && groupedSections.map((section) => (
           <div key={section.title}>
-            <div
-              style={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 5,
-                background: '#fff',
-                padding: '10px 0',
-                marginBottom: 4,
-                color: '#1c1a17',
-                fontSize: 17,
-                fontWeight: 800,
-                letterSpacing: -0.1,
-              }}
-            >
-              {section.title}
-            </div>
+            <SectionHeader>{section.title}</SectionHeader>
             {section.items.map((place) => (
               <PlaceCard
                 key={place.id}
@@ -357,7 +229,7 @@ export default function PlacesScreen() {
         ))}
 
         {!loading && filtered.length === 0 && (
-          <div style={{ padding: '30px 0', textAlign: 'center', color: '#b6ae9f', fontSize: 13.5, fontWeight: 600 }}>
+          <div style={{ padding: '30px 0', textAlign: 'center', color: color.faint, fontSize: 13.5, fontWeight: 600 }}>
             Nenhum lugar encontrado nessa categoria.
           </div>
         )}

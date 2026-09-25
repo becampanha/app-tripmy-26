@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
 import { CheckIcon } from '@solar-icons/react/linear/check';
+import { color, radius, type } from './tokens.js';
 
 // Select customizado (botão pill + popover pequeno ancorado nele), no estilo
 // do resto do app — substitui o <select> nativo do navegador, cuja aparência
@@ -42,12 +43,11 @@ export default function Select({
           justifyContent: 'space-between',
           gap: 8,
           padding: '9px 14px',
-          borderRadius: 12,
-          border: '1px solid #ececec',
-          background: '#fff',
-          color: value ? '#1c1a17' : '#9a9186',
-          fontSize: 13,
-          fontWeight: 600,
+          borderRadius: radius.input,
+          border: `1px solid ${color.border}`,
+          background: color.bg,
+          color: value ? color.dark : color.muted,
+          ...type.input,
           cursor: 'pointer',
           userSelect: 'none',
           boxSizing: 'border-box',
@@ -58,7 +58,7 @@ export default function Select({
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {selected ? selected.label : placeholder}
         </span>
-        <AltArrowDownIcon size={14} color="#b3ab9c" style={{ flex: 'none' }} />
+        <AltArrowDownIcon size={14} color={color.faintIcon} style={{ flex: 'none' }} />
       </div>
 
       {open && (
@@ -75,9 +75,9 @@ export default function Select({
             maxWidth: fullWidth ? undefined : 260,
             maxHeight: 280,
             overflowY: 'auto',
-            background: '#fff',
-            borderRadius: 16,
-            border: '1px solid #ececec',
+            background: color.bg,
+            borderRadius: radius.button,
+            border: `1px solid ${color.border}`,
             boxShadow: '0 12px 28px rgba(28,26,23,0.16)',
             padding: 6,
             zIndex: 30,
@@ -85,7 +85,7 @@ export default function Select({
           }}
         >
           {label && (
-            <div style={{ padding: '6px 10px 4px', color: '#9a9186', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+            <div style={{ padding: '6px 10px 4px', color: color.muted, ...type.eyebrow }}>
               {label}
             </div>
           )}
@@ -102,13 +102,12 @@ export default function Select({
               padding: '8px 10px',
               borderRadius: 9,
               cursor: 'pointer',
-              color: '#9a9186',
-              fontSize: 13,
-              fontWeight: 600,
+              color: color.muted,
+              ...type.input,
             }}
           >
             {placeholder}
-            {!value && <CheckIcon size={14} color="#1c1a17" />}
+            {!value && <CheckIcon size={14} color={color.dark} />}
           </div>
 
           {normalized.map((opt) => {
@@ -127,14 +126,13 @@ export default function Select({
                   padding: '8px 10px',
                   borderRadius: 9,
                   cursor: 'pointer',
-                  background: active ? '#f9f7f2' : 'transparent',
-                  color: '#1c1a17',
-                  fontSize: 13,
-                  fontWeight: 600,
+                  background: active ? color.surfaceMuted : 'transparent',
+                  color: color.dark,
+                  ...type.input,
                 }}
               >
                 {opt.label}
-                {active && <CheckIcon size={14} color="#1c1a17" />}
+                {active && <CheckIcon size={14} color={color.dark} />}
               </div>
             );
           })}

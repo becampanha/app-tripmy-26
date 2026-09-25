@@ -7,7 +7,7 @@ import { CloseIcon } from '@solar-icons/react/linear/close';
 import { TrashBinTrashIcon } from '@solar-icons/react/linear/trash-bin-trash';
 import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimalistic';
 import { AddCircleIcon } from '@solar-icons/react/linear/add-circle';
-import { AddIcon } from '@solar-icons/react/linear/add';
+import { AddCircleIcon as AddCircleBoldIcon } from '@solar-icons/react/bold/add-circle';
 import { MagnifierIcon } from '@solar-icons/react/linear/magnifier';
 import { PointOnMapIcon } from '@solar-icons/react/bold/point-on-map';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
@@ -17,18 +17,19 @@ import {
   fetchPlaces, createPlace, updatePlace, deletePlace, uploadPlacePhoto,
   searchGooglePlaces, importGooglePlacePhotos,
   createRecommendation,
+  updateRecommendation,
+  deleteRecommendation,
 } from '../api/itineraryApi.js';
-import { FieldLabel, inputStyle } from './DebouncedInput.jsx';
-import Select from './Select.jsx';
 import RecommendationModal from './RecommendationModal.jsx';
+import EditActionBar from './EditActionBar.jsx';
 import { useGeocode } from '../hooks/useGeocode.js';
 import { usePlaceOccurrences } from '../hooks/usePlaceOccurrences.js';
 import { usePlaceRecommendations } from '../hooks/usePlaceRecommendations.js';
-import { useDragScroll } from '../hooks/useDragScroll.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { subcategoriesFor } from '../data/subcategories.js';
 import { tagOptionsFor } from '../data/placeTagOptions.js';
 import { getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
+import { IconButton, NavBar, navControlStyle, navControlTextColor, FieldLabel, inputStyle, Select, RecommendationCard, space, spacing } from '../design-system/index.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
@@ -88,7 +89,7 @@ function GoogleSearchPanel({ onSelect }) {
   return (
     <div style={{ padding: '20px 22px' }}>
       <div style={{ color: '#1c1a17', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Novo lugar</div>
-      <div style={{ color: '#1c1a17', fontSize: 13, fontWeight: 500, marginBottom: 16 }}>
+      <div style={{ color: '#1c1a17', fontSize: 13, fontWeight: 500, marginBottom: spacing.controlGap }}>
         Busque o lugar no Google para preencher os dados automaticamente.
       </div>
 
@@ -148,8 +149,8 @@ function GoogleSearchPanel({ onSelect }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
-                padding: 12,
+                gap: spacing.gapLg,
+                padding: space.xl - 2,
                 borderRadius: 14,
                 border: '1px solid #ececec',
                 cursor: importingId ? 'default' : 'pointer',
@@ -508,7 +509,7 @@ function MapFullscreen({ coords, name, address, photo, onClose }) {
           bottom: 20,
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
+          gap: spacing.gapLg,
           padding: 10,
           borderRadius: 18,
           background: 'rgba(255,255,255,0.9)',
@@ -582,7 +583,6 @@ export default function PlaceDetailScreen() {
   const originalRef = useRef(null);
   const coords = useGeocode(place?.address ?? draft?.address);
   const occurrences = usePlaceOccurrences(id);
-  const recommendationsScroll = useDragScroll();
 
   // Controla o efeito parallax (foto fixa atrás do conteúdo) e o surgimento
   // da nav bar branca flutuante conforme a página rola. Cada tela é seu
@@ -596,16 +596,28 @@ export default function PlaceDetailScreen() {
     return () => scrollRoot.removeEventListener('scroll', onScroll);
   }, []);
 
-  const { recommendations, addRecommendation } = usePlaceRecommendations(!isNew ? id : null);
+  const { recommendations, addRecommendation, removeRecommendation, patchRecommendation } = usePlaceRecommendations(!isNew ? id : null);
+  // Rascunho local de edição das recomendações — mesmo padrão do resto da
+  // tela (draft), só persiste no backend quando o usuário clica em Salvar.
+  // Chave: id da recomendação. Marcadas para remoção ficam em recDeleted.
+  const [recDrafts, setRecDrafts] = useState({});
+  const [recDeleted, setRecDeleted] = useState(new Set());
+  // Snapshot congelado das recomendações no momento em que a edição começou
+  // — igual ao originalRef dos campos do lugar. `recommendations` (do hook)
+  // pode revalidar via rede a QUALQUER momento, inclusive no meio de uma
+  // edição em andamento; usar o valor ao vivo durante o formulário/save fazia
+  // o draft "descasar" do id renderizado (campo aparentava vazio/desatualizado)
+  // e o loop de salvar iterar sobre uma lista que já não era mais a editada.
+  const recSnapshotRef = useRef([]);
 
-  const handlePublishRecommendation = async ({ description, photoFile }) => {
+  const handlePublishRecommendation = async ({ title, author, description, photoFile }) => {
     try {
       let photo = null;
       if (photoFile) {
         const { url } = await uploadPlacePhoto(photoFile);
         photo = url;
       }
-      const created = await createRecommendation({ placeId: id, description, photo });
+      const created = await createRecommendation({ placeId: id, title, author, description, photo });
       addRecommendation(created);
       setRecommendationModalOpen(false);
       showToast('Recomendação publicada com sucesso');
@@ -613,6 +625,16 @@ export default function PlaceDetailScreen() {
       showErrorToast(err, 'Não foi possível publicar a recomendação.');
       throw err;
     }
+  };
+
+  // Marca a recomendação para remoção no rascunho — só é de fato deletada no
+  // backend quando o usuário clica em Salvar (mesmo padrão do resto da tela).
+  const markRecommendationDeleted = (recId) => {
+    setRecDeleted((prev) => new Set(prev).add(recId));
+  };
+
+  const patchRecDraft = (recId, fields) => {
+    setRecDrafts((prev) => ({ ...prev, [recId]: { ...prev[recId], ...fields } }));
   };
 
   const reload = (silent) => {
@@ -712,6 +734,17 @@ export default function PlaceDetailScreen() {
     const snapshot = placeFields(place);
     originalRef.current = snapshot;
     setDraft({ ...snapshot });
+    const recSnapshot = recommendations || [];
+    recSnapshotRef.current = recSnapshot;
+    setRecDrafts(
+      Object.fromEntries(
+        recSnapshot.map((r) => [
+          r.id,
+          { title: r.title || '', author: r.author || '', description: r.description || '', photo: r.photo || null, photoFile: null, photoPreview: null },
+        ])
+      )
+    );
+    setRecDeleted(new Set());
     setEditing(true);
   };
 
@@ -723,6 +756,9 @@ export default function PlaceDetailScreen() {
     setEditing(false);
     setDraft(null);
     originalRef.current = null;
+    setRecDrafts({});
+    setRecDeleted(new Set());
+    recSnapshotRef.current = [];
   };
 
   const handleSave = async () => {
@@ -766,9 +802,41 @@ export default function PlaceDetailScreen() {
         await updatePlace(id, fields);
         await reload(true);
       }
+
+      for (const recId of recDeleted) {
+        await deleteRecommendation(recId);
+        removeRecommendation(recId);
+      }
+
+      for (const rec of recSnapshotRef.current) {
+        if (recDeleted.has(rec.id)) continue;
+        const d = recDrafts[rec.id];
+        if (!d) continue;
+
+        let photo = d.photo;
+        if (d.photoFile) {
+          const { url } = await uploadPlacePhoto(d.photoFile);
+          photo = url;
+        }
+
+        const recChanged =
+          d.title !== (rec.title || '') ||
+          d.author !== (rec.author || '') ||
+          d.description !== (rec.description || '') ||
+          photo !== (rec.photo || null);
+        if (!recChanged) continue;
+
+        const fields = { title: d.title, author: d.author, description: d.description, photo };
+        await updateRecommendation(rec.id, fields);
+        patchRecommendation(rec.id, fields);
+      }
+
       setEditing(false);
       setDraft(null);
       originalRef.current = null;
+      setRecDrafts({});
+      setRecDeleted(new Set());
+      recSnapshotRef.current = [];
       showToast('Edição realizada com sucesso');
     } catch (err) {
       showErrorToast(err, 'Não foi possível salvar as alterações do lugar.');
@@ -798,21 +866,7 @@ export default function PlaceDetailScreen() {
     return (
       <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box', paddingBottom: 40 }}>
         <div style={{ padding: '18px 22px 0' }}>
-          <div
-            onClick={() => navigate(-1)}
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 19,
-              background: '#f9f7f2',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <AltArrowLeftIcon size={20} color="#1c1a17" />
-          </div>
+          <IconButton icon={AltArrowLeftIcon} onClick={() => navigate(-1)} />
         </div>
         <GoogleSearchPanel onSelect={handleGooglePick} />
       </div>
@@ -893,124 +947,45 @@ export default function PlaceDetailScreen() {
         )}
       </div>
 
-      {/* Nav bar branca flutuante: só some quando o scroll ainda não engoliu
-          a foto — surge por cima dela assim que o conteúdo abaixo passa por
-          trás dos botões de voltar/editar. */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '100%',
-          maxWidth: 480,
-          height: 76,
-          background: '#fff',
-          boxShadow: navBarVisible ? '0 2px 10px rgba(28,26,23,0.08)' : 'none',
-          opacity: navBarVisible ? 1 : 0,
-          transition: 'opacity 0.2s ease, box-shadow 0.2s ease',
-          pointerEvents: 'none',
-          zIndex: 1,
-        }}
-      />
-
-      {/* Wrapper de largura travada (mesmo padrão da faixa mobile centralizada
-          usado em toda a tela) — os botões usam left/right simples dentro
-          dele, evitando cálculo de posição via calc() relativo ao viewport. */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '100%',
-          maxWidth: 480,
-          height: 0,
-          zIndex: 2,
-        }}
-      >
-        <div
-          onClick={() => navigate(-1)}
-          style={{
-            position: 'absolute',
-            top: 18,
-            left: 18,
-            width: 38,
-            height: 38,
-            borderRadius: 19,
-            background: navBarVisible ? '#f9f7f2' : 'rgba(255,255,255,0.22)',
-            backdropFilter: navBarVisible ? undefined : 'blur(10px)',
-            WebkitBackdropFilter: navBarVisible ? undefined : 'blur(10px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: navBarVisible ? 'none' : '0 4px 12px rgba(28,26,23,0.18)',
-            transition: 'background 0.2s ease, box-shadow 0.2s ease',
-          }}
-        >
-          <AltArrowLeftIcon size={20} color={navBarVisible ? '#1c1a17' : '#fff'} />
-        </div>
-
-        {(place || isNew) && (
-          <div style={{ position: 'absolute', top: 18, right: 18, display: 'flex', gap: 8 }}>
-            {editing && (
-              <div
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={handleCancel}
-                style={{
-                  height: 38,
-                  padding: '0 14px',
-                  borderRadius: 19,
-                  background: navBarVisible ? '#f9f7f2' : 'rgba(255,255,255,0.22)',
-                  backdropFilter: navBarVisible ? undefined : 'blur(10px)',
-                  WebkitBackdropFilter: navBarVisible ? undefined : 'blur(10px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  cursor: 'pointer',
-                  boxShadow: navBarVisible ? 'none' : '0 4px 12px rgba(28,26,23,0.18)',
-                  transition: 'background 0.2s ease, box-shadow 0.2s ease',
-                }}
-              >
-                <CloseIcon size={15} color={navBarVisible ? '#1c1a17' : '#fff'} />
-                <span style={{ color: navBarVisible ? '#1c1a17' : '#fff', fontSize: 13.5, fontWeight: 700 }}>Cancelar</span>
-              </div>
-            )}
-
+      <NavBar
+        visible={navBarVisible}
+        left={
+          <div
+            onClick={() => navigate(-1)}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              ...navControlStyle(navBarVisible),
+            }}
+          >
+            <AltArrowLeftIcon size={20} color={navControlTextColor(navBarVisible)} />
+          </div>
+        }
+        right={
+          (place || isNew) && !editing && (
             <div
-              onClick={() => {
-                if (saving) return;
-                editing ? handleSave() : startEditing();
-              }}
+              onClick={startEditing}
               style={{
                 height: 38,
-                padding: editing ? '0 14px' : 0,
-                width: editing ? 'auto' : 38,
+                width: 38,
                 borderRadius: 19,
-                background: editing ? '#1c1a17' : navBarVisible ? '#f9f7f2' : 'rgba(255,255,255,0.22)',
-                backdropFilter: editing || navBarVisible ? undefined : 'blur(10px)',
-                WebkitBackdropFilter: editing || navBarVisible ? undefined : 'blur(10px)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 6,
-                cursor: saving ? 'default' : 'pointer',
-                opacity: saving ? 0.7 : 1,
-                boxShadow: editing || !navBarVisible ? '0 4px 12px rgba(28,26,23,0.18)' : 'none',
-                transition: 'background 0.2s ease, box-shadow 0.2s ease',
+                cursor: 'pointer',
+                ...navControlStyle(navBarVisible),
               }}
             >
-              {editing ? (
-                <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>{saving ? 'Salvando...' : 'Salvar'}</span>
-              ) : (
-                <PenIcon size={17} color={navBarVisible ? '#1c1a17' : '#fff'} />
-              )}
+              <PenIcon size={17} color={navControlTextColor(navBarVisible)} />
             </div>
-          </div>
-        )}
-      </div>
+          )
+        }
+      />
 
       {/* Espaçador puramente estrutural: reserva a altura da foto fixa no
           fluxo do documento, mas nunca deve interceptar cliques — senão rouba
@@ -1121,7 +1096,7 @@ export default function PlaceDetailScreen() {
 
             <div>
               <FieldLabel>Fotos do lugar</FieldLabel>
-              <div style={{ display: 'flex', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: spacing.gapLg, marginTop: 6, flexWrap: 'wrap' }}>
                 {dishPhotos.map((src, i) => (
                   <div key={i} style={{ position: 'relative', width: 72, height: 72, flex: 'none' }}>
                     <div style={{ width: '100%', height: '100%', borderRadius: 14, overflow: 'hidden', background: '#eee9df' }}>
@@ -1179,6 +1154,148 @@ export default function PlaceDetailScreen() {
             </div>
 
             {!isNew && (
+              <div>
+                <FieldLabel>Recomendações</FieldLabel>
+                <div style={{ marginTop: 5, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {recSnapshotRef.current.filter((r) => !recDeleted.has(r.id)).length === 0 ? (
+                    <div
+                      style={{
+                        padding: 16,
+                        borderRadius: 16,
+                        border: '1px solid #ececec',
+                        color: '#9a9186',
+                        fontSize: 13.5,
+                        fontWeight: 600,
+                        textAlign: 'center',
+                      }}
+                    >
+                      Nenhuma recomendação no momento.
+                    </div>
+                  ) : (
+                    recSnapshotRef.current.filter((r) => !recDeleted.has(r.id)).map((rec) => {
+                      // recDrafts sempre tem essa chave — foi preenchido no
+                      // startEditing a partir deste MESMO snapshot; não usar
+                      // fallback incompleto aqui (não inclui photo/photoFile).
+                      const d = recDrafts[rec.id];
+                      if (!d) return null;
+                      return (
+                        <div
+                          key={rec.id}
+                          style={{
+                            display: 'flex',
+                            gap: 10,
+                            alignItems: 'flex-start',
+                            padding: 14,
+                            background: '#fff',
+                            border: '1px solid #ececec',
+                            borderRadius: 18,
+                          }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <div>
+                              <FieldLabel>Título</FieldLabel>
+                              <input
+                                value={d.title}
+                                onChange={(e) => patchRecDraft(rec.id, { title: e.target.value })}
+                                placeholder="Título"
+                                style={{ ...inputStyle, marginTop: 3 }}
+                              />
+                            </div>
+                            <div>
+                              <FieldLabel>Descrição</FieldLabel>
+                              <textarea
+                                value={d.description}
+                                onChange={(e) => patchRecDraft(rec.id, { description: e.target.value })}
+                                rows={2}
+                                style={{ ...inputStyle, marginTop: 3, resize: 'vertical', fontFamily: 'inherit' }}
+                              />
+                            </div>
+                            <div>
+                              <FieldLabel>Quem está sugerindo</FieldLabel>
+                              <input
+                                value={d.author}
+                                onChange={(e) => patchRecDraft(rec.id, { author: e.target.value })}
+                                placeholder="Nome"
+                                style={{ ...inputStyle, marginTop: 3 }}
+                              />
+                            </div>
+                            <div>
+                              <FieldLabel>Foto</FieldLabel>
+                              <div style={{ marginTop: 3, display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <label
+                                  style={{
+                                    flex: 1,
+                                    minWidth: 0,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    padding: 10,
+                                    borderRadius: 14,
+                                    background: '#f9f7f2',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      width: 44,
+                                      height: 44,
+                                      borderRadius: 10,
+                                      flex: 'none',
+                                      overflow: 'hidden',
+                                      background: '#eee9df',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                    }}
+                                  >
+                                    {d.photoPreview || d.photo ? (
+                                      <img src={d.photoPreview || d.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                      <CameraMinimalisticIcon size={18} color="#b3ab9c" />
+                                    )}
+                                  </div>
+                                  <span style={{ color: '#1c1a17', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {d.photo || d.photoPreview ? 'Trocar foto' : 'Adicionar foto (opcional)'}
+                                  </span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files[0];
+                                      if (!file) return;
+                                      patchRecDraft(rec.id, { photoFile: file, photoPreview: URL.createObjectURL(file) });
+                                    }}
+                                    style={{ display: 'none' }}
+                                  />
+                                </label>
+                                {(d.photo || d.photoPreview) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => patchRecDraft(rec.id, { photo: null, photoFile: null, photoPreview: null })}
+                                    style={{ border: 0, background: 'none', padding: 2, cursor: 'pointer', flex: 'none' }}
+                                  >
+                                    <CloseIcon size={16} color="#b3453f" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => markRecommendationDeleted(rec.id)}
+                            style={{ border: 0, background: 'none', padding: 2, cursor: 'pointer', flex: 'none' }}
+                          >
+                            <TrashBinTrashIcon size={16} color="#b3453f" />
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!isNew && (
               <div
                 onClick={handleDelete}
                 style={{
@@ -1186,8 +1303,8 @@ export default function PlaceDetailScreen() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 6,
-                  marginTop: 10,
-                  padding: 14,
+                  marginTop: spacing.gapLg,
+                  padding: spacing.cardPadding,
                   borderRadius: 16,
                   border: '1.5px solid rgba(179,69,63,0.35)',
                   color: '#b3453f',
@@ -1218,8 +1335,8 @@ export default function PlaceDetailScreen() {
               <div
                 style={{
                   display: 'flex',
-                  gap: 10,
-                  marginTop: 16,
+                  gap: spacing.gapLg,
+                  marginTop: spacing.controlGap,
                   overflowX: 'auto',
                   WebkitOverflowScrolling: 'touch',
                 }}
@@ -1247,8 +1364,8 @@ export default function PlaceDetailScreen() {
                     onClick={() => setRecommendationModalOpen(true)}
                     style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', padding: 2 }}
                   >
-                    <AddIcon size={16} color="#1c1a17" />
                     <span style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 700 }}>Criar</span>
+                    <AddCircleBoldIcon size={16} color="#1c1a17" />
                   </div>
                 </div>
 
@@ -1256,7 +1373,7 @@ export default function PlaceDetailScreen() {
                   {!recommendations ? (
                     <div
                       style={{
-                        padding: 14,
+                        padding: spacing.cardPadding,
                         borderRadius: 16,
                         border: '1px solid #ececec',
                       }}
@@ -1279,26 +1396,12 @@ export default function PlaceDetailScreen() {
                       Nenhuma recomendação no momento.
                     </div>
                   ) : (
-                    <div
-                      ref={recommendationsScroll.scrollerRef}
-                      {...recommendationsScroll.dragHandlers}
-                      style={{
-                        display: 'flex',
-                        gap: 10,
-                        overflowX: 'auto',
-                        WebkitOverflowScrolling: 'touch',
-                        cursor: 'grab',
-                        userSelect: 'none',
-                      }}
-                    >
+                    <div>
                       {recommendations.map((rec) => (
                         <RecommendationCard
                           key={rec.id}
                           recommendation={rec}
-                          onOpen={() => {
-                            if (recommendationsScroll.dragRef.current?.moved) return;
-                            if (rec.photo) setOpenRecommendationPhoto(rec.photo);
-                          }}
+                          onOpenPhoto={() => setOpenRecommendationPhoto(rec.photo)}
                         />
                       ))}
                     </div>
@@ -1314,7 +1417,7 @@ export default function PlaceDetailScreen() {
                 </div>
                 <div
                   style={{
-                    marginTop: 10,
+                    marginTop: spacing.gapLg,
                     background: '#fff',
                     border: '1px solid #ececec',
                     borderRadius: 16,
@@ -1370,7 +1473,7 @@ export default function PlaceDetailScreen() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                gap: 12,
+                                gap: space.xl - 2,
                                 padding: '12px 0',
                                 borderTop: '1px solid #f2efe9',
                               }}
@@ -1410,7 +1513,7 @@ export default function PlaceDetailScreen() {
                 style={{
                   display: 'block',
                   position: 'relative',
-                  marginTop: 10,
+                  marginTop: spacing.gapLg,
                   borderRadius: 20,
                   overflow: 'hidden',
                   background: '#eee9df',
@@ -1452,7 +1555,7 @@ export default function PlaceDetailScreen() {
                 rel="noreferrer"
                 style={{
                   display: 'block',
-                  marginTop: 16,
+                  marginTop: spacing.controlGap,
                   padding: '14px 18px',
                   borderRadius: 16,
                   background: '#1c1a17',
@@ -1505,6 +1608,10 @@ export default function PlaceDetailScreen() {
           onClose={() => setOpenRecommendationPhoto(null)}
         />
       )}
+
+      {editing && (
+        <EditActionBar onCancel={handleCancel} onSave={handleSave} saving={saving} />
+      )}
     </div>
   );
 }
@@ -1518,7 +1625,7 @@ function InfoCard({ icon, label, value }) {
       style={{
         flex: '0 0 auto',
         minWidth: 108,
-        padding: 14,
+        padding: spacing.cardPadding,
         borderRadius: 16,
         border: '1px solid #ececec',
         boxSizing: 'border-box',
@@ -1532,67 +1639,6 @@ function InfoCard({ icon, label, value }) {
 }
 
 
-// Card no estilo "postagem": foto opcional, título, descrição e um rodapé
-// com quem sugeriu + quando foi publicado.
-// Mesmo padrão visual do PlaceCard (tela de Lugares): foto de fundo cheia,
-// gradiente escuro na base, texto sobreposto no canto inferior esquerdo.
-function RecommendationCard({ recommendation, onOpen }) {
-  return (
-    <div
-      onClick={onOpen}
-      style={{
-        position: 'relative',
-        flex: '0 0 auto',
-        width: 260,
-        height: 220,
-        borderRadius: 18,
-        overflow: 'hidden',
-        background: '#eee9df',
-        cursor: recommendation.photo ? 'pointer' : 'default',
-      }}
-    >
-      {recommendation.photo && (
-        <img
-          src={recommendation.photo}
-          alt=""
-          loading="lazy"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      )}
-
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: '65%',
-          background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 100%)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {recommendation.description && (
-        <div
-          style={{
-            position: 'absolute',
-            left: 14,
-            right: 14,
-            bottom: 12,
-            color: '#fff',
-            fontSize: 13.5,
-            fontWeight: 700,
-            lineHeight: 1.35,
-            textShadow: '0 1px 4px rgba(0,0,0,0.4)',
-          }}
-        >
-          {recommendation.description}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // Uma linha de "ficha técnica": rótulo à esquerda, valor à direita, com
 // linha divisória embaixo — usado para Tipo, Custo, Horário etc.
 function InfoRow({ label, value, isLast }) {
@@ -1602,7 +1648,7 @@ function InfoRow({ label, value, isLast }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 12,
+        gap: space.xl - 2,
         padding: '12px 0',
         borderBottom: isLast ? 'none' : '1px solid #ececec',
       }}

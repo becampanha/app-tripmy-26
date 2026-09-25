@@ -12,6 +12,7 @@ import { setGlobalEditing } from '../hooks/useEditingState.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { createActivity, updateActivity, deleteActivity, reorderActivities, updateDay } from '../api/itineraryApi.js';
 import { weatherEmoji } from '../data/weatherCodes.js';
+import { Skeleton, color, radius, space, spacing, type } from '../design-system/index.js';
 
 const EDITABLE_FIELDS = ['time', 'title', 'subtitle', 'placeId'];
 
@@ -27,24 +28,9 @@ function activityFields(act) {
 
 let nextDraftId = -1;
 
-function Skeleton({ width, height, radius = 6, style }) {
-  return (
-    <div
-      style={{
-        width,
-        height,
-        borderRadius: radius,
-        background: '#f9f7f2',
-        animation: 'pulse 1.2s ease-in-out infinite',
-        ...style,
-      }}
-    />
-  );
-}
-
 function ActivitySkeleton() {
   return (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 14, marginBottom: 10, background: '#fff', border: '1px solid #ececec', borderRadius: 18 }}>
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 14, marginBottom: 10, background: color.bg, border: `1px solid ${color.border}`, borderRadius: radius.card }}>
       <Skeleton width={40} height={13} />
       <Skeleton width={8} height={8} radius={4} />
       <div style={{ flex: 1 }}>
@@ -209,10 +195,10 @@ export default function ScheduleScreen() {
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box' }}>
-      <div style={{ padding: '22px 22px 0' }}>
+    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
+      <div style={{ padding: `${space.screenGutter}px ${space.screenGutter}px 0` }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.3, color: '#1c1a17' }}>
+          <div style={{ ...type.mainTitle, color: color.dark }}>
             Roteiro
           </div>
 
@@ -224,14 +210,14 @@ export default function ScheduleScreen() {
                 width: 38,
                 height: 38,
                 borderRadius: 13,
-                background: '#f9f7f2',
+                background: color.surfaceMuted,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
               }}
             >
-              <PenIcon size={17} color="#1c1a17" />
+              <PenIcon size={17} color={color.dark} />
             </div>
           )}
         </div>
@@ -255,18 +241,16 @@ export default function ScheduleScreen() {
               style={{
                 flex: 1,
                 minWidth: 0,
-                border: '1px solid #eee9df',
+                border: `1px solid ${color.imagePlaceholder}`,
                 borderRadius: 8,
                 padding: '6px 8px',
-                fontSize: 17,
-                fontWeight: 800,
-                letterSpacing: -0.1,
-                color: '#1c1a17',
+                ...type.sectionTitle,
+                color: color.dark,
                 boxSizing: 'border-box',
               }}
             />
           ) : (
-            <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1 }}>
+            <div style={{ color: color.dark, ...type.sectionTitle }}>
               {currentDay ? currentDay.theme : <Skeleton width={120} height={17} />}
             </div>
           )}
@@ -274,7 +258,7 @@ export default function ScheduleScreen() {
             {currentWeather ? (
               <>
                 <span style={{ fontSize: 15 }}>{weatherEmoji(currentWeather.code)}</span>
-                <span style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 600 }}>
+                <span style={{ color: color.muted, fontSize: 12.5, fontWeight: 600 }}>
                   {Math.round(currentWeather.min)}°–{Math.round(currentWeather.max)}°
                   {currentWeather.isHistoricalAverage && (
                     <span style={{ color: '#c9c2b6' }}> (méd.)</span>
@@ -317,7 +301,7 @@ export default function ScheduleScreen() {
         })}
 
         {displayDay && n === 0 && (
-          <div style={{ padding: '30px 0', textAlign: 'center', color: '#b6ae9f', fontSize: 13.5, fontWeight: 600 }}>
+          <div style={{ padding: '30px 0', textAlign: 'center', color: color.faint, fontSize: 13.5, fontWeight: 600 }}>
             Sem atividades definidas para este dia.
           </div>
         )}
@@ -332,15 +316,15 @@ export default function ScheduleScreen() {
               gap: 6,
               padding: 14,
               marginTop: 4,
-              borderRadius: 18,
-              border: '1.5px dashed #dcd6ca',
-              color: '#1c1a17',
+              borderRadius: radius.card,
+              border: `1.5px dashed ${color.dashedBorder}`,
+              color: color.dark,
               fontSize: 13.5,
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
-            <AddIcon size={16} color="#1c1a17" />
+            <AddIcon size={16} color={color.dark} />
             Adicionar item
           </div>
         )}

@@ -1,5 +1,6 @@
 import { PointOnMapIcon } from '@solar-icons/react/linear/point-on-map';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
+import { PhotoCard, Badge, color } from '../design-system/index.js';
 
 function shortAddress(address) {
   if (!address) return '';
@@ -11,75 +12,14 @@ export default function PlaceCard({ place, onAction, inItinerary }) {
   const dishPhotos = place.dishPhotos || [];
 
   return (
-    <div
-      onClick={onAction}
-      style={{
-        position: 'relative',
-        height: 300,
-        marginBottom: 16,
-        borderRadius: 20,
-        overflow: 'hidden',
-        background: '#eee9df',
-        cursor: onAction ? 'pointer' : 'default',
-      }}
-    >
-      {facadePhoto && (
-        <img
-          src={facadePhoto}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      )}
-
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: '55%',
-          background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 100%)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      <div
-        style={{
-          position: 'absolute',
-          top: 12,
-          left: 12,
-          padding: '3px 9px',
-          borderRadius: 8,
-          background: 'rgba(28,26,23,0.72)',
-          color: '#fff',
-          fontSize: 11,
-          fontWeight: 700,
-          zIndex: 2,
-          pointerEvents: 'none',
-        }}
-      >
-        {place.tag || place.category}
+    <PhotoCard photo={facadePhoto} onClick={onAction}>
+      <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, pointerEvents: 'none' }}>
+        <Badge>{place.tag || place.category}</Badge>
       </div>
 
       {place.cost != null && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: 12,
-            padding: '3px 9px',
-            borderRadius: 8,
-            background: 'rgba(28,26,23,0.72)',
-            color: '#fff',
-            fontSize: 11,
-            fontWeight: 700,
-            zIndex: 2,
-            pointerEvents: 'none',
-          }}
-        >
-          💵 US$ {place.cost}
+        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 2, pointerEvents: 'none' }}>
+          <Badge>💵 US$ {place.cost}</Badge>
         </div>
       )}
 
@@ -107,7 +47,7 @@ export default function PlaceCard({ place, onAction, inItinerary }) {
                 gap: 4,
                 padding: '3px 8px 3px 6px',
                 borderRadius: 7,
-                background: '#3fa35a',
+                background: color.success,
                 marginBottom: 5,
               }}
             >
@@ -159,6 +99,6 @@ export default function PlaceCard({ place, onAction, inItinerary }) {
           </div>
         )}
       </div>
-    </div>
+    </PhotoCard>
   );
 }

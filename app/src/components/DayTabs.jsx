@@ -1,4 +1,5 @@
 import { useDragScroll } from '../hooks/useDragScroll.js';
+import { color } from '../design-system/index.js';
 
 const bubbleBase = {
   flex: 'none',
@@ -24,7 +25,7 @@ export default function DayTabs({ days, selected, onSelect }) {
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
-            style={{ ...bubbleBase, background: '#f9f7f2', animation: 'pulse 1.2s ease-in-out infinite' }}
+            style={{ ...bubbleBase, background: color.surfaceMuted, animation: 'pulse 1.2s ease-in-out infinite' }}
           />
         ))}
       </div>
@@ -56,7 +57,7 @@ export default function DayTabs({ days, selected, onSelect }) {
             }}
             style={{
               ...bubbleBase,
-              background: active ? '#1c1a17' : '#f9f7f2',
+              background: active ? color.dark : color.surfaceMuted,
             }}
           >
             <div
@@ -65,12 +66,12 @@ export default function DayTabs({ days, selected, onSelect }) {
                 fontWeight: 700,
                 letterSpacing: 0.3,
                 textTransform: 'uppercase',
-                color: active ? 'rgba(255,255,255,0.65)' : '#9a9186',
+                color: active ? 'rgba(255,255,255,0.65)' : color.muted,
               }}
             >
               {day.weekday}
             </div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: active ? '#fff' : '#1c1a17' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: active ? color.white : color.dark }}>
               {day.date.split('/')[0]}
             </div>
           </div>

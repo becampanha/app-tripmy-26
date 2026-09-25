@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimalistic';
-import { FieldLabel, inputStyle } from './DebouncedInput.jsx';
+import { FieldLabel, inputStyle } from '../design-system/index.js';
 
 // Bottom sheet para publicar uma recomendação: descrição e foto opcional.
 // Fica colado na parte de baixo da tela (diferente do PlaceSelectorModal,
 // que é fullscreen) — mais rápido de preencher e fechar.
 export default function RecommendationModal({ onSubmit, onClose }) {
+  const [title, setTitle] = useState('');
+  const [author, setAuthor] = useState('');
   const [description, setDescription] = useState('');
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -24,7 +26,12 @@ export default function RecommendationModal({ onSubmit, onClose }) {
     if (!canPublish) return;
     setPublishing(true);
     try {
-      await onSubmit({ description: description.trim(), photoFile });
+      await onSubmit({
+        title: title.trim() || null,
+        author: author.trim() || null,
+        description: description.trim(),
+        photoFile,
+      });
     } finally {
       setPublishing(false);
     }
@@ -80,6 +87,16 @@ export default function RecommendationModal({ onSubmit, onClose }) {
         </div>
 
         <div style={{ marginTop: 18 }}>
+          <FieldLabel>Título</FieldLabel>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ex: O melhor prato do restaurante"
+            style={{ ...inputStyle, marginTop: 5 }}
+          />
+        </div>
+
+        <div style={{ marginTop: 14 }}>
           <FieldLabel>Descrição</FieldLabel>
           <textarea
             value={description}
@@ -87,6 +104,16 @@ export default function RecommendationModal({ onSubmit, onClose }) {
             placeholder="Ex: Peça o brisket com molho extra"
             rows={3}
             style={{ ...inputStyle, marginTop: 5, resize: 'vertical', fontFamily: 'inherit' }}
+          />
+        </div>
+
+        <div style={{ marginTop: 14 }}>
+          <FieldLabel>Quem está sugerindo</FieldLabel>
+          <input
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            placeholder="Seu nome"
+            style={{ ...inputStyle, marginTop: 5 }}
           />
         </div>
 

@@ -6,10 +6,47 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  overscroll-behavior: none; /* impede o "bounce" elástico do navegador que revela a cor do sistema atrás do app ao puxar rápido além do topo/fim */
+}
+
 body {
   margin: 0;
   background: #fff;
   font-family: 'Nunito', system-ui, sans-serif;
+  -webkit-touch-callout: none; /* remove o menu de contexto nativo (copiar/compartilhar) ao segurar o dedo */
+  -webkit-user-select: none;
+  user-select: none; /* app-like: nada de "selecionar texto" por padrão, como num app nativo */
+  -webkit-tap-highlight-color: transparent; /* remove o flash cinza padrão do navegador ao tocar em algo */
+}
+
+/* Campos de formulário continuam selecionáveis — sem isso não dá pra
+   editar/copiar o que já foi digitado. */
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* Safari/Chrome mobile dão zoom automático ao focar um <input>/<textarea>
+   com font-size abaixo de 16px, "pra ajudar a leitura" — 16px é o piso
+   exato que desativa esse comportamento. Escopado só aos elementos de
+   formulário reais (não afeta botões/labels que usam o mesmo token de
+   tamanho mas não disparam esse zoom). */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
+/* Escape-hatch para telas que DEVEM permitir o gesto nativo do navegador —
+   fotos em fullscreen (pinch-to-zoom, segurar pra salvar/compartilhar). */
+.allow-native-touch {
+  -webkit-touch-callout: default;
+  -webkit-user-select: auto;
+  user-select: auto;
 }
 
 #root {

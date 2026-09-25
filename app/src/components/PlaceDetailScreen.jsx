@@ -332,6 +332,7 @@ function PhotoLightbox({ photos, photoIndex, onIndexChange, onClose }) {
 
   return (
     <div
+      className="allow-native-touch"
       style={{
         position: 'fixed',
         top: 0,
@@ -460,6 +461,7 @@ function PhotoLightbox({ photos, photoIndex, onIndexChange, onClose }) {
 function MapFullscreen({ coords, name, address, photo, onClose }) {
   return (
     <div
+      className="allow-native-touch"
       style={{
         position: 'fixed',
         top: 0,

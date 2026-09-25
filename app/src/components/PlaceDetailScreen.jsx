@@ -444,9 +444,9 @@ export default function PlaceDetailScreen() {
       const created = await createRecommendation({ placeId: id, title, author, description, photo });
       addRecommendation(created);
       setRecommendationModalOpen(false);
-      showToast('Recomendação publicada com sucesso');
+      showToast('Dica publicada com sucesso');
     } catch (err) {
-      showErrorToast(err, 'Não foi possível publicar a recomendação.');
+      showErrorToast(err, 'Não foi possível publicar a dica.');
       throw err;
     }
   };
@@ -701,6 +701,12 @@ export default function PlaceDetailScreen() {
   // Nav bar branca aparece quando o scroll já "engoliu" quase toda a foto —
   // some 40px antes do fim pra não bater exatamente no limiar do parallax.
   const navBarVisible = scrollY > HEADER_HEIGHT - 40;
+  // Puxar a tela pra baixo além do topo (scrollY negativo, "rubber-band" do
+  // próprio elemento) dá zoom na foto acompanhando o gesto — mesmo efeito do
+  // Instagram/Twitter. A foto é position:fixed (não rola com o conteúdo),
+  // então sem isso ela ficava parada enquanto o resto da tela esticava.
+  const pullDistance = Math.max(0, -scrollY);
+  const headerScale = 1 + pullDistance / HEADER_HEIGHT;
 
   return (
     <div ref={rootRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box', paddingBottom: 40 }}>
@@ -712,7 +718,9 @@ export default function PlaceDetailScreen() {
           position: 'fixed',
           top: 0,
           left: '50%',
-          transform: 'translateX(-50%)',
+          transform: `translateX(-50%) scale(${headerScale})`,
+          transformOrigin: 'top center',
+          transition: pullDistance === 0 ? 'transform 0.2s ease' : 'none',
           width: '100%',
           maxWidth: 480,
           height: HEADER_HEIGHT,
@@ -979,7 +987,7 @@ export default function PlaceDetailScreen() {
 
             {!isNew && (
               <div>
-                <FieldLabel>Recomendações</FieldLabel>
+                <FieldLabel>Dicas</FieldLabel>
                 <div style={{ marginTop: 5, display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {recSnapshotRef.current.filter((r) => !recDeleted.has(r.id)).length === 0 ? (
                     <div
@@ -993,7 +1001,7 @@ export default function PlaceDetailScreen() {
                         textAlign: 'center',
                       }}
                     >
-                      Nenhuma recomendação no momento.
+                      Nenhuma dica no momento.
                     </div>
                   ) : (
                     recSnapshotRef.current.filter((r) => !recDeleted.has(r.id)).map((rec) => {
@@ -1182,7 +1190,7 @@ export default function PlaceDetailScreen() {
               <div style={{ marginTop: 22 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1 }}>
-                    Recomendações
+                    Dicas
                   </div>
                   <div
                     onClick={() => setRecommendationModalOpen(true)}
@@ -1217,7 +1225,7 @@ export default function PlaceDetailScreen() {
                         textAlign: 'center',
                       }}
                     >
-                      Nenhuma recomendação no momento.
+                      Nenhuma dica no momento.
                     </div>
                   ) : (
                     <div>

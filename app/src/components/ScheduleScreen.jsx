@@ -10,9 +10,10 @@ import { useItinerary } from '../hooks/useItinerary.js';
 import { useDayWeather } from '../hooks/useDayWeather.js';
 import { setGlobalEditing } from '../hooks/useEditingState.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
+import { useScrollY } from '../hooks/useScrollY.js';
 import { createActivity, updateActivity, deleteActivity, reorderActivities, updateDay } from '../api/itineraryApi.js';
 import { weatherEmoji } from '../data/weatherCodes.js';
-import { Skeleton, color, radius, space, spacing, type } from '../design-system/index.js';
+import { FixedHeader, Skeleton, color, radius, space, spacing, type } from '../design-system/index.js';
 
 const EDITABLE_FIELDS = ['time', 'title', 'subtitle', 'placeId'];
 
@@ -47,6 +48,7 @@ export default function ScheduleScreen() {
   const [saving, setSaving] = useState(false);
   const [selectorFor, setSelectorFor] = useState(null); // activity id (ou id negativo temporário de item recém-criado)
   const { days, loading, reload } = useItinerary();
+  const { scrollY, anchorRef } = useScrollY();
   // Enquanto editing=true, toda mutação (digitar, mover, excluir, adicionar,
   // vincular lugar) só mexe neste estado local — nada de chamada de rede a
   // cada tecla. As chamadas de API só acontecem de uma vez, em lote, quando
@@ -195,7 +197,30 @@ export default function ScheduleScreen() {
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
+    <div ref={anchorRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
+      <FixedHeader
+        scrollY={scrollY}
+        title="Roteiro"
+        right={
+          !editing && (
+            <div
+              onClick={startEditing}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 11,
+                background: color.surfaceMuted,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <PenIcon size={15} color={color.dark} />
+            </div>
+          )
+        }
+      />
       <div style={{ padding: `${space.screenGutter}px ${space.screenGutter}px 0` }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div style={{ ...type.mainTitle, color: color.dark }}>

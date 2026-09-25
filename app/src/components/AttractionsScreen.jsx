@@ -3,7 +3,8 @@ import AttractionCard from './AttractionCard.jsx';
 import { fetchAttractions } from '../api/itineraryApi.js';
 import { readCache, writeCache } from '../hooks/persistentCache.js';
 import { PARK_ICON_MAP } from '../data/parkIcons.js';
-import { HScrollTabs, SearchInput, SectionHeader, Skeleton, Toggle, cardPhotoHeight, color, radius, space, spacing, type } from '../design-system/index.js';
+import { useScrollY } from '../hooks/useScrollY.js';
+import { FixedHeader, HScrollTabs, SearchInput, SectionHeader, Skeleton, Toggle, cardPhotoHeight, color, radius, space, spacing, type } from '../design-system/index.js';
 
 // Mesmo padrão visual/funcional da tela de Lugares: abas com scroll
 // horizontal (aqui, um parque por aba) + seções sticky por área + busca.
@@ -14,6 +15,7 @@ export default function AttractionsScreen() {
   const [parkIndex, setParkIndex] = useState(0);
   const [search, setSearch] = useState('');
   const [onlyInItinerary, setOnlyInItinerary] = useState(false);
+  const { scrollY, anchorRef } = useScrollY();
 
   useEffect(() => {
     fetchAttractions()
@@ -45,7 +47,8 @@ export default function AttractionsScreen() {
   });
 
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
+    <div ref={anchorRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
+      <FixedHeader scrollY={scrollY} title="Atrações" />
       <div style={{ padding: `${space.screenGutter}px ${space.screenGutter}px 0` }}>
         <div style={{ ...type.screenTitle, color: color.dark }}>
           Atrações

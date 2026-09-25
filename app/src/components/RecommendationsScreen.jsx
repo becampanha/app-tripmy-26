@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAllRecommendations } from '../hooks/useAllRecommendations.js';
-import { RecommendationCard, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
+import { useScrollY } from '../hooks/useScrollY.js';
+import { FixedHeader, RecommendationCard, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
 
 function RecommendationsSkeleton() {
   return (
@@ -24,12 +25,14 @@ function RecommendationsSkeleton() {
 export default function RecommendationsScreen() {
   const { recommendations } = useAllRecommendations();
   const navigate = useNavigate();
+  const { scrollY, anchorRef } = useScrollY();
 
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
+    <div ref={anchorRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
+      <FixedHeader scrollY={scrollY} title="Dicas" />
       <div style={{ padding: `${spacing.screenGutter}px ${spacing.screenGutter}px 0` }}>
         <div style={{ ...type.mainTitle, color: color.dark }}>
-          Recomendações
+          Dicas
         </div>
       </div>
 
@@ -38,7 +41,7 @@ export default function RecommendationsScreen() {
 
         {recommendations && recommendations.length === 0 && (
           <div style={{ padding: '30px 0', textAlign: 'center', color: color.faint, fontSize: 13.5, fontWeight: 600 }}>
-            Nenhuma recomendação publicada ainda.
+            Nenhuma dica publicada ainda.
           </div>
         )}
 

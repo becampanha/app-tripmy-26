@@ -8,7 +8,7 @@ import { FloatingBar, color, overlay, radius } from '../design-system/index.js';
 
 const TABS = [
   { key: 'roteiro', label: 'Roteiro', icon: MapIcon, path: '/' },
-  { key: 'recomendacoes', label: 'Recomendações', icon: HeartIcon, path: '/recomendacoes' },
+  { key: 'recomendacoes', label: 'Dicas', icon: HeartIcon, path: '/recomendacoes' },
   { key: 'lugares', label: 'Lugares', icon: ShopIcon, path: '/lugares' },
   { key: 'atracoes', label: 'Atrações', icon: FerrisWheelIcon, path: '/atracoes' },
   { key: 'mais', label: 'Mais', icon: MenuDotsIcon, path: '/mais' },

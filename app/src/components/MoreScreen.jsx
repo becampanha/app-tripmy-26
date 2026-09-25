@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { RefreshIcon } from '@solar-icons/react/bold/refresh';
-import { color, spacing, type } from '../design-system/index.js';
+import { useScrollY } from '../hooks/useScrollY.js';
+import { FixedHeader, color, spacing, type } from '../design-system/index.js';
 
 function formatBuildDate(iso) {
   if (!iso) return '';
@@ -28,6 +29,7 @@ async function hardRefresh() {
 
 export default function MoreScreen() {
   const [refreshing, setRefreshing] = useState(false);
+  const { scrollY, anchorRef } = useScrollY();
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -39,7 +41,8 @@ export default function MoreScreen() {
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
+    <div ref={anchorRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
+      <FixedHeader scrollY={scrollY} title="Mais" />
       <div style={{ padding: `${spacing.screenGutter}px ${spacing.screenGutter}px 0` }}>
         <div style={{ ...type.mainTitle, color: color.dark }}>
           Mais

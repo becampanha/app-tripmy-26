@@ -7,7 +7,8 @@ import { CATEGORY_ICON_MAP } from '../data/placeTags.js';
 import { subcategoriesFor } from '../data/subcategories.js';
 import { usePlacesInItinerary } from '../hooks/usePlacesInItinerary.js';
 import { getPlacesScreenState, savePlacesScreenState, getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
-import { HScrollTabs, SearchInput, Toggle, SectionHeader, Skeleton, Select, color, radius, space, spacing, type } from '../design-system/index.js';
+import { useScrollY } from '../hooks/useScrollY.js';
+import { FixedHeader, HScrollTabs, SearchInput, Toggle, SectionHeader, Skeleton, Select, color, radius, space, spacing, type } from '../design-system/index.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
@@ -38,6 +39,7 @@ export default function PlacesScreen() {
   const navigate = useNavigate();
   const placesInItinerary = usePlacesInItinerary();
   const rootRef = useRef(null);
+  const { scrollY } = useScrollY(rootRef);
 
   // Salva filtros a cada mudança, pra sobreviver à desmontagem ao navegar
   // para a tela de detalhes e voltar.
@@ -135,6 +137,27 @@ export default function PlacesScreen() {
 
   return (
     <div ref={rootRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
+      <FixedHeader
+        scrollY={scrollY}
+        title="Lugares"
+        right={
+          <div
+            onClick={() => navigate('/lugares/novo')}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 11,
+              background: color.surfaceMuted,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <AddIcon size={15} color={color.dark} />
+          </div>
+        }
+      />
       <div style={{ padding: `${space.screenGutter}px ${space.screenGutter}px 0` }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div style={{ ...type.screenTitle, color: color.dark }}>

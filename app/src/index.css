@@ -1,5 +1,9 @@
 :root {
   color-scheme: light;
+  /* Espessura padrão dos ícones "linear" (contorno, @solar-icons/react) —
+     o pacote lê essa variável internamente (default é 1.5). Ícones "bold"
+     (tab bar) são preenchidos, não usam stroke, então não são afetados. */
+  --solar-stroke-width: 2;
 }
 
 * {

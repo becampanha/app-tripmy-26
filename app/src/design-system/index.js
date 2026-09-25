@@ -17,3 +17,4 @@ export { default as TextField, FieldLabel, inputStyle } from './TextField.jsx';
 export { default as Select } from './Select.jsx';
 export { default as RecommendationCard } from './RecommendationCard.jsx';
 export { default as PhotoLightbox } from './PhotoLightbox.jsx';
+export { default as FixedHeader } from './FixedHeader.jsx';

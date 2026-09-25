@@ -68,7 +68,7 @@ export default function RecommendationModal({ onSubmit, onClose }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#1c1a17' }}>Nova recomendação</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#1c1a17' }}>Nova dica</div>
           <div
             onClick={onClose}
             style={{

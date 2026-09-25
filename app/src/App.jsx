@@ -72,7 +72,18 @@ function Screen({ pathname, depth, direction, children }) {
       exit={exit}
       transition={direction === null ? { duration: 0 } : TRANSITION}
       data-scroll-root
-      style={{ position: 'absolute', inset: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        // Este motion.div — não o html/body — é quem de fato rola cada tela
+        // (o body inteiro tem overflow:hidden, ver App abaixo). overscroll-
+        // -behavior:none tentava impedir o "bounce" no elemento errado antes;
+        // contain evita que ele vaze pro body por trás (revelando a cor de
+        // fundo do sistema) sem travar o scroll do próprio elemento.
+        overscrollBehavior: 'contain',
+      }}
     >
       {children}
     </motion.div>

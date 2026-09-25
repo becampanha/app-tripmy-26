@@ -12,8 +12,12 @@ body {
   /* O meta viewport (maximum-scale=1, user-scalable=no) é ignorado pelo
      Chrome/Android há anos (WCAG) e por versões recentes do Safari — quem
      de fato bloqueia pinch-to-zoom de forma confiável entre navegadores é
-     touch-action no CSS. pan-x/pan-y mantêm o scroll normal da página. */
-  touch-action: pan-x pan-y;
+     touch-action no CSS. Só pan-y aqui (não pan-x): o body em si nunca tem
+     scroll horizontal próprio — travar só o eixo vertical evita que esse
+     touch-action "brigue" com o algoritmo de decisão de gesto do navegador
+     quando o dedo começa sobre um scroller horizontal interno (abas de dia,
+     categorias) e ocasionalmente engasgava o scroll vertical da tela. */
+  touch-action: pan-y;
 }
 
 body {
@@ -61,7 +65,13 @@ select {
 
 body,
 #root {
-  min-height: 100vh;
+  /* 100vh no iOS conta a área por trás da barra de endereço do Safari
+     (mesmo quando ela some), então #root podia ficar fisicamente mais alto
+     que o container real do app (App.jsx usa 100dvh) — a sobra, com o
+     fundo bege daqui, é o que "vazava" atrás da barra de status/tab bar
+     durante o bounce elástico do scroll. */
+  height: 100dvh;
+  overflow: hidden;
 }
 
 ::-webkit-scrollbar {

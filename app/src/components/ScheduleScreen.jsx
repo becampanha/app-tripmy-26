@@ -1,13 +1,15 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { AddIcon } from '@solar-icons/react/linear/add';
-import { CloseIcon } from '@solar-icons/react/linear/close';
 import DayTabs from './DayTabs.jsx';
 import ActivityItem from './ActivityItem.jsx';
 import DistanceBetween from './DistanceBetween.jsx';
 import PlaceSelectorModal from './PlaceSelectorModal.jsx';
+import EditActionBar from './EditActionBar.jsx';
 import { useItinerary } from '../hooks/useItinerary.js';
 import { useDayWeather } from '../hooks/useDayWeather.js';
+import { setGlobalEditing } from '../hooks/useEditingState.js';
+import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { createActivity, updateActivity, deleteActivity, reorderActivities, updateDay } from '../api/itineraryApi.js';
 import { weatherEmoji } from '../data/weatherCodes.js';
 
@@ -67,6 +69,13 @@ export default function ScheduleScreen() {
   const [draft, setDraft] = useState(null); // { dayId, theme, activities: [...] }
   const originalRef = useRef(null); // snapshot pré-edição, para diff no Salvar
 
+  // Avisa o Shell (App.jsx) pra esconder a BottomTabBar enquanto esta tela
+  // está em edição — ela some pra dar lugar à EditActionBar (Cancelar/Salvar).
+  useEffect(() => {
+    setGlobalEditing(editing);
+    return () => setGlobalEditing(false);
+  }, [editing]);
+
   const currentDay = days ? days[selectedDay] : null;
   const weatherByDay = useDayWeather(days);
   const currentWeather = currentDay ? weatherByDay[currentDay.id] : null;
@@ -75,6 +84,7 @@ export default function ScheduleScreen() {
   const n = displayDay ? displayDay.activities.length : 0;
 
   const startEditing = () => {
+    if (!currentDay) return;
     const snapshot = {
       dayId: currentDay.id,
       theme: currentDay.theme,
@@ -190,6 +200,9 @@ export default function ScheduleScreen() {
       setDraft(null);
       originalRef.current = null;
       await reload(true);
+      showToast('Edição realizada com sucesso');
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível salvar as alterações do roteiro.');
     } finally {
       setSaving(false);
     }
@@ -203,54 +216,24 @@ export default function ScheduleScreen() {
             Roteiro
           </div>
 
-          <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
-            {editing && (
-              <div
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={handleCancel}
-                style={{
-                  height: 38,
-                  padding: '0 16px',
-                  borderRadius: 13,
-                  background: '#f9f7f2',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  cursor: 'pointer',
-                }}
-              >
-                <CloseIcon size={15} color="#1c1a17" />
-                <span style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 700 }}>Cancelar</span>
-              </div>
-            )}
-
+          {!editing && (
             <div
-              onClick={() => {
-                if (saving) return;
-                editing ? handleSave() : startEditing();
-              }}
+              onClick={startEditing}
               style={{
+                flex: 'none',
+                width: 38,
                 height: 38,
-                padding: editing ? '0 16px' : 0,
-                width: editing ? 'auto' : 38,
                 borderRadius: 13,
-                background: editing ? '#1c1a17' : '#f9f7f2',
+                background: '#f9f7f2',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 6,
-                cursor: saving ? 'default' : 'pointer',
-                opacity: saving ? 0.7 : 1,
+                cursor: 'pointer',
               }}
             >
-              {editing ? (
-                <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>{saving ? 'Salvando...' : 'Salvar'}</span>
-              ) : (
-                <PenIcon size={17} color="#1c1a17" />
-              )}
+              <PenIcon size={17} color="#1c1a17" />
             </div>
-          </div>
+          )}
         </div>
 
         <DayTabs days={days} selected={selectedDay} onSelect={setSelectedDay} />
@@ -368,6 +351,10 @@ export default function ScheduleScreen() {
           onSelect={handleSelectPlace}
           onClose={() => setSelectorFor(null)}
         />
+      )}
+
+      {editing && (
+        <EditActionBar onCancel={handleCancel} onSave={handleSave} saving={saving} />
       )}
     </div>
   );

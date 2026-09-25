@@ -105,3 +105,7 @@ export function createRecommendation({ placeId, description, photo }) {
     body: JSON.stringify({ placeId, description, photo }),
   });
 }
+
+export function fetchAttractions() {
+  return request('/api/attractions');
+}

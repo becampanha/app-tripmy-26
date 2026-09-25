@@ -1,10 +1,12 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MapIcon } from '@solar-icons/react/bold/map';
 import { ShopIcon } from '@solar-icons/react/bold/shop';
+import { FerrisWheelIcon } from '@solar-icons/react/bold/ferris-wheel';
 
 const TABS = [
   { key: 'roteiro', label: 'Roteiro', icon: MapIcon, path: '/' },
   { key: 'lugares', label: 'Lugares', icon: ShopIcon, path: '/lugares' },
+  { key: 'atracoes', label: 'Atrações', icon: FerrisWheelIcon, path: '/atracoes' },
 ];
 
 export default function BottomTabBar() {

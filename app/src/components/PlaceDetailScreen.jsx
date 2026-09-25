@@ -25,6 +25,7 @@ import { useGeocode } from '../hooks/useGeocode.js';
 import { usePlaceOccurrences } from '../hooks/usePlaceOccurrences.js';
 import { usePlaceRecommendations } from '../hooks/usePlaceRecommendations.js';
 import { useDragScroll } from '../hooks/useDragScroll.js';
+import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { subcategoriesFor } from '../data/subcategories.js';
 import { tagOptionsFor } from '../data/placeTagOptions.js';
 import { getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
@@ -58,6 +59,8 @@ function GoogleSearchPanel({ onSelect }) {
     try {
       const places = await searchGooglePlaces(query.trim());
       setResults(places);
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível buscar no Google agora.');
     } finally {
       setSearching(false);
     }
@@ -596,14 +599,20 @@ export default function PlaceDetailScreen() {
   const { recommendations, addRecommendation } = usePlaceRecommendations(!isNew ? id : null);
 
   const handlePublishRecommendation = async ({ description, photoFile }) => {
-    let photo = null;
-    if (photoFile) {
-      const { url } = await uploadPlacePhoto(photoFile);
-      photo = url;
+    try {
+      let photo = null;
+      if (photoFile) {
+        const { url } = await uploadPlacePhoto(photoFile);
+        photo = url;
+      }
+      const created = await createRecommendation({ placeId: id, description, photo });
+      addRecommendation(created);
+      setRecommendationModalOpen(false);
+      showToast('Recomendação publicada com sucesso');
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível publicar a recomendação.');
+      throw err;
     }
-    const created = await createRecommendation({ placeId: id, description, photo });
-    addRecommendation(created);
-    setRecommendationModalOpen(false);
   };
 
   const reload = (silent) => {
@@ -648,19 +657,34 @@ export default function PlaceDetailScreen() {
 
   const handleReplaceMainPhoto = async (file) => {
     if (!file) return;
-    const { url } = await uploadPlacePhoto(file);
-    await patchPlace({ photo: url });
+    try {
+      const { url } = await uploadPlacePhoto(file);
+      await patchPlace({ photo: url });
+      showToast('Foto principal atualizada');
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível trocar a foto principal.');
+    }
   };
 
   const handleAddDishPhoto = async (file) => {
     if (!file) return;
-    const { url } = await uploadPlacePhoto(file);
-    await patchPlace({ dishPhotos: [...dishPhotos, url] });
+    try {
+      const { url } = await uploadPlacePhoto(file);
+      await patchPlace({ dishPhotos: [...dishPhotos, url] });
+      showToast('Foto adicionada com sucesso');
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível adicionar a foto.');
+    }
   };
 
   const handleRemoveDishPhoto = async (index) => {
     const next = dishPhotos.filter((_, i) => i !== index);
-    await patchPlace({ dishPhotos: next });
+    try {
+      await patchPlace({ dishPhotos: next });
+      showToast('Foto removida');
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível remover a foto.');
+    }
   };
 
   // Chamado ao escolher um resultado da busca do Google no fluxo de criação:
@@ -719,6 +743,9 @@ export default function PlaceDetailScreen() {
         const freshPlaces = await fetchPlaces();
         setCachedPlaces(freshPlaces);
         navigate(`/lugares/${created.id}`, { replace: true });
+        showToast('Lugar criado com sucesso');
+      } catch (err) {
+        showErrorToast(err, 'Não foi possível criar o lugar.');
       } finally {
         setSaving(false);
       }
@@ -742,14 +769,22 @@ export default function PlaceDetailScreen() {
       setEditing(false);
       setDraft(null);
       originalRef.current = null;
+      showToast('Edição realizada com sucesso');
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível salvar as alterações do lugar.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    await deletePlace(id);
-    navigate('/lugares');
+    try {
+      await deletePlace(id);
+      navigate('/lugares');
+      showToast('Lugar removido com sucesso');
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível remover o lugar.');
+    }
   };
 
   const setDraftField = (field) => (value) => {

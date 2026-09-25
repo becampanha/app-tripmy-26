@@ -4,7 +4,10 @@ import { AnimatePresence, motion } from 'motion/react';
 import ScheduleScreen from './components/ScheduleScreen.jsx';
 import PlacesScreen from './components/PlacesScreen.jsx';
 import PlaceDetailScreen from './components/PlaceDetailScreen.jsx';
+import AttractionsScreen from './components/AttractionsScreen.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
+import ToastHost from './components/ToastHost.jsx';
+import { useIsEditingAnywhere } from './hooks/useEditingState.js';
 
 // Hierarquia simples de navegação: Roteiro e Lugares são telas "raiz" das
 // abas (sem transição de push/pop entre si); a tela de detalhe de um lugar
@@ -80,6 +83,10 @@ function Shell() {
   const prevDepth = prevDepthRef.current;
   const direction = currentDepth === prevDepth ? null : currentDepth > prevDepth ? 'push' : 'pop';
   prevDepthRef.current = currentDepth;
+  // Enquanto uma tela raiz está em modo de edição, ela mesma renderiza sua
+  // própria EditActionBar (Cancelar/Salvar) no lugar da tab bar — ver
+  // useEditingState.js.
+  const isEditing = useIsEditingAnywhere();
 
   return (
     <>
@@ -90,10 +97,11 @@ function Shell() {
             <Route path="/lugares" element={<PlacesScreen />} />
             <Route path="/lugares/novo" element={<PlaceDetailScreen />} />
             <Route path="/lugares/:id" element={<PlaceDetailScreen />} />
+            <Route path="/atracoes" element={<AttractionsScreen />} />
           </Routes>
         </Screen>
       </AnimatePresence>
-      {currentDepth === 0 && <BottomTabBar />}
+      {currentDepth === 0 && !isEditing && <BottomTabBar />}
     </>
   );
 }
@@ -104,6 +112,7 @@ export default function App() {
       <HashRouter>
         <Shell />
       </HashRouter>
+      <ToastHost />
     </div>
   );
 }

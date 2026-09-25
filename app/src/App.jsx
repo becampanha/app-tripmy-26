@@ -127,7 +127,22 @@ function Shell() {
 
 export default function App() {
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', height: '100dvh', position: 'relative', overflow: 'hidden' }}>
+    <div
+      style={{
+        // position:fixed + inset:0 (em vez de relative + height:100dvh)
+        // trava o container na viewport visual real de forma absoluta —
+        // 100dvh ainda pode descasar momentaneamente do espaço físico
+        // disponível durante o recálculo dinâmico da barra de endereço do
+        // Safari no meio de um gesto de scroll, o que deixava a borda do
+        // app "escorregar" e revelar o fundo do body por trás durante o
+        // bounce elástico.
+        position: 'fixed',
+        inset: 0,
+        maxWidth: 480,
+        margin: '0 auto',
+        overflow: 'hidden',
+      }}
+    >
       <HashRouter>
         <Shell />
       </HashRouter>

@@ -60,7 +60,11 @@ select {
 }
 
 #root {
-  background: #e7e2da;
+  /* Branco em vez do bege original: quando o overscroll ainda vaza por trás
+     da status bar/tab bar (ver comentário abaixo — a causa raiz não foi
+     totalmente eliminada), branco confunde muito menos com o fundo real das
+     telas do que o bege se destacava. */
+  background: #fff;
 }
 
 body,

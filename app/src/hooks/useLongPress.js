@@ -43,6 +43,10 @@ export function useLongPress(onLongPress) {
     // expomos `didLongPress()` pra o consumidor checar antes de agir no onClick.
     didLongPress: () => firedRef.current,
     handlers: {
+      // touch-action: 'none' no elemento (ver RecommendationCard) já impede
+      // o navegador de interpretar o toque como início de scroll — sem isso,
+      // o browser frequentemente cancela o gesto antes dos LONG_PRESS_MS
+      // passarem, tentando decidir "é toque ou é scroll?".
       onTouchStart: (e) => start(e.touches[0].clientX, e.touches[0].clientY),
       onTouchMove: (e) => move(e.touches[0].clientX, e.touches[0].clientY),
       onTouchEnd: clear,

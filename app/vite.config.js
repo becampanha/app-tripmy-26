@@ -1,8 +1,30 @@
+import { execSync } from 'node:child_process';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// Identificador de build para a tela "Mais" (hash curto do commit + hora do
+// build) — gerado sozinho a cada deploy, nunca editado manualmente. Usa as
+// env vars que a Vercel já injeta no ambiente de build; cai pro git local
+// (via execSync) só em dev, quando essas vars não existem.
+function resolveCommitSha() {
+  if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7);
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim();
+  } catch {
+    return 'dev';
+  }
+}
+
+const BUILD_INFO = {
+  commit: resolveCommitSha(),
+  builtAt: new Date().toISOString(),
+};
+
 export default defineConfig({
+  define: {
+    __BUILD_INFO__: JSON.stringify(BUILD_INFO),
+  },
   plugins: [
     react(),
     VitePWA({

@@ -6,6 +6,7 @@ import PlacesScreen from './components/PlacesScreen.jsx';
 import PlaceDetailScreen from './components/PlaceDetailScreen.jsx';
 import AttractionsScreen from './components/AttractionsScreen.jsx';
 import RecommendationsScreen from './components/RecommendationsScreen.jsx';
+import MoreScreen from './components/MoreScreen.jsx';
 import DesignSystemScreen from './components/DesignSystemScreen.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import ToastHost from './components/ToastHost.jsx';
@@ -101,6 +102,7 @@ function Shell() {
             <Route path="/lugares/novo" element={<PlaceDetailScreen />} />
             <Route path="/lugares/:id" element={<PlaceDetailScreen />} />
             <Route path="/atracoes" element={<AttractionsScreen />} />
+            <Route path="/mais" element={<MoreScreen />} />
             {/* Rota oculta de referência interna — não aparece na tab bar,
                 só acessível digitando /design-system na URL. */}
             <Route path="/design-system" element={<DesignSystemScreen />} />

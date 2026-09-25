@@ -1,5 +1,4 @@
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
-import { useLongPress } from '../hooks/useLongPress.js';
 import { color, radius, space } from './tokens.js';
 
 function formatRecommendationDate(iso) {
@@ -21,13 +20,10 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
     formatRecommendationDate(recommendation.createdAt),
   ].filter(Boolean).join(' · ');
   // Clique normal (em qualquer parte do card, inclusive a foto) navega para
-  // o lugar. Pressionar e segurar especificamente NA FOTO abre ela em
-  // fullscreen (estilo Peek & Pop do iOS) — por isso a foto tem seu próprio
-  // onClick que intercepta o clique quando o long-press já disparou.
+  // o lugar. A foto usa o menu de contexto NATIVO do sistema ao segurar o
+  // dedo (Salvar Imagem, Copiar) — não um long-press customizado; por isso
+  // fica de fora do touch-callout:none global (ver classe allow-native-touch).
   const cardClickable = !!onClick;
-  const photoLongPress = useLongPress(() => {
-    if (recommendation.photo && onOpenPhoto) onOpenPhoto();
-  });
 
   return (
     <div
@@ -85,10 +81,9 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
 
       {recommendation.photo && (
         <div
-          {...photoLongPress.handlers}
+          className="allow-native-touch"
           onClick={(e) => {
             e.stopPropagation();
-            if (photoLongPress.didLongPress()) return;
             if (onOpenPhoto) onOpenPhoto();
             else if (onClick) onClick();
           }}
@@ -102,10 +97,6 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
             overflow: 'hidden',
             background: color.imagePlaceholder,
             cursor: 'pointer',
-            WebkitTouchCallout: 'none',
-            WebkitUserSelect: 'none',
-            userSelect: 'none',
-            touchAction: 'pan-y',
           }}
         >
           <img

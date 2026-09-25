@@ -7,7 +7,6 @@ import { CloseIcon } from '@solar-icons/react/linear/close';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import { ClockCircleIcon } from '@solar-icons/react/bold/clock-circle';
 import { FieldLabel, inputStyle, color, radius, type } from '../design-system/index.js';
-import { useLongPress } from '../hooks/useLongPress.js';
 
 export default function ActivityItem({
   activity,
@@ -20,16 +19,12 @@ export default function ActivityItem({
   onDelete,
   onMoveUp,
   onMoveDown,
-  onOpenPhoto,
   isFirst,
   isLast,
 }) {
   const { place } = activity;
   const navigate = useNavigate();
   const clickable = !editing && !!place;
-  const photoLongPress = useLongPress(() => {
-    if (place?.photo && onOpenPhoto) onOpenPhoto();
-  });
 
   return (
     <div
@@ -196,13 +191,7 @@ export default function ActivityItem({
 
             {place && (
               <div
-                {...(place.photo ? photoLongPress.handlers : {})}
-                onClick={(e) => {
-                  if (!place.photo) return;
-                  e.stopPropagation();
-                  if (photoLongPress.didLongPress()) return;
-                  navigate(`/lugares/${place.id}`);
-                }}
+                className={place.photo ? 'allow-native-touch' : undefined}
                 style={{
                   position: 'relative',
                   flex: 'none',
@@ -212,11 +201,6 @@ export default function ActivityItem({
                   borderRadius: radius.chip,
                   overflow: 'hidden',
                   background: color.imagePlaceholder,
-                  cursor: place.photo ? 'pointer' : 'default',
-                  WebkitTouchCallout: 'none',
-                  WebkitUserSelect: 'none',
-                  userSelect: 'none',
-                  touchAction: 'pan-y',
                 }}
               >
                 {place.photo && (

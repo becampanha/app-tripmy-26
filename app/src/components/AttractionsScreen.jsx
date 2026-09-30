@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence } from 'motion/react';
 import AttractionCard from './AttractionCard.jsx';
 import { fetchAttractions } from '../api/itineraryApi.js';
 import { readCache, writeCache } from '../hooks/persistentCache.js';
@@ -113,9 +114,11 @@ export default function AttractionsScreen() {
         )}
       </div>
 
-      {mapOpen && park && (
-        <ParkMap park={park} onClose={() => setMapOpen(false)} getLiveQueue={getLiveQueue} />
-      )}
+      <AnimatePresence>
+        {mapOpen && park && (
+          <ParkMap key="park-map" park={park} onClose={() => setMapOpen(false)} getLiveQueue={getLiveQueue} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

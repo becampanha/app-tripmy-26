@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import ScheduleScreen from './components/ScheduleScreen.jsx';
+import AllDaysScreen from './components/AllDaysScreen.jsx';
 import PlacesScreen from './components/PlacesScreen.jsx';
 import PlaceDetailScreen from './components/PlaceDetailScreen.jsx';
 import AttractionsScreen from './components/AttractionsScreen.jsx';
@@ -12,7 +13,7 @@ import BottomTabBar from './components/BottomTabBar.jsx';
 import ToastHost from './components/ToastHost.jsx';
 import AddToHomeScreenPrompt, { wasAddToHomeScreenDismissed } from './components/AddToHomeScreenPrompt.jsx';
 import WelcomeScreen, { wasWelcomeScreenSeen } from './components/WelcomeScreen.jsx';
-import { useIsEditingAnywhere } from './hooks/useEditingState.js';
+import { useIsEditingAnywhere, useIsFullscreenOverlayOpen } from './hooks/useEditingState.js';
 import { isIOS, isStandalone } from './hooks/useIsStandalone.js';
 
 // Hierarquia simples de navegação: Roteiro e Lugares são telas "raiz" das
@@ -31,7 +32,7 @@ import { isIOS, isStandalone } from './hooks/useIsStandalone.js';
 // global recalculado a cada render do Shell, que seria idêntico para as duas
 // instâncias simultâneas durante a transição.
 function depthOf(pathname) {
-  return pathname.startsWith('/lugares/') ? 1 : 0;
+  return pathname.startsWith('/lugares/') || pathname === '/roteiro/dias' ? 1 : 0;
 }
 
 const TRANSITION = { type: 'tween', ease: [0.32, 0.72, 0, 1], duration: 0.32 };
@@ -104,6 +105,7 @@ function Shell() {
   // própria EditActionBar (Cancelar/Salvar) no lugar da tab bar — ver
   // useEditingState.js.
   const isEditing = useIsEditingAnywhere();
+  const isOverlayOpen = useIsFullscreenOverlayOpen();
 
   return (
     <>
@@ -111,6 +113,7 @@ function Shell() {
         <Screen pathname={location.pathname} depth={currentDepth} direction={direction}>
           <Routes location={location}>
             <Route path="/" element={<ScheduleScreen />} />
+            <Route path="/roteiro/dias" element={<AllDaysScreen />} />
             <Route path="/recomendacoes" element={<RecommendationsScreen />} />
             <Route path="/lugares" element={<PlacesScreen />} />
             <Route path="/lugares/novo" element={<PlaceDetailScreen />} />
@@ -123,7 +126,11 @@ function Shell() {
           </Routes>
         </Screen>
       </AnimatePresence>
-      {currentDepth === 0 && !isEditing && location.pathname !== '/design-system' && <BottomTabBar />}
+      <AnimatePresence>
+        {currentDepth === 0 && !isEditing && !isOverlayOpen && location.pathname !== '/design-system' && (
+          <BottomTabBar key="bottom-tab-bar" />
+        )}
+      </AnimatePresence>
     </>
   );
 }
@@ -155,10 +162,14 @@ export default function App() {
         <Shell />
       </HashRouter>
       <ToastHost />
-      {!showWelcome && showAddToHomeScreen && (
-        <AddToHomeScreenPrompt onClose={() => setShowAddToHomeScreen(false)} />
-      )}
-      {showWelcome && <WelcomeScreen onClose={() => setShowWelcome(false)} />}
+      <AnimatePresence>
+        {!showWelcome && showAddToHomeScreen && (
+          <AddToHomeScreenPrompt key="add-to-home" onClose={() => setShowAddToHomeScreen(false)} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showWelcome && <WelcomeScreen key="welcome" onClose={() => setShowWelcome(false)} />}
+      </AnimatePresence>
     </div>
   );
 }

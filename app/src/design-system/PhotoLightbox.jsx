@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { shellMaxWidth } from './tokens.js';
 
@@ -73,9 +74,23 @@ export default function PhotoLightbox({ photos, photoIndex, onIndexChange, onClo
         width: '100%',
         maxWidth: shellMaxWidth,
         zIndex: 50,
-        background: `rgba(0,0,0,${Math.max(0.4, 1 - dragY / 300)})`,
+        overflow: 'hidden',
       }}
     >
+      {/* Wrapper motion só pra entrada/saída (fade) — o fundo em si continua
+          sendo controlado ao vivo pelo gesto de arrasto vertical (dragY),
+          não pela animação do Framer, daí ficar num elemento separado. */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: `rgba(0,0,0,${Math.max(0.4, 1 - dragY / 300)})`,
+        }}
+      />
       <div
         ref={scrollerRef}
         onScroll={handleScroll}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { WELCOME_SLIDES } from '../data/welcomeSlides.js';
+import { useHidesTabBar } from '../hooks/useEditingState.js';
 import { color, shellMaxWidth, spacing, type } from '../design-system/index.js';
 
 const DISMISSED_KEY = 'welcomeScreenSeen';
@@ -33,6 +34,7 @@ function markWelcomeScreenSeen() {
 // Embla — não dá pra confiar só no z-index quando dois blocos empilhados
 // têm position/overflow diferentes (foi o que bugava o ícone antes).
 export default function WelcomeScreen({ onClose }) {
+  useHidesTabBar(true);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
   const [index, setIndex] = useState(0);
   const isLast = index === WELCOME_SLIDES.length - 1;
@@ -70,11 +72,26 @@ export default function WelcomeScreen({ onClose }) {
         width: '100%',
         maxWidth: shellMaxWidth,
         zIndex: 70,
-        background: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
+        overflow: 'hidden',
       }}
     >
+      {/* Wrapper motion separado do posicionamento externo (que já usa
+          transform: translateX(-50%) pra centralizar) — animar aqui em vez
+          de na div de fora evita que o Framer Motion sobrescreva esse
+          transform com o seu próprio, o que quebraria a centralização. */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.98 }}
+        transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: '#fff',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
       <div
         style={{
           height: PHOTO_HEIGHT,
@@ -236,6 +253,7 @@ export default function WelcomeScreen({ onClose }) {
           {isLast ? 'Começar' : 'Próximo'}
         </div>
       </div>
+      </motion.div>
     </div>
   );
 }

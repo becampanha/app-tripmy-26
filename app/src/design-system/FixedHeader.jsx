@@ -8,7 +8,7 @@ const REVEAL_THRESHOLD = 8; // px de scroll antes da barra fixa aparecer
 // telas "raiz" (Roteiro, Dicas, Lugares, Atrações, Mais): o título grande
 // normal continua no topo do conteúdo, esta barra é o que aparece por cima
 // dele conforme a página rola.
-export default function FixedHeader({ scrollY, title, right }) {
+export default function FixedHeader({ scrollY, title, left, right }) {
   const visible = scrollY > REVEAL_THRESHOLD;
 
   return (
@@ -34,8 +34,11 @@ export default function FixedHeader({ scrollY, title, right }) {
         gap: spacing.gapMd,
       }}
     >
-      <div style={{ ...type.itemTitle, color: color.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {title}
+      <div style={{ display: 'flex', alignItems: 'center', gap: spacing.gapMd, minWidth: 0 }}>
+        {left && <div style={{ flex: 'none' }}>{left}</div>}
+        <div style={{ ...type.itemTitle, color: color.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {title}
+        </div>
       </div>
       {right && <div style={{ display: 'flex', alignItems: 'center', gap: spacing.gapMd, flex: 'none' }}>{right}</div>}
     </div>

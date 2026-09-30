@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence } from 'motion/react';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { AddIcon } from '@solar-icons/react/linear/add';
+import { ListIcon } from '@solar-icons/react/linear/list';
 import DayTabs from './DayTabs.jsx';
 import ActivityItem from './ActivityItem.jsx';
 import DistanceBetween from './DistanceBetween.jsx';
@@ -11,6 +14,7 @@ import { useDayWeather } from '../hooks/useDayWeather.js';
 import { setGlobalEditing } from '../hooks/useEditingState.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { useScrollY } from '../hooks/useScrollY.js';
+import { getScheduleScreenState, saveScheduleScreenState } from '../hooks/useScheduleScreenState.js';
 import { createActivity, updateActivity, deleteActivity, reorderActivities, updateDay } from '../api/itineraryApi.js';
 import { weatherEmoji } from '../data/weatherCodes.js';
 import { FixedHeader, Skeleton, color, radius, space, spacing, type } from '../design-system/index.js';
@@ -43,12 +47,47 @@ function ActivitySkeleton() {
 }
 
 export default function ScheduleScreen() {
-  const [selectedDay, setSelectedDay] = useState(1);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const savedState = useRef(getScheduleScreenState()).current;
+  // Prioridade: veio de "Resumo do Roteiro" com um dia específico (state da
+  // navegação) > último dia visitado nesta sessão (savedState) > dia 1.
+  const [selectedDay, setSelectedDay] = useState(
+    () => location.state?.selectedDay ?? savedState.selectedDay ?? 1
+  );
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectorFor, setSelectorFor] = useState(null); // activity id (ou id negativo temporário de item recém-criado)
   const { days, loading, reload } = useItinerary();
   const { scrollY, anchorRef } = useScrollY();
+
+  // Salva o dia selecionado a cada mudança, pra sobreviver à desmontagem ao
+  // navegar para outra tela e voltar (mesmo padrão de usePlacesScreenState).
+  useEffect(() => {
+    saveScheduleScreenState({ selectedDay });
+  }, [selectedDay]);
+
+  // Restaura a posição de scroll salva assim que o roteiro carrega. Quem
+  // rola de fato é o motion.div ancestral (overflowY: auto, ver App.jsx).
+  useLayoutEffect(() => {
+    if (loading) return;
+    const scroller = anchorRef.current?.closest('[data-scroll-root]');
+    if (scroller && savedState.scrollTop) {
+      scroller.scrollTop = savedState.scrollTop;
+    }
+  }, [loading]);
+
+  // Salva a posição de scroll continuamente (não só ao clicar num botão
+  // específico) — diferente de Lugares, a navegação pra fora do Roteiro
+  // acontece de várias formas (trocar de aba, abrir Resumo do Roteiro, abrir
+  // um lugar vinculado a uma atividade), não dá pra interceptar uma por uma.
+  useEffect(() => {
+    const scroller = anchorRef.current?.closest('[data-scroll-root]');
+    if (!scroller) return;
+    const onScroll = () => saveScheduleScreenState({ scrollTop: scroller.scrollTop });
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    return () => scroller.removeEventListener('scroll', onScroll);
+  }, []);
   // Enquanto editing=true, toda mutação (digitar, mover, excluir, adicionar,
   // vincular lugar) só mexe neste estado local — nada de chamada de rede a
   // cada tecla. As chamadas de API só acontecem de uma vez, em lote, quando
@@ -203,21 +242,38 @@ export default function ScheduleScreen() {
         title="Roteiro"
         right={
           !editing && (
-            <div
-              onClick={startEditing}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 11,
-                background: color.surfaceMuted,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <PenIcon size={15} color={color.dark} />
-            </div>
+            <>
+              <div
+                onClick={() => navigate('/roteiro/dias')}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 11,
+                  background: color.surfaceMuted,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <ListIcon size={15} color={color.dark} />
+              </div>
+              <div
+                onClick={startEditing}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 11,
+                  background: color.surfaceMuted,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <PenIcon size={15} color={color.dark} />
+              </div>
+            </>
           )
         }
       />
@@ -228,21 +284,39 @@ export default function ScheduleScreen() {
           </div>
 
           {!editing && (
-            <div
-              onClick={startEditing}
-              style={{
-                flex: 'none',
-                width: 38,
-                height: 38,
-                borderRadius: 13,
-                background: color.surfaceMuted,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <PenIcon size={17} color={color.dark} />
+            <div style={{ display: 'flex', gap: spacing.gapMd, flex: 'none' }}>
+              <div
+                onClick={() => navigate('/roteiro/dias')}
+                style={{
+                  flex: 'none',
+                  width: 38,
+                  height: 38,
+                  borderRadius: 13,
+                  background: color.surfaceMuted,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <ListIcon size={17} color={color.dark} />
+              </div>
+              <div
+                onClick={startEditing}
+                style={{
+                  flex: 'none',
+                  width: 38,
+                  height: 38,
+                  borderRadius: 13,
+                  background: color.surfaceMuted,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <PenIcon size={17} color={color.dark} />
+              </div>
             </div>
           )}
         </div>
@@ -355,16 +429,21 @@ export default function ScheduleScreen() {
         )}
       </div>
 
-      {selectorFor && (
-        <PlaceSelectorModal
-          onSelect={handleSelectPlace}
-          onClose={() => setSelectorFor(null)}
-        />
-      )}
+      <AnimatePresence>
+        {selectorFor && (
+          <PlaceSelectorModal
+            key="place-selector"
+            onSelect={handleSelectPlace}
+            onClose={() => setSelectorFor(null)}
+          />
+        )}
+      </AnimatePresence>
 
-      {editing && (
-        <EditActionBar onCancel={handleCancel} onSave={handleSave} saving={saving} />
-      )}
+      <AnimatePresence>
+        {editing && (
+          <EditActionBar key="edit-action-bar" onCancel={handleCancel} onSave={handleSave} saving={saving} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

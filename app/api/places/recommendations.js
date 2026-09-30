@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
     if (!placeId) {
       const rows = await sql.query(
-        `SELECT r.*, p.name AS place_name, p.photo AS place_photo, p.tag AS place_tag, p.address AS place_address
+        `SELECT r.*, p.name AS place_name, p.photo AS place_photo, p.tag AS place_tag, p.address AS place_address, p.subcategory AS place_subcategory
          FROM place_recommendations r
          JOIN places p ON p.id = r.place_id
          ORDER BY r.created_at DESC`
@@ -35,6 +35,7 @@ export default async function handler(req, res) {
           photo: r.place_photo,
           tag: r.place_tag,
           address: r.place_address,
+          subcategory: r.place_subcategory,
         },
       }));
 

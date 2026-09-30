@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useEmblaCarousel from 'embla-carousel-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { CloseIcon } from '@solar-icons/react/linear/close';
@@ -293,9 +294,16 @@ function MapFullscreen({ coords, name, address, photo, onClose }) {
         width: '100%',
         maxWidth: 480,
         zIndex: 50,
-        background: '#eee9df',
+        overflow: 'hidden',
       }}
     >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.98 }}
+        transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+        style={{ position: 'absolute', inset: 0, background: '#eee9df' }}
+      >
       <iframe
         title="Mapa"
         src={`https://www.google.com/maps/embed/v1/view?key=${import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY}&center=${coords.lat},${coords.lng}&zoom=16`}
@@ -354,6 +362,7 @@ function MapFullscreen({ coords, name, address, photo, onClose }) {
           </div>
         </div>
       </div>
+      </motion.div>
     </div>
   );
 }
@@ -1406,44 +1415,58 @@ export default function PlaceDetailScreen() {
         </div>
       </div>
 
-      {lightboxOpen && (
-        <PhotoLightbox
-          photos={allPhotos}
-          photoIndex={photoIndex}
-          onIndexChange={setPhotoIndex}
-          onClose={() => setLightboxOpen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {lightboxOpen && (
+          <PhotoLightbox
+            key="lightbox-main"
+            photos={allPhotos}
+            photoIndex={photoIndex}
+            onIndexChange={setPhotoIndex}
+            onClose={() => setLightboxOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
-      {mapFullscreen && coords && (
-        <MapFullscreen
-          coords={coords}
-          name={place?.name || draft?.name}
-          address={place?.address || draft?.address}
-          photo={facadePhoto}
-          onClose={() => setMapFullscreen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {mapFullscreen && coords && (
+          <MapFullscreen
+            key="map-fullscreen"
+            coords={coords}
+            name={place?.name || draft?.name}
+            address={place?.address || draft?.address}
+            photo={facadePhoto}
+            onClose={() => setMapFullscreen(false)}
+          />
+        )}
+      </AnimatePresence>
 
-      {recommendationModalOpen && (
-        <RecommendationModal
-          onSubmit={handlePublishRecommendation}
-          onClose={() => setRecommendationModalOpen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {recommendationModalOpen && (
+          <RecommendationModal
+            key="recommendation-modal"
+            onSubmit={handlePublishRecommendation}
+            onClose={() => setRecommendationModalOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
-      {openRecommendationPhoto && (
-        <PhotoLightbox
-          photos={[openRecommendationPhoto]}
-          photoIndex={0}
-          onIndexChange={() => {}}
-          onClose={() => setOpenRecommendationPhoto(null)}
-        />
-      )}
+      <AnimatePresence>
+        {openRecommendationPhoto && (
+          <PhotoLightbox
+            key="lightbox-recommendation"
+            photos={[openRecommendationPhoto]}
+            photoIndex={0}
+            onIndexChange={() => {}}
+            onClose={() => setOpenRecommendationPhoto(null)}
+          />
+        )}
+      </AnimatePresence>
 
-      {editing && (
-        <EditActionBar onCancel={handleCancel} onSave={handleSave} saving={saving} />
-      )}
+      <AnimatePresence>
+        {editing && (
+          <EditActionBar key="edit-action-bar" onCancel={handleCancel} onSave={handleSave} saving={saving} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

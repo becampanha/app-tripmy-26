@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { motion } from 'motion/react';
 import { SquareTopUpIcon } from '@solar-icons/react/bold/square-top-up';
 import { AddSquareIcon } from '@solar-icons/react/bold/add-square';
 import { color, radius, spacing, type } from '../design-system/index.js';
@@ -27,16 +27,17 @@ function dismiss() {
 // Aparece uma única vez (ver wasAddToHomeScreenDismissed) — depois de
 // pulada ou concluída, não volta a incomodar nas próximas visitas.
 export default function AddToHomeScreenPrompt({ onClose }) {
-  const [closing, setClosing] = useState(false);
-
   const handleClose = () => {
     dismiss();
-    setClosing(true);
-    setTimeout(onClose, 200);
+    onClose();
   };
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       style={{
         position: 'fixed',
         inset: 0,
@@ -44,8 +45,6 @@ export default function AddToHomeScreenPrompt({ onClose }) {
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
-        opacity: closing ? 0 : 1,
-        transition: 'opacity 0.2s ease',
       }}
     >
       <div
@@ -53,7 +52,11 @@ export default function AddToHomeScreenPrompt({ onClose }) {
         style={{ position: 'absolute', inset: 0, background: 'rgba(28,26,23,0.55)' }}
       />
 
-      <div
+      <motion.div
+        initial={{ y: 24 }}
+        animate={{ y: 0 }}
+        exit={{ y: 24 }}
+        transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
         style={{
           position: 'relative',
           width: '100%',
@@ -63,8 +66,6 @@ export default function AddToHomeScreenPrompt({ onClose }) {
           borderTopRightRadius: radius.sheetTop,
           boxSizing: 'border-box',
           padding: `${spacing.screenGutter}px ${spacing.screenGutter}px calc(${spacing.screenGutter}px + env(safe-area-inset-bottom))`,
-          transform: closing ? 'translateY(12px)' : 'translateY(0)',
-          transition: 'transform 0.2s ease',
         }}
       >
         <div
@@ -148,7 +149,7 @@ export default function AddToHomeScreenPrompt({ onClose }) {
         >
           Continuar no navegador
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

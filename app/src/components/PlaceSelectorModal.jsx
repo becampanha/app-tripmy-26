@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'motion/react';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import PlaceCard from './PlaceCard.jsx';
 import { fetchPlaces } from '../api/itineraryApi.js';
@@ -98,11 +99,27 @@ export default function PlaceSelectorModal({ onSelect, onClose }) {
         width: '100%',
         maxWidth: shellMaxWidth,
         zIndex: 20,
-        background: color.bg,
-        overflowY: 'auto',
-        boxSizing: 'border-box',
+        overflow: 'hidden',
       }}
     >
+      {/* Wrapper motion separado da div de posicionamento (transform:
+          translateX(-50%) pra centralizar) — mesmo motivo do WelcomeScreen
+          e ParkMap. Slide da direita, consistente com o padrão de telas
+          empilhadas já usado em App.jsx (é "abrir uma tela nova", não um
+          popup, por isso slide em vez de fade). */}
+      <motion.div
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'tween', ease: [0.32, 0.72, 0, 1], duration: 0.28 }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: color.bg,
+          overflowY: 'auto',
+          boxSizing: 'border-box',
+        }}
+      >
       <div style={{ padding: `${space.screenGutter}px ${space.screenGutter}px 0` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: 20, fontWeight: 800, color: color.dark }}>Selecionar lugar</div>
@@ -180,6 +197,7 @@ export default function PlaceSelectorModal({ onSelect, onClose }) {
           </div>
         )}
       </div>
+      </motion.div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'motion/react';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimalistic';
 import { FieldLabel, inputStyle } from '../design-system/index.js';
@@ -48,12 +49,20 @@ export default function RecommendationModal({ onSubmit, onClose }) {
         justifyContent: 'center',
       }}
     >
-      <div
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
         onClick={onClose}
         style={{ position: 'absolute', inset: 0, background: 'rgba(28,26,23,0.5)' }}
       />
 
-      <div
+      <motion.div
+        initial={{ y: 24 }}
+        animate={{ y: 0 }}
+        exit={{ y: 24 }}
+        transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
         style={{
           position: 'relative',
           width: '100%',
@@ -178,7 +187,7 @@ export default function RecommendationModal({ onSubmit, onClose }) {
         >
           {publishing ? 'Publicando...' : 'Publicar'}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

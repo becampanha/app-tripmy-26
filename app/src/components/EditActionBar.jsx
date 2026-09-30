@@ -1,3 +1,4 @@
+import { motion } from 'motion/react';
 import { CheckIcon } from '@solar-icons/react/bold/check';
 import { FloatingBar, color, radius } from '../design-system/index.js';
 
@@ -6,6 +7,12 @@ import { FloatingBar, color, radius } from '../design-system/index.js';
 // (botão verde com check) no lugar da navegação entre abas.
 export default function EditActionBar({ onCancel, onSave, saving }) {
   return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 12 }}
+      transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+    >
     <FloatingBar padding="8px 8px 8px 20px" style={{ justifyContent: 'space-between' }}>
       <div
         onMouseDown={(e) => e.preventDefault()}
@@ -39,5 +46,6 @@ export default function EditActionBar({ onCancel, onSave, saving }) {
         </span>
       </div>
     </FloatingBar>
+    </motion.div>
   );
 }

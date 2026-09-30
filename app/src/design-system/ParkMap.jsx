@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { RouteIcon } from '@solar-icons/react/bold/route';
 import AttractionCard from '../components/AttractionCard.jsx';
 import { useAttractionLocations } from '../hooks/useAttractionLocations.js';
+import { useHidesTabBar } from '../hooks/useEditingState.js';
 import { color, shellMaxWidth } from './tokens.js';
 
 // Mapa fullscreen de um parque com um marcador (balão com tempo de fila,
@@ -38,6 +40,7 @@ function pinHtml({ label, required, isSelected }) {
 }
 
 export default function ParkMap({ park, onClose, getLiveQueue }) {
+  useHidesTabBar(true);
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef(new Map());
@@ -208,9 +211,20 @@ export default function ParkMap({ park, onClose, getLiveQueue }) {
         width: '100%',
         maxWidth: shellMaxWidth,
         zIndex: 40,
-        background: color.surfaceMuted,
+        overflow: 'hidden',
       }}
     >
+      {/* Wrapper motion separado da div de posicionamento externo (que usa
+          transform: translateX(-50%) pra centralizar) — mesma razão do
+          WelcomeScreen: animar aqui evita que o Framer sobrescreva esse
+          transform com o seu próprio. */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.98 }}
+        transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+        style={{ position: 'absolute', inset: 0, background: color.surfaceMuted }}
+      >
       <div ref={containerRef} style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
 
       {(loading || !leaflet) && (
@@ -323,40 +337,48 @@ export default function ParkMap({ park, onClose, getLiveQueue }) {
         </div>
       )}
 
-      {selected && (
-        <div
-          style={{
-            position: 'absolute',
-            left: 14,
-            right: 14,
-            bottom: 14,
-            zIndex: 10,
-          }}
-        >
-          <div style={{ position: 'relative' }}>
-            <AttractionCard attraction={selected} liveQueue={getLiveQueue?.(selected.name)} />
-            <div
-              onClick={() => setSelected(null)}
-              style={{
-                position: 'absolute',
-                top: -10,
-                right: -10,
-                width: 28,
-                height: 28,
-                borderRadius: 14,
-                background: color.dark,
-                boxShadow: '0 2px 8px rgba(28,26,23,0.35)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <CloseIcon size={15} color="#fff" />
+      <AnimatePresence>
+        {selected && (
+          <motion.div
+            key={selected.id}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+            style={{
+              position: 'absolute',
+              left: 14,
+              right: 14,
+              bottom: 14,
+              zIndex: 10,
+            }}
+          >
+            <div style={{ position: 'relative' }}>
+              <AttractionCard attraction={selected} liveQueue={getLiveQueue?.(selected.name)} />
+              <div
+                onClick={() => setSelected(null)}
+                style={{
+                  position: 'absolute',
+                  top: -10,
+                  right: -10,
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  background: color.dark,
+                  boxShadow: '0 2px 8px rgba(28,26,23,0.35)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <CloseIcon size={15} color="#fff" />
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      </motion.div>
     </div>
   );
 }

@@ -23,12 +23,25 @@ function cacheSet(key, value) {
 // Calcula distância (km) e tempo de carro (min) entre dois lugares, a partir
 // das coordenadas já resolvidas de cada um (ver useGeocode). Retorna null
 // enquanto carrega ou se algum dos dois lugares não tiver coordenadas ainda.
+function readCachedDistance(originId, destId) {
+  if (!originId || !destId) return null;
+  const cached = cacheGet(`distance:${originId}:${destId}`);
+  if (cached && typeof cached.distanceKm === 'number' && typeof cached.durationMin === 'number') return cached;
+  return null;
+}
+
 export function useDistance(originId, originCoords, destId, destCoords) {
-  const [result, setResult] = useState(null);
+  // Lazy initializer: lê o cache de forma síncrona antes da primeira
+  // pintura — sem isso, DistanceBetween simplesmente não renderizava nada
+  // (return null) por um instante em toda montagem, mesmo com a distância
+  // já calculada de uma visita anterior (cache é permanente, sem TTL).
+  const [result, setResult] = useState(() => readCachedDistance(originId, destId));
 
   useEffect(() => {
-    setResult(null);
-    if (!originId || !destId || !originCoords || !destCoords) return;
+    if (!originId || !destId || !originCoords || !destCoords) {
+      setResult(null);
+      return;
+    }
 
     const cacheKey = `distance:${originId}:${destId}`;
     const cached = cacheGet(cacheKey);
@@ -38,6 +51,7 @@ export function useDistance(originId, originCoords, destId, destCoords) {
       setResult(cached);
       return;
     }
+    setResult(null);
 
     let cancelled = false;
     const params = new URLSearchParams({

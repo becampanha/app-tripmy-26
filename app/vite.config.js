@@ -63,9 +63,9 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'Cronograma de Viagem',
-        short_name: 'Cronograma',
-        description: 'Cronograma de atividades do dia para a viagem a Orlando',
+        name: 'Family Trip',
+        short_name: 'Family Trip',
+        description: 'Roteiro, dicas, lugares e atrações da viagem em família a Orlando.',
         start_url: '/',
         display: 'standalone',
         background_color: '#151210',

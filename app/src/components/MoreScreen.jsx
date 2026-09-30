@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { RefreshIcon } from '@solar-icons/react/bold/refresh';
+import { PlayCircleIcon } from '@solar-icons/react/bold/play-circle';
 import { useScrollY } from '../hooks/useScrollY.js';
+import WelcomeScreen from './WelcomeScreen.jsx';
 import { FixedHeader, color, spacing, type } from '../design-system/index.js';
 
 function formatBuildDate(iso) {
@@ -29,6 +31,7 @@ async function hardRefresh() {
 
 export default function MoreScreen() {
   const [refreshing, setRefreshing] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
   const { scrollY, anchorRef } = useScrollY();
 
   const handleRefresh = async () => {
@@ -92,7 +95,30 @@ export default function MoreScreen() {
           Limpa o cache local e recarrega o app do zero — use se o app parecer
           desatualizado depois de uma publicação nova.
         </div>
+
+        <div
+          onClick={() => setShowWelcome(true)}
+          style={{
+            marginTop: spacing.screenGutter,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            padding: spacing.cardPadding,
+            borderRadius: 16,
+            background: color.surfaceMuted,
+            color: color.dark,
+            fontSize: 14.5,
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          <PlayCircleIcon size={17} color={color.dark} />
+          Ver tela de boas-vindas
+        </div>
       </div>
+
+      {showWelcome && <WelcomeScreen onClose={() => setShowWelcome(false)} />}
     </div>
   );
 }

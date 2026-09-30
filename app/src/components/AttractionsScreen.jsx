@@ -7,12 +7,15 @@ import { useScrollY } from '../hooks/useScrollY.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
 import { FixedHeader, HScrollTabs, ParkMap, ParkStrategyCard, SearchInput, SectionHeader, Skeleton, Toggle, cardPhotoHeight, color, radius, space, spacing, type } from '../design-system/index.js';
 
+// Espelho em memória de módulo do cache — evita reler e reparsear o
+// localStorage a cada render (mesmo padrão de useItinerary.js).
+let cachedParks = readCache('attractions');
+
 // Mesmo padrão visual/funcional da tela de Lugares: abas com scroll
 // horizontal (aqui, um parque por aba) + seções sticky por área + busca.
 export default function AttractionsScreen() {
-  const cached = readCache('attractions');
-  const [parks, setParks] = useState(cached || []);
-  const [loading, setLoading] = useState(cached === null);
+  const [parks, setParks] = useState(cachedParks || []);
+  const [loading, setLoading] = useState(cachedParks === null);
   const [parkIndex, setParkIndex] = useState(0);
   const [search, setSearch] = useState('');
   const [onlyInItinerary, setOnlyInItinerary] = useState(false);
@@ -23,8 +26,9 @@ export default function AttractionsScreen() {
   useEffect(() => {
     fetchAttractions()
       .then((data) => {
-        setParks(data);
+        cachedParks = data;
         writeCache('attractions', data);
+        setParks(data);
       })
       .finally(() => setLoading(false));
   }, []);

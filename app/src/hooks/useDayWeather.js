@@ -87,10 +87,28 @@ function firstAddress(day) {
   return null;
 }
 
+// Só olha o que já está em cache, sem disparar fetch nenhum — usado pra
+// popular o estado inicial de forma síncrona (sem isso, toda montagem do
+// hook mostrava o skeleton do clima por um instante mesmo já tendo o dado
+// salvo de uma visita anterior dentro do TTL de 6h).
+function readCachedWeatherByDay(days) {
+  if (!days || days.length === 0) return {};
+  const isoDates = resolveYear(days.map((d) => d.date));
+  const result = {};
+  days.forEach((day, i) => {
+    const address = firstAddress(day);
+    const coords = address ? cacheGet(`geo:${address}`) : ORLANDO;
+    if (!coords) return;
+    const weather = cacheGet(`weather:${isoDates[i]}:${coords.lat.toFixed(2)},${coords.lng.toFixed(2)}`);
+    if (weather) result[day.id] = weather;
+  });
+  return result;
+}
+
 // Retorna { [dayId]: { max, min, code, isHistoricalAverage } | undefined } —
 // undefined enquanto carrega, objeto quando resolvido.
 export function useDayWeather(days) {
-  const [weatherByDay, setWeatherByDay] = useState({});
+  const [weatherByDay, setWeatherByDay] = useState(() => readCachedWeatherByDay(days));
 
   useEffect(() => {
     if (!days || days.length === 0) return;
@@ -98,18 +116,17 @@ export function useDayWeather(days) {
     const isoDates = resolveYear(days.map((d) => d.date));
 
     let cancelled = false;
-    (async () => {
-      for (let i = 0; i < days.length; i++) {
-        if (cancelled) return;
-        const day = days[i];
-        const address = firstAddress(day);
-        const coords = await resolveCoords(address);
-        const weather = await resolveWeather(isoDates[i], coords);
-        if (!cancelled) {
-          setWeatherByDay((prev) => ({ ...prev, [day.id]: weather }));
-        }
+    // Um dia não depende do outro — resolvidos em paralelo (antes era
+    // sequencial, então o clima do dia 10 só aparecia depois do 1º ao 9º
+    // terminarem, mesmo todos já estando em cache).
+    days.forEach(async (day, i) => {
+      const address = firstAddress(day);
+      const coords = await resolveCoords(address);
+      const weather = await resolveWeather(isoDates[i], coords);
+      if (!cancelled) {
+        setWeatherByDay((prev) => ({ ...prev, [day.id]: weather }));
       }
-    })();
+    });
 
     return () => {
       cancelled = true;

@@ -25,11 +25,17 @@ function cacheSet(key, value) {
 // Resolve um endereço em texto para { lat, lng }, com cache em localStorage.
 // Retorna null enquanto carrega ou se o endereço não puder ser resolvido.
 export function useGeocode(address) {
-  const [coords, setCoords] = useState(null);
+  // Lazy initializer (não um valor direto): roda de forma síncrona antes da
+  // primeira pintura, então um endereço já cacheado nunca aparece como null
+  // primeiro — sem isso, havia um "flash" de coordenada vazia até o efeito
+  // rodar, mesmo com o dado já salvo de uma visita anterior.
+  const [coords, setCoords] = useState(() => (address ? cacheGet(`geo:${address}`) : null));
 
   useEffect(() => {
-    setCoords(null);
-    if (!address) return;
+    if (!address) {
+      setCoords(null);
+      return;
+    }
 
     const cacheKey = `geo:${address}`;
     const cached = cacheGet(cacheKey);
@@ -37,6 +43,7 @@ export function useGeocode(address) {
       setCoords(cached);
       return;
     }
+    setCoords(null);
 
     let cancelled = false;
     fetch(`/api/places/google?action=geocode&address=${encodeURIComponent(address)}`)

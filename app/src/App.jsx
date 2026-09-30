@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import ScheduleScreen from './components/ScheduleScreen.jsx';
@@ -10,7 +10,10 @@ import MoreScreen from './components/MoreScreen.jsx';
 import DesignSystemScreen from './components/DesignSystemScreen.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import ToastHost from './components/ToastHost.jsx';
+import AddToHomeScreenPrompt, { wasAddToHomeScreenDismissed } from './components/AddToHomeScreenPrompt.jsx';
+import WelcomeScreen, { wasWelcomeScreenSeen } from './components/WelcomeScreen.jsx';
 import { useIsEditingAnywhere } from './hooks/useEditingState.js';
+import { isIOS, isStandalone } from './hooks/useIsStandalone.js';
 
 // Hierarquia simples de navegação: Roteiro e Lugares são telas "raiz" das
 // abas (sem transição de push/pop entre si); a tela de detalhe de um lugar
@@ -126,6 +129,11 @@ function Shell() {
 }
 
 export default function App() {
+  const [showWelcome, setShowWelcome] = useState(() => !wasWelcomeScreenSeen());
+  const [showAddToHomeScreen, setShowAddToHomeScreen] = useState(
+    () => isIOS() && !isStandalone() && !wasAddToHomeScreenDismissed()
+  );
+
   return (
     <div
       style={{
@@ -147,6 +155,10 @@ export default function App() {
         <Shell />
       </HashRouter>
       <ToastHost />
+      {!showWelcome && showAddToHomeScreen && (
+        <AddToHomeScreenPrompt onClose={() => setShowAddToHomeScreen(false)} />
+      )}
+      {showWelcome && <WelcomeScreen onClose={() => setShowWelcome(false)} />}
     </div>
   );
 }

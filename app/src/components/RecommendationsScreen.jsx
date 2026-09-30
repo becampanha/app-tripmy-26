@@ -1,7 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AnimatePresence } from 'motion/react';
 import { useAllRecommendations } from '../hooks/useAllRecommendations.js';
 import { useScrollY } from '../hooks/useScrollY.js';
+import { updateRecommendation, deleteRecommendation, uploadPlacePhoto } from '../api/itineraryApi.js';
+import { showToast, showErrorToast } from '../hooks/useToast.js';
+import RecommendationEditModal from './RecommendationEditModal.jsx';
 import { FixedHeader, RecommendationCard, SectionHeader, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
 
 const NO_AREA_LABEL = 'Outros lugares';
@@ -56,14 +60,45 @@ function RecommendationsSkeleton() {
 }
 
 export default function RecommendationsScreen() {
-  const { recommendations } = useAllRecommendations();
+  const { recommendations, patchRecommendation, removeRecommendation } = useAllRecommendations();
   const navigate = useNavigate();
   const { scrollY, anchorRef } = useScrollY();
+  const [editingRecommendation, setEditingRecommendation] = useState(null);
 
   const sections = useMemo(
     () => (recommendations ? groupByArea(recommendations) : null),
     [recommendations]
   );
+
+  const handleSaveRecommendation = async ({ title, author, description, photo, photoFile }) => {
+    try {
+      let finalPhoto = photo;
+      if (photoFile) {
+        const { url } = await uploadPlacePhoto(photoFile);
+        finalPhoto = url;
+      }
+      const fields = { title, author, description, photo: finalPhoto };
+      await updateRecommendation(editingRecommendation.id, fields);
+      patchRecommendation(editingRecommendation.id, fields);
+      setEditingRecommendation(null);
+      showToast('Dica atualizada com sucesso');
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível atualizar a dica.');
+      throw err;
+    }
+  };
+
+  const handleDeleteRecommendation = async () => {
+    try {
+      await deleteRecommendation(editingRecommendation.id);
+      removeRecommendation(editingRecommendation.id);
+      setEditingRecommendation(null);
+      showToast('Dica removida com sucesso');
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível remover a dica.');
+      throw err;
+    }
+  };
 
   return (
     <div ref={anchorRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
@@ -92,11 +127,24 @@ export default function RecommendationsScreen() {
                 recommendation={rec}
                 place={rec.place}
                 onClick={() => navigate(`/lugares/${rec.place.id}`)}
+                onEdit={() => setEditingRecommendation(rec)}
               />
             ))}
           </div>
         ))}
       </div>
+
+      <AnimatePresence>
+        {editingRecommendation && (
+          <RecommendationEditModal
+            key="recommendation-edit-modal"
+            recommendation={editingRecommendation}
+            onSave={handleSaveRecommendation}
+            onDelete={handleDeleteRecommendation}
+            onClose={() => setEditingRecommendation(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

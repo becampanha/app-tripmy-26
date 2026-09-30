@@ -25,5 +25,21 @@ export function useAllRecommendations() {
     };
   }, []);
 
-  return { recommendations };
+  const patchRecommendation = (id, fields) => {
+    setRecommendations((prev) => {
+      const next = (prev || []).map((r) => (r.id === id ? { ...r, ...fields } : r));
+      writeCache('recommendations:all', next);
+      return next;
+    });
+  };
+
+  const removeRecommendation = (id) => {
+    setRecommendations((prev) => {
+      const next = (prev || []).filter((r) => r.id !== id);
+      writeCache('recommendations:all', next);
+      return next;
+    });
+  };
+
+  return { recommendations, patchRecommendation, removeRecommendation };
 }

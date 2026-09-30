@@ -96,11 +96,24 @@ function Screen({ pathname, depth, direction, children }) {
 
 function Shell() {
   const location = useLocation();
-  const prevDepthRef = useRef(depthOf(location.pathname));
   const currentDepth = depthOf(location.pathname);
-  const prevDepth = prevDepthRef.current;
-  const direction = currentDepth === prevDepth ? null : currentDepth > prevDepth ? 'push' : 'pop';
-  prevDepthRef.current = currentDepth;
+  // pathname (não currentDepth) é o que de fato identifica "já processamos
+  // essa navegação" — Shell pode re-renderizar por outros motivos (isEditing,
+  // isOverlayOpen mudando, ex: abrir um modal) sem o pathname ter mudado.
+  // Atualizar prevDepthRef incondicionalmente a cada render (como era antes)
+  // "gastava" a comparação nesses renders espúrios: na próxima navegação de
+  // verdade, currentDepth já batia com o prevDepth desatualizado por engano,
+  // e direction saía sempre null (sem animação nenhuma, pra sempre depois
+  // do primeiro render espúrio).
+  const lastPathnameRef = useRef(location.pathname);
+  const prevDepthRef = useRef(currentDepth);
+  let direction = null;
+  if (location.pathname !== lastPathnameRef.current) {
+    const prevDepth = prevDepthRef.current;
+    direction = currentDepth === prevDepth ? null : currentDepth > prevDepth ? 'push' : 'pop';
+    prevDepthRef.current = currentDepth;
+    lastPathnameRef.current = location.pathname;
+  }
   // Enquanto uma tela raiz está em modo de edição, ela mesma renderiza sua
   // própria EditActionBar (Cancelar/Salvar) no lugar da tab bar — ver
   // useEditingState.js.

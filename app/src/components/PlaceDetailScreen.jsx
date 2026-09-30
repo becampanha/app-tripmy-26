@@ -22,6 +22,7 @@ import {
   deleteRecommendation,
 } from '../api/itineraryApi.js';
 import RecommendationModal from './RecommendationModal.jsx';
+import RecommendationEditModal from './RecommendationEditModal.jsx';
 import EditActionBar from './EditActionBar.jsx';
 import { useGeocode } from '../hooks/useGeocode.js';
 import { usePlaceOccurrences } from '../hooks/usePlaceOccurrences.js';
@@ -412,6 +413,11 @@ export default function PlaceDetailScreen() {
   const [scrollY, setScrollY] = useState(0);
   const [recommendationModalOpen, setRecommendationModalOpen] = useState(false);
   const [openRecommendationPhoto, setOpenRecommendationPhoto] = useState(null);
+  // Recomendação sendo editada no momento (ou null) — abre o
+  // RecommendationEditModal a partir do botão de editar do próprio
+  // RecommendationCard. Edição já não depende mais do modo de edição do
+  // lugar: salva/exclui imediatamente, como a criação.
+  const [editingRecommendation, setEditingRecommendation] = useState(null);
   const rootRef = useRef(null);
   const originalRef = useRef(null);
   const coords = useGeocode(place?.address ?? draft?.address);
@@ -430,18 +436,6 @@ export default function PlaceDetailScreen() {
   }, []);
 
   const { recommendations, addRecommendation, removeRecommendation, patchRecommendation } = usePlaceRecommendations(!isNew ? id : null);
-  // Rascunho local de edição das recomendações — mesmo padrão do resto da
-  // tela (draft), só persiste no backend quando o usuário clica em Salvar.
-  // Chave: id da recomendação. Marcadas para remoção ficam em recDeleted.
-  const [recDrafts, setRecDrafts] = useState({});
-  const [recDeleted, setRecDeleted] = useState(new Set());
-  // Snapshot congelado das recomendações no momento em que a edição começou
-  // — igual ao originalRef dos campos do lugar. `recommendations` (do hook)
-  // pode revalidar via rede a QUALQUER momento, inclusive no meio de uma
-  // edição em andamento; usar o valor ao vivo durante o formulário/save fazia
-  // o draft "descasar" do id renderizado (campo aparentava vazio/desatualizado)
-  // e o loop de salvar iterar sobre uma lista que já não era mais a editada.
-  const recSnapshotRef = useRef([]);
 
   const handlePublishRecommendation = async ({ title, author, description, photoFile }) => {
     try {
@@ -460,14 +454,36 @@ export default function PlaceDetailScreen() {
     }
   };
 
-  // Marca a recomendação para remoção no rascunho — só é de fato deletada no
-  // backend quando o usuário clica em Salvar (mesmo padrão do resto da tela).
-  const markRecommendationDeleted = (recId) => {
-    setRecDeleted((prev) => new Set(prev).add(recId));
+  // Editar e excluir agora são imediatos (mesmo espírito da criação) — não
+  // dependem mais do modo de edição do lugar nem do botão Salvar geral.
+  const handleSaveRecommendation = async ({ title, author, description, photo, photoFile }) => {
+    try {
+      let finalPhoto = photo;
+      if (photoFile) {
+        const { url } = await uploadPlacePhoto(photoFile);
+        finalPhoto = url;
+      }
+      const fields = { title, author, description, photo: finalPhoto };
+      await updateRecommendation(editingRecommendation.id, fields);
+      patchRecommendation(editingRecommendation.id, fields);
+      setEditingRecommendation(null);
+      showToast('Dica atualizada com sucesso');
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível atualizar a dica.');
+      throw err;
+    }
   };
 
-  const patchRecDraft = (recId, fields) => {
-    setRecDrafts((prev) => ({ ...prev, [recId]: { ...prev[recId], ...fields } }));
+  const handleDeleteRecommendation = async () => {
+    try {
+      await deleteRecommendation(editingRecommendation.id);
+      removeRecommendation(editingRecommendation.id);
+      setEditingRecommendation(null);
+      showToast('Dica removida com sucesso');
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível remover a dica.');
+      throw err;
+    }
   };
 
   const reload = (silent) => {
@@ -567,17 +583,6 @@ export default function PlaceDetailScreen() {
     const snapshot = placeFields(place);
     originalRef.current = snapshot;
     setDraft({ ...snapshot });
-    const recSnapshot = recommendations || [];
-    recSnapshotRef.current = recSnapshot;
-    setRecDrafts(
-      Object.fromEntries(
-        recSnapshot.map((r) => [
-          r.id,
-          { title: r.title || '', author: r.author || '', description: r.description || '', photo: r.photo || null, photoFile: null, photoPreview: null },
-        ])
-      )
-    );
-    setRecDeleted(new Set());
     setEditing(true);
   };
 
@@ -589,9 +594,6 @@ export default function PlaceDetailScreen() {
     setEditing(false);
     setDraft(null);
     originalRef.current = null;
-    setRecDrafts({});
-    setRecDeleted(new Set());
-    recSnapshotRef.current = [];
   };
 
   const handleSave = async () => {
@@ -636,40 +638,9 @@ export default function PlaceDetailScreen() {
         await reload(true);
       }
 
-      for (const recId of recDeleted) {
-        await deleteRecommendation(recId);
-        removeRecommendation(recId);
-      }
-
-      for (const rec of recSnapshotRef.current) {
-        if (recDeleted.has(rec.id)) continue;
-        const d = recDrafts[rec.id];
-        if (!d) continue;
-
-        let photo = d.photo;
-        if (d.photoFile) {
-          const { url } = await uploadPlacePhoto(d.photoFile);
-          photo = url;
-        }
-
-        const recChanged =
-          d.title !== (rec.title || '') ||
-          d.author !== (rec.author || '') ||
-          d.description !== (rec.description || '') ||
-          photo !== (rec.photo || null);
-        if (!recChanged) continue;
-
-        const fields = { title: d.title, author: d.author, description: d.description, photo };
-        await updateRecommendation(rec.id, fields);
-        patchRecommendation(rec.id, fields);
-      }
-
       setEditing(false);
       setDraft(null);
       originalRef.current = null;
-      setRecDrafts({});
-      setRecDeleted(new Set());
-      recSnapshotRef.current = [];
       showToast('Edição realizada com sucesso');
     } catch (err) {
       showErrorToast(err, 'Não foi possível salvar as alterações do lugar.');
@@ -995,148 +966,6 @@ export default function PlaceDetailScreen() {
             </div>
 
             {!isNew && (
-              <div>
-                <FieldLabel>Dicas</FieldLabel>
-                <div style={{ marginTop: 5, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {recSnapshotRef.current.filter((r) => !recDeleted.has(r.id)).length === 0 ? (
-                    <div
-                      style={{
-                        padding: 16,
-                        borderRadius: 16,
-                        border: '1px solid #ececec',
-                        color: '#9a9186',
-                        fontSize: 13.5,
-                        fontWeight: 600,
-                        textAlign: 'center',
-                      }}
-                    >
-                      Nenhuma dica no momento.
-                    </div>
-                  ) : (
-                    recSnapshotRef.current.filter((r) => !recDeleted.has(r.id)).map((rec) => {
-                      // recDrafts sempre tem essa chave — foi preenchido no
-                      // startEditing a partir deste MESMO snapshot; não usar
-                      // fallback incompleto aqui (não inclui photo/photoFile).
-                      const d = recDrafts[rec.id];
-                      if (!d) return null;
-                      return (
-                        <div
-                          key={rec.id}
-                          style={{
-                            display: 'flex',
-                            gap: 10,
-                            alignItems: 'flex-start',
-                            padding: 14,
-                            background: '#fff',
-                            border: '1px solid #ececec',
-                            borderRadius: 18,
-                          }}
-                        >
-                          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <div>
-                              <FieldLabel>Título</FieldLabel>
-                              <input
-                                value={d.title}
-                                onChange={(e) => patchRecDraft(rec.id, { title: e.target.value })}
-                                placeholder="Título"
-                                style={{ ...inputStyle, marginTop: 3 }}
-                              />
-                            </div>
-                            <div>
-                              <FieldLabel>Descrição</FieldLabel>
-                              <textarea
-                                value={d.description}
-                                onChange={(e) => patchRecDraft(rec.id, { description: e.target.value })}
-                                rows={2}
-                                style={{ ...inputStyle, marginTop: 3, resize: 'vertical', fontFamily: 'inherit' }}
-                              />
-                            </div>
-                            <div>
-                              <FieldLabel>Quem está sugerindo</FieldLabel>
-                              <input
-                                value={d.author}
-                                onChange={(e) => patchRecDraft(rec.id, { author: e.target.value })}
-                                placeholder="Nome"
-                                style={{ ...inputStyle, marginTop: 3 }}
-                              />
-                            </div>
-                            <div>
-                              <FieldLabel>Foto</FieldLabel>
-                              <div style={{ marginTop: 3, display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <label
-                                  style={{
-                                    flex: 1,
-                                    minWidth: 0,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    padding: 10,
-                                    borderRadius: 14,
-                                    background: '#f9f7f2',
-                                    cursor: 'pointer',
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      width: 44,
-                                      height: 44,
-                                      borderRadius: 10,
-                                      flex: 'none',
-                                      overflow: 'hidden',
-                                      background: '#eee9df',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                    }}
-                                  >
-                                    {d.photoPreview || d.photo ? (
-                                      <img src={d.photoPreview || d.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    ) : (
-                                      <CameraMinimalisticIcon size={18} color="#b3ab9c" />
-                                    )}
-                                  </div>
-                                  <span style={{ color: '#1c1a17', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {d.photo || d.photoPreview ? 'Trocar foto' : 'Adicionar foto (opcional)'}
-                                  </span>
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                      const file = e.target.files[0];
-                                      if (!file) return;
-                                      patchRecDraft(rec.id, { photoFile: file, photoPreview: URL.createObjectURL(file) });
-                                    }}
-                                    style={{ display: 'none' }}
-                                  />
-                                </label>
-                                {(d.photo || d.photoPreview) && (
-                                  <button
-                                    type="button"
-                                    onClick={() => patchRecDraft(rec.id, { photo: null, photoFile: null, photoPreview: null })}
-                                    style={{ border: 0, background: 'none', padding: 2, cursor: 'pointer', flex: 'none' }}
-                                  >
-                                    <CloseIcon size={16} color="#b3453f" />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => markRecommendationDeleted(rec.id)}
-                            style={{ border: 0, background: 'none', padding: 2, cursor: 'pointer', flex: 'none' }}
-                          >
-                            <TrashBinTrashIcon size={16} color="#b3453f" />
-                          </button>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            )}
-
-            {!isNew && (
               <div
                 onClick={handleDelete}
                 style={{
@@ -1243,6 +1072,7 @@ export default function PlaceDetailScreen() {
                           key={rec.id}
                           recommendation={rec}
                           onOpenPhoto={() => setOpenRecommendationPhoto(rec.photo)}
+                          onEdit={() => setEditingRecommendation(rec)}
                         />
                       ))}
                     </div>
@@ -1458,6 +1288,18 @@ export default function PlaceDetailScreen() {
             photoIndex={0}
             onIndexChange={() => {}}
             onClose={() => setOpenRecommendationPhoto(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editingRecommendation && (
+          <RecommendationEditModal
+            key="recommendation-edit-modal"
+            recommendation={editingRecommendation}
+            onSave={handleSaveRecommendation}
+            onDelete={handleDeleteRecommendation}
+            onClose={() => setEditingRecommendation(null)}
           />
         )}
       </AnimatePresence>

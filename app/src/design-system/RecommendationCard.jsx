@@ -1,4 +1,5 @@
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
+import { PenIcon } from '@solar-icons/react/linear/pen';
 import { color, radius, space } from './tokens.js';
 
 function formatRecommendationDate(iso) {
@@ -6,15 +7,16 @@ function formatRecommendationDate(iso) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-// Card de recomendação (somente leitura) — mesmo padrão visual do card de
-// atividade do Roteiro (ActivityItem): fundo branco com borda, texto à
-// esquerda, thumbnail pequena da foto à direita. Usado tanto na tela de
-// detalhe do lugar (uma recomendação por vez, sem badge de lugar) quanto na
-// tela agregada de Recomendações (todos os lugares juntos — aí `place` traz
-// a mesma badge/pill de lugar vinculado do ActivityItem, embaixo do texto).
-// Editar/remover uma recomendação acontece inline no modo de edição do
-// lugar (PlaceDetailScreen), não neste card.
-export default function RecommendationCard({ recommendation, place, onOpenPhoto, onClick }) {
+// Card de recomendação — mesmo padrão visual do card de atividade do
+// Roteiro (ActivityItem): fundo branco com borda, texto à esquerda,
+// thumbnail pequena da foto à direita. Usado tanto na tela de detalhe do
+// lugar (uma recomendação por vez, sem badge de lugar) quanto na tela
+// agregada de Dicas (todos os lugares juntos — aí `place` traz a mesma
+// badge/pill de lugar vinculado do ActivityItem, embaixo do texto).
+// `onEdit` (opcional) mostra um botão de editar que abre o
+// RecommendationEditModal — mesmo card nas duas telas, por isso a prop é
+// opcional em vez de sempre presente.
+export default function RecommendationCard({ recommendation, place, onOpenPhoto, onClick, onEdit }) {
   const meta = [
     recommendation.author ? `Recomendado por ${recommendation.author}` : null,
     formatRecommendationDate(recommendation.createdAt),
@@ -51,9 +53,34 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
             {recommendation.description}
           </div>
         )}
-        {meta && (
-          <div style={{ color: color.muted, fontSize: 11.5, fontWeight: 600, marginTop: 8 }}>
-            {meta}
+        {(meta || onEdit) && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 8 }}>
+            {meta && (
+              <div style={{ color: color.muted, fontSize: 11.5, fontWeight: 600, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {meta}
+              </div>
+            )}
+            {onEdit && (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                style={{
+                  flex: 'none',
+                  width: 26,
+                  height: 26,
+                  borderRadius: 9,
+                  background: color.surfaceMuted,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <PenIcon size={13} color={color.dark} />
+              </div>
+            )}
           </div>
         )}
         {place && (

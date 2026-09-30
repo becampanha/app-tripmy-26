@@ -124,3 +124,11 @@ export function deleteRecommendation(id) {
 export function fetchAttractions() {
   return request('/api/attractions');
 }
+
+export function fetchLiveQueueTimes() {
+  return request('/api/attractions?action=live');
+}
+
+export function fetchAttractionLocations(parkId) {
+  return request(`/api/attractions?action=locations&park=${encodeURIComponent(parkId)}`);
+}

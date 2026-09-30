@@ -4,7 +4,8 @@ import { fetchAttractions } from '../api/itineraryApi.js';
 import { readCache, writeCache } from '../hooks/persistentCache.js';
 import { PARK_ICON_MAP } from '../data/parkIcons.js';
 import { useScrollY } from '../hooks/useScrollY.js';
-import { FixedHeader, HScrollTabs, SearchInput, SectionHeader, Skeleton, Toggle, cardPhotoHeight, color, radius, space, spacing, type } from '../design-system/index.js';
+import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
+import { FixedHeader, HScrollTabs, ParkMap, ParkStrategyCard, SearchInput, SectionHeader, Skeleton, Toggle, cardPhotoHeight, color, radius, space, spacing, type } from '../design-system/index.js';
 
 // Mesmo padrão visual/funcional da tela de Lugares: abas com scroll
 // horizontal (aqui, um parque por aba) + seções sticky por área + busca.
@@ -16,6 +17,8 @@ export default function AttractionsScreen() {
   const [search, setSearch] = useState('');
   const [onlyInItinerary, setOnlyInItinerary] = useState(false);
   const { scrollY, anchorRef } = useScrollY();
+  const { getLiveQueue } = useLiveQueueTimes();
+  const [mapOpen, setMapOpen] = useState(false);
 
   useEffect(() => {
     fetchAttractions()
@@ -78,6 +81,10 @@ export default function AttractionsScreen() {
           </div>
         </div>
 
+        {!loading && park && (
+          <ParkStrategyCard strategy={park.strategy} onOpenMap={() => setMapOpen(true)} />
+        )}
+
         {loading && parks.length === 0 && Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} height={cardPhotoHeight} radius={radius.cardPhoto} style={{ marginBottom: spacing.controlGap }} />
         ))}
@@ -86,7 +93,11 @@ export default function AttractionsScreen() {
           <div key={section.name}>
             <SectionHeader>{section.name}</SectionHeader>
             {section.attractions.map((attraction) => (
-              <AttractionCard key={attraction.id} attraction={attraction} />
+              <AttractionCard
+                key={attraction.id}
+                attraction={attraction}
+                liveQueue={getLiveQueue(attraction.name)}
+              />
             ))}
           </div>
         ))}
@@ -97,6 +108,10 @@ export default function AttractionsScreen() {
           </div>
         )}
       </div>
+
+      {mapOpen && park && (
+        <ParkMap park={park} onClose={() => setMapOpen(false)} getLiveQueue={getLiveQueue} />
+      )}
     </div>
   );
 }

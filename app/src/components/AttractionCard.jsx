@@ -34,9 +34,40 @@ function MiniStat({ icon: Icon, value }) {
   );
 }
 
-export default function AttractionCard({ attraction }) {
+// Mesmo MiniStat, mas com um pontinho verde pulsante ao lado do valor —
+// usado só quando o dado é a fila real (API), não a estimativa da planilha.
+function LiveMiniStat({ icon: Icon, value }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '4px 8px',
+        borderRadius: 8,
+        background: 'rgba(28,26,23,0.55)',
+      }}
+    >
+      <Icon size={12} color="#fff" />
+      <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{value}</span>
+      <span
+        style={{
+          width: 5,
+          height: 5,
+          borderRadius: 3,
+          background: tokenColor.success,
+          animation: 'pulse 1.6s ease-in-out infinite',
+        }}
+      />
+    </div>
+  );
+}
+
+export default function AttractionCard({ attraction, liveQueue }) {
   const intensityLabel = INTENSITY_LABEL[attraction.intensity] || attraction.intensity;
   const hasHeightRestriction = attraction.restrictions === 'Altura mínima';
+  const hasLiveQueue = typeof liveQueue === 'number';
+  const queueValue = hasLiveQueue ? `${liveQueue} min` : attraction.queue;
 
   return (
     <PhotoCard photo={attraction.photo} contentStyle={{ padding: 14, display: 'flex', flexDirection: 'column' }}>
@@ -47,10 +78,14 @@ export default function AttractionCard({ attraction }) {
           </div>
         )}
 
-        {(attraction.duration || attraction.queue) && (
+        {(attraction.duration || queueValue) && (
           <div style={{ display: 'flex', gap: 6, flex: 'none', marginLeft: 'auto' }}>
             <MiniStat icon={FerrisWheelIcon} value={attraction.duration} />
-            <MiniStat icon={ClockCircleIcon} value={attraction.queue} />
+            {hasLiveQueue ? (
+              <LiveMiniStat icon={ClockCircleIcon} value={queueValue} />
+            ) : (
+              <MiniStat icon={ClockCircleIcon} value={queueValue} />
+            )}
           </div>
         )}
       </div>

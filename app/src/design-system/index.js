@@ -18,3 +18,5 @@ export { default as Select } from './Select.jsx';
 export { default as RecommendationCard } from './RecommendationCard.jsx';
 export { default as PhotoLightbox } from './PhotoLightbox.jsx';
 export { default as FixedHeader } from './FixedHeader.jsx';
+export { default as ParkStrategyCard } from './ParkStrategyCard.jsx';
+export { default as ParkMap } from './ParkMap.jsx';

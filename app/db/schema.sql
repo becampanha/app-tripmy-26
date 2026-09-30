@@ -57,4 +57,22 @@ CREATE TABLE IF NOT EXISTS place_recommendations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Catálogo de atrações (ver tabela `attractions`, criada fora deste arquivo
+-- na sessão original de importação da planilha — schema documentado aqui
+-- por consistência: park_id, park_name, park_emoji, park_sort_order, area,
+-- area_sort_order, name, sort_order, required, type, duration, queue_time,
+-- best_time, restrictions, parent_swap, intensity, photo).
+
+-- Resumo de estratégia de visita por parque (rope drop/ordem sugerida),
+-- escrito manualmente, cruzando as atrações marcadas required=true de cada
+-- parque com como esses parques de fato funcionam na prática.
+-- `route`: a mesma ordem sugerida, como array JSON de nomes de atração
+-- (precisam bater com attractions.name) — usado para traçar a rota no mapa.
+CREATE TABLE IF NOT EXISTS park_strategies (
+  park_id TEXT PRIMARY KEY,
+  summary TEXT NOT NULL,
+  route JSONB,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS idx_place_recommendations_place_id ON place_recommendations(place_id);

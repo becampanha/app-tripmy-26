@@ -46,7 +46,7 @@ const variants = {
   receded: { x: '-22%', opacity: 0.92 },
 };
 
-function Screen({ pathname, depth, direction, children }) {
+function Screen({ depth, direction, children }) {
   // direction: 'push' | 'pop' | null (transição no mesmo nível, sem animação)
   const isTopOfStack = depth === 1;
 
@@ -69,7 +69,6 @@ function Screen({ pathname, depth, direction, children }) {
 
   return (
     <motion.div
-      key={pathname}
       variants={variants}
       initial={initial}
       animate={animate}
@@ -123,7 +122,15 @@ function Shell() {
   return (
     <>
       <AnimatePresence initial={false}>
-        <Screen pathname={location.pathname} depth={currentDepth} direction={direction}>
+        {/* key precisa estar aqui — no filho DIRETO do AnimatePresence, não
+            um nível mais fundo dentro do motion.div retornado por Screen.
+            AnimatePresence só rastreia entrada/saída comparando as keys dos
+            seus filhos imediatos; como Screen é sempre o mesmo componente
+            React (só re-renderiza com props novas), uma key só no motion.div
+            interno nunca era vista mudar — a transição de saída (exit)
+            nunca disparava de fato, por mais que a lógica de variants
+            parecesse correta na leitura do código. */}
+        <Screen key={location.pathname} depth={currentDepth} direction={direction}>
           <Routes location={location}>
             <Route path="/" element={<ScheduleScreen />} />
             <Route path="/roteiro/dias" element={<AllDaysScreen />} />

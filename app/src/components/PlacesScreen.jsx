@@ -8,7 +8,8 @@ import { subcategoriesFor } from '../data/subcategories.js';
 import { usePlacesInItinerary } from '../hooks/usePlacesInItinerary.js';
 import { getPlacesScreenState, savePlacesScreenState, getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
 import { useScrollY } from '../hooks/useScrollY.js';
-import { FixedHeader, HScrollTabs, SearchInput, Toggle, SectionHeader, Skeleton, Select, color, radius, space, spacing, type } from '../design-system/index.js';
+import { useElementHeight } from '../hooks/useElementHeight.js';
+import { FixedHeader, HScrollTabs, SearchInput, Toggle, SectionHeader, Skeleton, Select, color, radius, space, spacing } from '../design-system/index.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
@@ -40,6 +41,7 @@ export default function PlacesScreen() {
   const placesInItinerary = usePlacesInItinerary();
   const rootRef = useRef(null);
   const { scrollY } = useScrollY(rootRef);
+  const { ref: headerRef, height: headerHeight } = useElementHeight();
 
   // Salva filtros a cada mudança, pra sobreviver à desmontagem ao navegar
   // para a tela de detalhes e voltar.
@@ -138,38 +140,26 @@ export default function PlacesScreen() {
   return (
     <div ref={rootRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
       <FixedHeader
+        headerRef={headerRef}
         scrollY={scrollY}
         title="Lugares"
+        tabs={
+          <HScrollTabs
+            items={tabItems}
+            activeKey={category}
+            onSelect={(cat) => {
+              setCategory(cat);
+              setSubcategory('');
+            }}
+            style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }}
+          />
+        }
         right={
           <div
             onClick={() => navigate('/lugares/novo')}
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: 11,
-              background: color.surfaceMuted,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <AddIcon size={15} color={color.dark} />
-          </div>
-        }
-      />
-      <div style={{ padding: `${space.screenGutter}px ${space.screenGutter}px 0` }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div style={{ ...type.screenTitle, color: color.dark }}>
-            Lugares
-          </div>
-
-          <div
-            onClick={() => navigate('/lugares/novo')}
-            style={{
-              flex: 'none',
-              height: 38,
               width: 38,
+              height: 38,
               borderRadius: 13,
               background: color.surfaceMuted,
               display: 'flex',
@@ -180,21 +170,12 @@ export default function PlacesScreen() {
           >
             <AddIcon size={17} color={color.dark} />
           </div>
-        </div>
-
-        <HScrollTabs
-          items={tabItems}
-          activeKey={category}
-          onSelect={(cat) => {
-            setCategory(cat);
-            setSubcategory('');
-          }}
-        />
-      </div>
+        }
+      />
 
       <div
         style={{
-          marginTop: spacing.controlGap,
+          marginTop: headerHeight + spacing.controlGap,
           boxSizing: 'border-box',
           padding: `2px ${space.screenGutter}px 120px`,
         }}
@@ -230,7 +211,7 @@ export default function PlacesScreen() {
 
         {!loading && groupedSections && groupedSections.map((section) => (
           <div key={section.title}>
-            <SectionHeader>{section.title}</SectionHeader>
+            <SectionHeader style={{ top: headerHeight }}>{section.title}</SectionHeader>
             {section.items.map((place) => (
               <PlaceCard
                 key={place.id}

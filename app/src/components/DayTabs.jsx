@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useDragScroll } from '../hooks/useDragScroll.js';
 import { color } from '../design-system/index.js';
 
@@ -16,12 +17,28 @@ const bubbleBase = {
   userSelect: 'none',
 };
 
-export default function DayTabs({ days, selected, onSelect }) {
+export default function DayTabs({ days, selected, onSelect, style }) {
   const { scrollerRef, dragRef, dragHandlers } = useDragScroll();
+  const activeRef = useRef(null);
+
+  // Este componente é renderizado em paralelo em dois lugares (título
+  // normal da tela + dentro do FixedHeader) — cada instância tem seu
+  // próprio scroll horizontal nativo, sem sincronia entre elas. Sem isso, a
+  // instância que acabou de aparecer (ex: a do FixedHeader, ao rolar a
+  // página) ficava com o scroll "resetado", mostrando a aba ativa fora do
+  // lugar onde o usuário a tinha deixado na outra instância.
+  // `inline: 'nearest'` (não 'center'): só move o scroll o mínimo pra trazer
+  // a aba pra dentro da área visível — se ela já está visível (ex: usuário
+  // clicou numa aba perto da borda, já vendo ela), não move nada. Com
+  // 'center' toda seleção recentralizava a aba, mesmo quando já visível,
+  // o que deixava a navegação por clique estranha (a tela "pulava").
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [selected]);
 
   if (!days) {
     return (
-      <div style={{ display: 'flex', gap: 10, marginTop: 14, padding: '2px 2px 6px' }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 14, padding: '2px 2px 6px', ...style }}>
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
@@ -45,6 +62,7 @@ export default function DayTabs({ days, selected, onSelect }) {
         WebkitOverflowScrolling: 'touch',
         cursor: 'grab',
         userSelect: 'none',
+        ...style,
       }}
     >
       {days.map((day, i) => {
@@ -52,6 +70,7 @@ export default function DayTabs({ days, selected, onSelect }) {
         return (
           <div
             key={day.date}
+            ref={active ? activeRef : undefined}
             onClick={() => {
               if (!dragRef.current || !dragRef.current.moved) onSelect(i);
             }}

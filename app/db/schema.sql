@@ -44,15 +44,18 @@ CREATE INDEX IF NOT EXISTS idx_activities_day_id ON activities(day_id);
 CREATE INDEX IF NOT EXISTS idx_activities_place_id ON activities(place_id);
 CREATE INDEX IF NOT EXISTS idx_places_category ON places(category);
 
--- Recomendações publicadas por usuários dentro de um lugar (tipo "postagem").
--- title/author foram removidos da UI numa sessão, depois trazidos de volta
--- numa seguinte — mantidos nullable pra não quebrar registros antigos.
+-- Recomendações publicadas por usuários, opcionalmente vinculadas a um lugar
+-- (tipo "postagem"). title/author foram removidos da UI numa sessão, depois
+-- trazidos de volta numa seguinte — mantidos nullable pra não quebrar
+-- registros antigos. place_id também é nullable (dica "solta", sem lugar) e
+-- description também (uma dica pode trazer só título e/ou autor) — mas pelo
+-- menos um dos três (title/author/description) é exigido pela API.
 CREATE TABLE IF NOT EXISTS place_recommendations (
   id SERIAL PRIMARY KEY,
-  place_id TEXT NOT NULL REFERENCES places(id) ON DELETE CASCADE,
+  place_id TEXT REFERENCES places(id) ON DELETE CASCADE,
   title TEXT,
   author TEXT,
-  description TEXT NOT NULL,
+  description TEXT,
   photo TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

@@ -4,20 +4,23 @@ import { AnimatePresence } from 'motion/react';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { AddIcon } from '@solar-icons/react/linear/add';
 import { ListIcon } from '@solar-icons/react/linear/list';
+import { MapIcon } from '@solar-icons/react/bold/map';
 import DayTabs from './DayTabs.jsx';
 import ActivityItem from './ActivityItem.jsx';
 import DistanceBetween from './DistanceBetween.jsx';
 import PlaceSelectorModal from './PlaceSelectorModal.jsx';
+import DayMap from './DayMap.jsx';
 import EditActionBar from './EditActionBar.jsx';
 import { useItinerary } from '../hooks/useItinerary.js';
 import { useDayWeather } from '../hooks/useDayWeather.js';
 import { setGlobalEditing } from '../hooks/useEditingState.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { useScrollY } from '../hooks/useScrollY.js';
+import { useElementHeight } from '../hooks/useElementHeight.js';
 import { getScheduleScreenState, saveScheduleScreenState } from '../hooks/useScheduleScreenState.js';
 import { createActivity, updateActivity, deleteActivity, reorderActivities, updateDay } from '../api/itineraryApi.js';
 import { weatherEmoji } from '../data/weatherCodes.js';
-import { FixedHeader, Skeleton, color, radius, space, spacing, type } from '../design-system/index.js';
+import { FixedHeader, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
 
 const EDITABLE_FIELDS = ['time', 'title', 'subtitle', 'placeId'];
 
@@ -60,6 +63,7 @@ export default function ScheduleScreen() {
   const [selectorFor, setSelectorFor] = useState(null); // activity id (ou id negativo temporário de item recém-criado)
   const { days, loading, reload } = useItinerary();
   const { scrollY, anchorRef } = useScrollY();
+  const { ref: headerRef, height: headerHeight } = useElementHeight();
 
   // Salva o dia selecionado a cada mudança, pra sobreviver à desmontagem ao
   // navegar para outra tela e voltar (mesmo padrão de usePlacesScreenState).
@@ -95,6 +99,7 @@ export default function ScheduleScreen() {
   // PUT + reload a cada campo editado que existia antes.
   const [draft, setDraft] = useState(null); // { dayId, theme, activities: [...] }
   const originalRef = useRef(null); // snapshot pré-edição, para diff no Salvar
+  const [mapOpen, setMapOpen] = useState(false);
 
   // Avisa o Shell (App.jsx) pra esconder a BottomTabBar enquanto esta tela
   // está em edição — ela some pra dar lugar à EditActionBar (Cancelar/Salvar).
@@ -238,57 +243,16 @@ export default function ScheduleScreen() {
   return (
     <div ref={anchorRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
       <FixedHeader
+        headerRef={headerRef}
         scrollY={scrollY}
         title="Roteiro"
+        tabs={<DayTabs days={days} selected={selectedDay} onSelect={setSelectedDay} style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
         right={
           !editing && (
             <>
               <div
                 onClick={() => navigate('/roteiro/dias')}
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 11,
-                  background: color.surfaceMuted,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-              >
-                <ListIcon size={15} color={color.dark} />
-              </div>
-              <div
-                onClick={startEditing}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 11,
-                  background: color.surfaceMuted,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-              >
-                <PenIcon size={15} color={color.dark} />
-              </div>
-            </>
-          )
-        }
-      />
-      <div style={{ padding: `${space.screenGutter}px ${space.screenGutter}px 0` }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div style={{ ...type.mainTitle, color: color.dark }}>
-            Roteiro
-          </div>
-
-          {!editing && (
-            <div style={{ display: 'flex', gap: spacing.gapMd, flex: 'none' }}>
-              <div
-                onClick={() => navigate('/roteiro/dias')}
-                style={{
-                  flex: 'none',
                   width: 38,
                   height: 38,
                   borderRadius: 13,
@@ -304,7 +268,6 @@ export default function ScheduleScreen() {
               <div
                 onClick={startEditing}
                 style={{
-                  flex: 'none',
                   width: 38,
                   height: 38,
                   borderRadius: 13,
@@ -317,20 +280,69 @@ export default function ScheduleScreen() {
               >
                 <PenIcon size={17} color={color.dark} />
               </div>
-            </div>
-          )}
-        </div>
-
-        <DayTabs days={days} selected={selectedDay} onSelect={setSelectedDay} />
-      </div>
+            </>
+          )
+        }
+      />
 
       <div
         style={{
-          marginTop: 18,
+          marginTop: headerHeight + 16,
           boxSizing: 'border-box',
-          padding: '20px 22px 120px',
+          padding: '0 22px 120px',
         }}
       >
+        {/* Call-to-action do mapa do dia — imagem estática fixa (não
+            gerada por API em tempo real, arquivo salvo em public/), sem
+            overlay; o botão preto por cima leva pro mapa de verdade, com os
+            pontos reais das atividades do dia, montado ao abrir o DayMap em
+            tela cheia. */}
+        <div
+          onClick={() => setMapOpen(true)}
+          style={{
+            position: 'relative',
+            marginBottom: 28,
+            borderRadius: 20,
+            overflow: 'hidden',
+            height: 110,
+            background: '#eee9df',
+            border: `1px solid ${color.border}`,
+            cursor: 'pointer',
+          }}
+        >
+          <img
+            src="/roteiro-mapa-card.png"
+            alt=""
+            loading="lazy"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 18px',
+                borderRadius: 14,
+                background: '#1c1a17',
+              }}
+            >
+              <MapIcon size={17} color="#fff" />
+              <span style={{ color: '#fff', fontSize: 14.5, fontWeight: 800, letterSpacing: -0.1 }}>
+                Ver roteiro no mapa
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, gap: 10 }}>
           {editing && draft ? (
             <input
@@ -442,6 +454,18 @@ export default function ScheduleScreen() {
       <AnimatePresence>
         {editing && (
           <EditActionBar key="edit-action-bar" onCancel={handleCancel} onSave={handleSave} saving={saving} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {mapOpen && currentDay && (
+          <DayMap
+            key="day-map"
+            days={days}
+            selectedDay={selectedDay}
+            onSelectDay={setSelectedDay}
+            onClose={() => setMapOpen(false)}
+          />
         )}
       </AnimatePresence>
     </div>

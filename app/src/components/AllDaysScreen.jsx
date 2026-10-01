@@ -3,8 +3,9 @@ import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { useItinerary } from '../hooks/useItinerary.js';
 import { useDayWeather } from '../hooks/useDayWeather.js';
 import { useScrollY } from '../hooks/useScrollY.js';
+import { useElementHeight } from '../hooks/useElementHeight.js';
 import { weatherEmoji } from '../data/weatherCodes.js';
-import { FixedHeader, Skeleton, color, radius, space, spacing, type } from '../design-system/index.js';
+import { FixedHeader, Skeleton, color, radius, space, type } from '../design-system/index.js';
 
 function DayRowSkeleton() {
   return (
@@ -30,19 +31,21 @@ export default function AllDaysScreen() {
   const { days } = useItinerary();
   const weatherByDay = useDayWeather(days);
   const { scrollY, anchorRef } = useScrollY();
+  const { ref: headerRef, height: headerHeight } = useElementHeight();
 
   return (
     <div ref={anchorRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
       <FixedHeader
+        headerRef={headerRef}
         scrollY={scrollY}
         title="Resumo do Roteiro"
         left={
           <div
             onClick={() => navigate(-1)}
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: 11,
+              width: 38,
+              height: 38,
+              borderRadius: 13,
               background: color.surfaceMuted,
               display: 'flex',
               alignItems: 'center',
@@ -50,31 +53,12 @@ export default function AllDaysScreen() {
               cursor: 'pointer',
             }}
           >
-            <AltArrowLeftIcon size={17} color={color.dark} />
+            <AltArrowLeftIcon size={19} color={color.dark} />
           </div>
         }
       />
-      <div style={{ padding: `${space.screenGutter}px ${space.screenGutter}px 0`, display: 'flex', alignItems: 'center', gap: spacing.gapMd }}>
-        <div
-          onClick={() => navigate(-1)}
-          style={{
-            flex: 'none',
-            width: 38,
-            height: 38,
-            borderRadius: 13,
-            background: color.surfaceMuted,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          <AltArrowLeftIcon size={19} color={color.dark} />
-        </div>
-        <div style={{ ...type.mainTitle, color: color.dark }}>Resumo do Roteiro</div>
-      </div>
 
-      <div style={{ marginTop: 18, boxSizing: 'border-box', padding: `0 ${space.screenGutter}px 40px` }}>
+      <div style={{ marginTop: headerHeight + 18, boxSizing: 'border-box', padding: `0 ${space.screenGutter}px 40px` }}>
         {!days && Array.from({ length: 6 }).map((_, i) => <DayRowSkeleton key={i} />)}
 
         {days && days.map((day, i) => {

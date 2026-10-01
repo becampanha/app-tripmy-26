@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { RefreshIcon } from '@solar-icons/react/bold/refresh';
 import { PlayCircleIcon } from '@solar-icons/react/bold/play-circle';
 import { useScrollY } from '../hooks/useScrollY.js';
+import { useElementHeight } from '../hooks/useElementHeight.js';
 import WelcomeScreen from './WelcomeScreen.jsx';
 import { FixedHeader, color, spacing, type } from '../design-system/index.js';
 
@@ -33,6 +34,7 @@ export default function MoreScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const { scrollY, anchorRef } = useScrollY();
+  const { ref: headerRef, height: headerHeight } = useElementHeight();
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -45,14 +47,9 @@ export default function MoreScreen() {
 
   return (
     <div ref={anchorRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
-      <FixedHeader scrollY={scrollY} title="Mais" />
-      <div style={{ padding: `${spacing.screenGutter}px ${spacing.screenGutter}px 0` }}>
-        <div style={{ ...type.mainTitle, color: color.dark }}>
-          Mais
-        </div>
-      </div>
+      <FixedHeader headerRef={headerRef} scrollY={scrollY} title="Mais" />
 
-      <div style={{ marginTop: spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
+      <div style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
         <div
           style={{
             padding: spacing.cardPadding,

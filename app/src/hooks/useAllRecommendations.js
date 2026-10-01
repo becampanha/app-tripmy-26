@@ -25,6 +25,14 @@ export function useAllRecommendations() {
     };
   }, []);
 
+  const addRecommendation = (created) => {
+    setRecommendations((prev) => {
+      const next = [created, ...(prev || [])];
+      writeCache('recommendations:all', next);
+      return next;
+    });
+  };
+
   const patchRecommendation = (id, fields) => {
     setRecommendations((prev) => {
       const next = (prev || []).map((r) => (r.id === id ? { ...r, ...fields } : r));
@@ -41,5 +49,5 @@ export function useAllRecommendations() {
     });
   };
 
-  return { recommendations, patchRecommendation, removeRecommendation };
+  return { recommendations, addRecommendation, patchRecommendation, removeRecommendation };
 }

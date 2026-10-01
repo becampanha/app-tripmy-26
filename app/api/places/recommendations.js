@@ -18,7 +18,7 @@ export default async function handler(req, res) {
       const rows = await sql.query(
         `SELECT r.*, p.name AS place_name, p.photo AS place_photo, p.tag AS place_tag, p.address AS place_address, p.subcategory AS place_subcategory
          FROM place_recommendations r
-         JOIN places p ON p.id = r.place_id
+         LEFT JOIN places p ON p.id = r.place_id
          ORDER BY r.created_at DESC`
       );
 
@@ -29,14 +29,14 @@ export default async function handler(req, res) {
         description: r.description,
         photo: r.photo,
         createdAt: r.created_at,
-        place: {
+        place: r.place_id ? {
           id: r.place_id,
           name: r.place_name,
           photo: r.place_photo,
           tag: r.place_tag,
           address: r.place_address,
           subcategory: r.place_subcategory,
-        },
+        } : null,
       }));
 
       return res.status(200).json(recommendations);
@@ -65,15 +65,15 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     const { placeId, title, author, description, photo } = req.body || {};
-    if (!placeId || !description) {
-      return res.status(400).json({ error: 'Campos "placeId" e "description" são obrigatórios' });
+    if (!title && !author && !description) {
+      return res.status(400).json({ error: 'Preencha ao menos título, descrição ou autor' });
     }
 
     const rows = await sql.query(
       `INSERT INTO place_recommendations (place_id, title, author, description, photo)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [placeId, title || null, author || null, description, photo || null]
+      [placeId || null, title || null, author || null, description || null, photo || null]
     );
 
     const r = rows[0];
@@ -94,13 +94,13 @@ export default async function handler(req, res) {
     }
 
     const { title, author, description, photo } = req.body || {};
-    if (!description) {
-      return res.status(400).json({ error: 'Campo "description" é obrigatório' });
+    if (!title && !author && !description) {
+      return res.status(400).json({ error: 'Preencha ao menos título, descrição ou autor' });
     }
 
     await sql.query(
       'UPDATE place_recommendations SET title = $1, author = $2, description = $3, photo = $4 WHERE id = $5',
-      [title || null, author || null, description, photo || null, id]
+      [title || null, author || null, description || null, photo || null, id]
     );
     return res.status(200).json({ ok: true });
   }

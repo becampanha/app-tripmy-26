@@ -1,19 +1,27 @@
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimalistic';
-import { FieldLabel, inputStyle } from '../design-system/index.js';
+import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
+import PlaceSelectorModal from './PlaceSelectorModal.jsx';
+import { FieldLabel, color, inputStyle, radius } from '../design-system/index.js';
 
-// Bottom sheet para publicar uma recomendação: descrição e foto opcional.
+// Bottom sheet para publicar uma recomendação: título, descrição, autor e
+// foto, todos opcionais — basta um dos três campos de texto preenchido.
 // Fica colado na parte de baixo da tela (diferente do PlaceSelectorModal,
 // que é fullscreen) — mais rápido de preencher e fechar.
-export default function RecommendationModal({ onSubmit, onClose }) {
+// `showPlaceField` liga o seletor de lugar opcional (tela de Dicas, onde o
+// lugar não é conhecido de antemão); quando a dica já nasce vinculada a um
+// lugar (tela de detalhe do lugar), essa prop fica de fora e não aparece.
+export default function RecommendationModal({ onSubmit, onClose, showPlaceField }) {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [description, setDescription] = useState('');
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [publishing, setPublishing] = useState(false);
+  const [place, setPlace] = useState(null);
+  const [selectorOpen, setSelectorOpen] = useState(false);
 
   const handlePickPhoto = (file) => {
     if (!file) return;
@@ -21,7 +29,8 @@ export default function RecommendationModal({ onSubmit, onClose }) {
     setPhotoPreview(URL.createObjectURL(file));
   };
 
-  const canPublish = description.trim().length > 0 && !publishing;
+  const canPublish =
+    (title.trim().length > 0 || author.trim().length > 0 || description.trim().length > 0) && !publishing;
 
   const handlePublish = async () => {
     if (!canPublish) return;
@@ -30,8 +39,10 @@ export default function RecommendationModal({ onSubmit, onClose }) {
       await onSubmit({
         title: title.trim() || null,
         author: author.trim() || null,
-        description: description.trim(),
+        description: description.trim() || null,
         photoFile,
+        placeId: place?.id || null,
+        place,
       });
     } finally {
       setPublishing(false);
@@ -94,6 +105,61 @@ export default function RecommendationModal({ onSubmit, onClose }) {
             <CloseIcon size={16} color="#1c1a17" />
           </div>
         </div>
+
+        {showPlaceField && (
+          <div style={{ marginTop: 18 }}>
+            <FieldLabel>Lugar (opcional)</FieldLabel>
+            <div
+              onClick={() => setSelectorOpen(true)}
+              style={{
+                marginTop: 5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '12px 14px',
+                borderRadius: radius.input,
+                background: '#f9f7f2',
+                cursor: 'pointer',
+              }}
+            >
+              {place ? (
+                <>
+                  {place.tag && <span style={{ flex: 'none' }}>{place.tag.split(' ')[0]}</span>}
+                  <span style={{ flex: 1, minWidth: 0, color: color.dark, fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {place.name}
+                  </span>
+                </>
+              ) : (
+                <span style={{ flex: 1, color: color.faint, fontSize: 13, fontWeight: 600 }}>
+                  Vincular a um lugar
+                </span>
+              )}
+              {place ? (
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPlace(null);
+                  }}
+                  style={{
+                    flex: 'none',
+                    width: 22,
+                    height: 22,
+                    borderRadius: 11,
+                    background: color.border,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <CloseIcon size={12} color={color.dark} />
+                </div>
+              ) : (
+                <AltArrowRightIcon size={15} color={color.faintIcon} style={{ flex: 'none' }} />
+              )}
+            </div>
+          </div>
+        )}
 
         <div style={{ marginTop: 18 }}>
           <FieldLabel>Título</FieldLabel>
@@ -188,6 +254,20 @@ export default function RecommendationModal({ onSubmit, onClose }) {
           {publishing ? 'Publicando...' : 'Publicar'}
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {selectorOpen && (
+          <PlaceSelectorModal
+            key="place-selector"
+            zIndex={40}
+            onSelect={(p) => {
+              setPlace(p);
+              setSelectorOpen(false);
+            }}
+            onClose={() => setSelectorOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

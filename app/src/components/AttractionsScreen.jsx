@@ -5,8 +5,9 @@ import { fetchAttractions } from '../api/itineraryApi.js';
 import { readCache, writeCache } from '../hooks/persistentCache.js';
 import { PARK_ICON_MAP } from '../data/parkIcons.js';
 import { useScrollY } from '../hooks/useScrollY.js';
+import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
-import { FixedHeader, HScrollTabs, ParkMap, ParkStrategyCard, SearchInput, SectionHeader, Skeleton, Toggle, cardPhotoHeight, color, radius, space, spacing, type } from '../design-system/index.js';
+import { FixedHeader, HScrollTabs, ParkMap, ParkStrategyCard, SearchInput, SectionHeader, Skeleton, Toggle, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
 
 // Espelho em memória de módulo do cache — evita reler e reparsear o
 // localStorage a cada render (mesmo padrão de useItinerary.js).
@@ -21,6 +22,7 @@ export default function AttractionsScreen() {
   const [search, setSearch] = useState('');
   const [onlyInItinerary, setOnlyInItinerary] = useState(false);
   const { scrollY, anchorRef } = useScrollY();
+  const { ref: headerRef, height: headerHeight } = useElementHeight();
   const { getLiveQueue } = useLiveQueueTimes();
   const [mapOpen, setMapOpen] = useState(false);
 
@@ -56,18 +58,16 @@ export default function AttractionsScreen() {
 
   return (
     <div ref={anchorRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
-      <FixedHeader scrollY={scrollY} title="Atrações" />
-      <div style={{ padding: `${space.screenGutter}px ${space.screenGutter}px 0` }}>
-        <div style={{ ...type.screenTitle, color: color.dark }}>
-          Atrações
-        </div>
-
-        <HScrollTabs items={tabItems} activeKey={parkIndex} onSelect={setParkIndex} loading={loading} />
-      </div>
+      <FixedHeader
+        headerRef={headerRef}
+        scrollY={scrollY}
+        title="Atrações"
+        tabs={<HScrollTabs items={tabItems} activeKey={parkIndex} onSelect={setParkIndex} loading={loading} style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
+      />
 
       <div
         style={{
-          marginTop: spacing.controlGap,
+          marginTop: headerHeight + spacing.controlGap,
           boxSizing: 'border-box',
           padding: `2px ${space.screenGutter}px 120px`,
         }}
@@ -96,7 +96,7 @@ export default function AttractionsScreen() {
 
         {!loading && park && sections.map((section) => (
           <div key={section.name}>
-            <SectionHeader>{section.name}</SectionHeader>
+            <SectionHeader style={{ top: headerHeight }}>{section.name}</SectionHeader>
             {section.attractions.map((attraction) => (
               <AttractionCard
                 key={attraction.id}

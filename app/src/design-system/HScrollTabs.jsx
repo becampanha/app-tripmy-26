@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useDragScroll } from '../hooks/useDragScroll.js';
 import { color, radius, spacing, type } from './tokens.js';
 
@@ -6,6 +7,22 @@ import { color, radius, spacing, type } from './tokens.js';
 // do modal de vincular lugar. Cada item: { key, label, icon?: Component, count? }.
 export default function HScrollTabs({ items, activeKey, onSelect, loading, loadingCount = 3, style }) {
   const { scrollerRef, dragRef, dragHandlers } = useDragScroll();
+  const activeRef = useRef(null);
+
+  // Este componente costuma ser renderizado em paralelo em dois lugares
+  // (título normal da tela + dentro do FixedHeader) — cada instância tem
+  // seu próprio scroll horizontal nativo, sem sincronia entre elas. Sem
+  // isso, a instância que acabou de aparecer (ex: a do FixedHeader, ao
+  // rolar a página) ficava com o scroll "resetado", mostrando a aba ativa
+  // fora do lugar onde o usuário a tinha deixado na outra instância.
+  // `inline: 'nearest'` (não 'center'): só move o scroll o mínimo pra trazer
+  // a aba pra dentro da área visível — se ela já está visível (ex: usuário
+  // clicou numa aba perto da borda, já vendo ela), não move nada. Com
+  // 'center' toda seleção recentralizava a aba, mesmo quando já visível, o
+  // que deixava a navegação por clique estranha (a tela "pulava").
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [activeKey]);
 
   return (
     <div
@@ -36,6 +53,7 @@ export default function HScrollTabs({ items, activeKey, onSelect, loading, loadi
         return (
           <div
             key={item.key}
+            ref={active ? activeRef : undefined}
             onClick={() => {
               if (dragRef.current && dragRef.current.moved) return;
               onSelect(item.key);

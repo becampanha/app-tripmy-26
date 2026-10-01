@@ -6,7 +6,6 @@ import { useHidesTabBar } from '../hooks/useEditingState.js';
 import { color, shellMaxWidth, spacing, type } from '../design-system/index.js';
 
 const DISMISSED_KEY = 'welcomeScreenSeen';
-const PHOTO_HEIGHT = '62%';
 const BADGE_SIZE = 72;
 
 export function wasWelcomeScreenSeen() {
@@ -94,8 +93,9 @@ export default function WelcomeScreen({ onClose }) {
       >
       <div
         style={{
-          height: PHOTO_HEIGHT,
-          flex: 'none',
+          flex: '3 1 0%',
+          minHeight: 0,
+          maxHeight: '58%',
           position: 'relative',
           padding: `${spacing.screenGutter}px ${spacing.screenGutter}px 0`,
           paddingTop: 'calc(env(safe-area-inset-top) + 18px)',
@@ -166,7 +166,7 @@ export default function WelcomeScreen({ onClose }) {
         </div>
       </div>
 
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ flex: '2 1 0%', minHeight: 110, position: 'relative', overflow: 'hidden' }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={slide.key}
@@ -177,7 +177,7 @@ export default function WelcomeScreen({ onClose }) {
             style={{
               position: 'absolute',
               inset: 0,
-              padding: `${BADGE_SIZE / 2 + spacing.screenGutter}px ${spacing.screenGutter}px 90px`,
+              padding: `${BADGE_SIZE / 2 + spacing.screenGutter}px ${spacing.screenGutter}px ${spacing.screenGutter}px`,
               textAlign: 'center',
               overflowY: 'auto',
               boxSizing: 'border-box',
@@ -201,10 +201,8 @@ export default function WelcomeScreen({ onClose }) {
 
       <div
         style={{
-          position: 'absolute',
-          left: spacing.screenGutter,
-          right: spacing.screenGutter,
-          bottom: 'calc(env(safe-area-inset-bottom) + 22px)',
+          flex: 'none',
+          padding: `${spacing.gapMd}px ${spacing.screenGutter}px calc(env(safe-area-inset-bottom) + 22px)`,
           display: 'flex',
           alignItems: 'center',
           gap: spacing.gapMd,

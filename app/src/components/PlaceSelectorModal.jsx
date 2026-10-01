@@ -23,7 +23,7 @@ const CATEGORY_LABELS = {
   Outro: 'Outros',
 };
 
-export default function PlaceSelectorModal({ onSelect, onClose }) {
+export default function PlaceSelectorModal({ onSelect, onClose, zIndex = 20 }) {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState(CATEGORIES[0]);
@@ -98,7 +98,7 @@ export default function PlaceSelectorModal({ onSelect, onClose }) {
         transform: 'translateX(-50%)',
         width: '100%',
         maxWidth: shellMaxWidth,
-        zIndex: 20,
+        zIndex,
         overflow: 'hidden',
       }}
     >

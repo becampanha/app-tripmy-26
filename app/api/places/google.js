@@ -187,6 +187,68 @@ async function distance(req, res, apiKey) {
   });
 }
 
+// Rota real (ruas) ligando vários pontos em sequência — usado pelo mapa do
+// dia do Roteiro (DayMap), pra traçar o caminho entre os lugares visitados
+// na ordem do roteiro. Mesma Routes API já usada em `distance()` acima, só
+// que aqui pedindo a polyline da rota em vez de só duração/distância, e
+// aceitando N pontos intermediários (não só origem/destino).
+async function route(req, res, apiKey) {
+  const { points } = req.query;
+  if (!points) {
+    return res.status(400).json({ error: 'Parâmetro "points" é obrigatório' });
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(points);
+  } catch {
+    return res.status(400).json({ error: 'Parâmetro "points" precisa ser um JSON válido' });
+  }
+
+  if (!Array.isArray(parsed) || parsed.length < 2) {
+    return res.status(400).json({ error: 'Parâmetro "points" precisa ter ao menos 2 pontos ({lat,lng})' });
+  }
+
+  const toLatLng = (p) => ({ location: { latLng: { latitude: p.lat, longitude: p.lng } } });
+  const [origin, ...rest] = parsed;
+  const destination = rest.pop();
+  const intermediates = rest;
+
+  const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+      'X-Goog-FieldMask': 'routes.polyline.encodedPolyline,routes.duration,routes.distanceMeters',
+    },
+    body: JSON.stringify({
+      origin: toLatLng(origin),
+      destination: toLatLng(destination),
+      intermediates: intermediates.map(toLatLng),
+      travelMode: 'DRIVE',
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    return res.status(response.status).json({ error: 'Erro na Routes API', details: errorBody });
+  }
+
+  const data = await response.json();
+  const routeData = data.routes?.[0];
+  const encodedPolyline = routeData?.polyline?.encodedPolyline;
+  if (!encodedPolyline) {
+    return res.status(404).json({ error: 'Rota não encontrada' });
+  }
+
+  res.setHeader('Cache-Control', 'public, max-age=2592000');
+  return res.status(200).json({
+    encodedPolyline,
+    distanceKm: routeData.distanceMeters / 1000,
+    durationMin: Math.round(parseInt(routeData.duration, 10) / 60),
+  });
+}
+
 // Busca até 3 fotos de um lugar no Google Places (a 1ª vira a foto principal,
 // as próximas 2 viram fotos-vitrine) e sobe cada uma pro Vercel Blob, já que
 // Functions são serverless (sem filesystem gravável persistente) — não dá
@@ -244,7 +306,7 @@ async function importPhotos(req, res, apiKey) {
   });
 }
 
-const ACTIONS = { search, details, photo, map, geocode, distance, importPhotos };
+const ACTIONS = { search, details, photo, map, geocode, distance, route, importPhotos };
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

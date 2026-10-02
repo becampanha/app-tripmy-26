@@ -7,6 +7,7 @@ import { FerrisWheelIcon } from '@solar-icons/react/bold/ferris-wheel';
 import { CalendarMinimalisticIcon } from '@solar-icons/react/bold/calendar-minimalistic';
 import { InfoCircleIcon } from '@solar-icons/react/bold/info-circle';
 import { PhotoCard, color as tokenColor } from '../design-system/index.js';
+import { ATTRACTION_STATUS_LABEL } from '../data/attractionStatus.js';
 
 const INTENSITY_LABEL = {
   Alta: 'Muito radical',
@@ -65,12 +66,13 @@ function LiveMiniStat({ icon: Icon, value }) {
   );
 }
 
-export default function AttractionCard({ attraction, liveQueue, onToggleRequired, disableNavigate, bottomContent, style }) {
+export default function AttractionCard({ attraction, liveQueue, liveStatus, disableNavigate, bottomContent, style }) {
   const navigate = useNavigate();
   const intensityLabel = INTENSITY_LABEL[attraction.intensity] || attraction.intensity;
   const hasHeightRestriction = attraction.restrictions === 'Altura mínima';
   const hasLiveQueue = typeof liveQueue === 'number';
-  const queueValue = hasLiveQueue ? `${liveQueue} min` : attraction.queue;
+  const statusLabel = !hasLiveQueue ? ATTRACTION_STATUS_LABEL[liveStatus] : null;
+  const queueValue = hasLiveQueue ? `${liveQueue} min` : statusLabel || attraction.queue;
 
   return (
     <PhotoCard
@@ -102,10 +104,6 @@ export default function AttractionCard({ attraction, liveQueue, onToggleRequired
 
       <div style={{ minWidth: 0 }}>
         <div
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleRequired?.(!attraction.required);
-          }}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -114,7 +112,6 @@ export default function AttractionCard({ attraction, liveQueue, onToggleRequired
             borderRadius: 7,
             background: attraction.required ? tokenColor.success : tokenColor.dark,
             marginBottom: 5,
-            cursor: onToggleRequired ? 'pointer' : 'default',
           }}
         >
           {attraction.required ? (

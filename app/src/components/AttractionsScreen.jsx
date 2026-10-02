@@ -1,31 +1,77 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { MapIcon } from '@solar-icons/react/bold/map';
 import { ListIcon } from '@solar-icons/react/linear/list';
 import AttractionCard from './AttractionCard.jsx';
-import { updateAttraction } from '../api/itineraryApi.js';
-import { showErrorToast } from '../hooks/useToast.js';
 import { useAttractionsData } from '../hooks/useAttractionsData.js';
+import { getAttractionsScreenState, saveAttractionsScreenState } from '../hooks/useAttractionsScreenState.js';
 import { PARK_ICON_MAP } from '../data/parkIcons.js';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
 import { FixedHeader, HScrollTabs, ParkMap, SearchInput, SectionHeader, Skeleton, Toggle, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
 
+// area vem em CAIXA ALTA da planilha original importada (ex: "ADVENTURELAND",
+// "DIAGON ALLEY") — aqui só pra exibição, sem mexer no dado em si (usado
+// pra agrupar/comparar em outros lugares). Conectores minúsculos ficam
+// minúsculos (ex: "of", "the"), resto vira Primeira Maiúscula.
+const LOWERCASE_WORDS = new Set(['de', 'da', 'do', 'e', 'of', 'the', 'and']);
+function formatAreaLabel(area) {
+  return area
+    .toLowerCase()
+    .split(' ')
+    .map((word, i) => (i > 0 && LOWERCASE_WORDS.has(word) ? word : word.charAt(0).toUpperCase() + word.slice(1)))
+    .join(' ');
+}
+
 // Mesmo padrão visual/funcional da tela de Lugares: abas com scroll
 // horizontal (aqui, um parque por aba) + seções sticky por área + busca.
 export default function AttractionsScreen() {
   const location = useLocation();
   const navigate = useNavigate();
+  const savedState = useRef(getAttractionsScreenState()).current;
   const { parks, setParks, loading } = useAttractionsData();
-  const [parkIndex, setParkIndex] = useState(0);
-  const [search, setSearch] = useState('');
-  const [onlyInItinerary, setOnlyInItinerary] = useState(false);
+  const [parkIndex, setParkIndex] = useState(
+    () => location.state?.parkIndex ?? savedState.parkIndex ?? 0
+  );
+  const [search, setSearch] = useState(savedState.search);
+  const [onlyInItinerary, setOnlyInItinerary] = useState(savedState.onlyInItinerary);
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
-  const { getLiveQueue } = useLiveQueueTimes();
+  const { getLiveQueue, getLiveStatus } = useLiveQueueTimes();
   const [mapOpen, setMapOpen] = useState(false);
+
+  // Salva parque/filtros a cada mudança, pra sobreviver à desmontagem ao
+  // navegar para outra tela e voltar (mesmo padrão de usePlacesScreenState).
+  useEffect(() => {
+    saveAttractionsScreenState({ parkIndex, search, onlyInItinerary });
+  }, [parkIndex, search, onlyInItinerary]);
+
+  // Restaura a posição de scroll salva assim que a lista carrega. Quem rola
+  // de fato é o motion.div ancestral (overflowY: auto, ver App.jsx) —
+  // mesmo padrão de ScheduleScreen.jsx.
+  useLayoutEffect(() => {
+    if (loading) return;
+    const scroller = anchorRef.current?.closest('[data-scroll-root]');
+    if (scroller && savedState.scrollTop) {
+      scroller.scrollTop = savedState.scrollTop;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  // Salva a posição de scroll continuamente — a navegação pra fora da tela
+  // de Atrações acontece de várias formas (abrir detalhe, abrir mapa, abrir
+  // Roteiro de Atrações, trocar de aba inferior), não dá pra interceptar
+  // uma por uma.
+  useEffect(() => {
+    const scroller = anchorRef.current?.closest('[data-scroll-root]');
+    if (!scroller) return;
+    const onScroll = () => saveAttractionsScreenState({ scrollTop: scroller.scrollTop });
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    return () => scroller.removeEventListener('scroll', onScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Abrir o mapa empurra uma entrada real no histórico (mesmo padrão do
   // ScheduleScreen/DayMap) — sem isso, clicar "Detalhes" dentro do mapa e
@@ -41,30 +87,6 @@ export default function AttractionsScreen() {
   }, [location.state]);
 
   const park = parks[parkIndex];
-
-  // Otimista: atualiza a lista local na hora, só reverte se o PUT falhar —
-  // mesmo padrão de reação imediata usado nos outros toggles do app.
-  // useAttractionsData sincroniza o espelho em memória/localStorage sozinho.
-  const applyRequired = (attractionId, required) =>
-    setParks((prev) =>
-      prev.map((p) => ({
-        ...p,
-        areas: p.areas.map((a) => ({
-          ...a,
-          attractions: a.attractions.map((at) =>
-            at.id === attractionId ? { ...at, required } : at
-          ),
-        })),
-      }))
-    );
-
-  const handleToggleRequired = (attractionId, required) => {
-    applyRequired(attractionId, required);
-    updateAttraction(attractionId, { required }).catch((err) => {
-      applyRequired(attractionId, !required);
-      showErrorToast(err, 'Não foi possível atualizar o status no roteiro.');
-    });
-  };
 
   const sections = useMemo(() => {
     if (!park) return [];
@@ -191,13 +213,13 @@ export default function AttractionsScreen() {
 
         {!loading && park && sections.map((section) => (
           <div key={section.name}>
-            <SectionHeader style={{ top: headerHeight }}>{section.name}</SectionHeader>
+            <SectionHeader style={{ top: headerHeight }}>{formatAreaLabel(section.name)}</SectionHeader>
             {section.attractions.map((attraction) => (
               <AttractionCard
                 key={attraction.id}
                 attraction={attraction}
                 liveQueue={getLiveQueue(attraction.name)}
-                onToggleRequired={(required) => handleToggleRequired(attraction.id, required)}
+                liveStatus={getLiveStatus(attraction.name)}
               />
             ))}
           </div>
@@ -219,6 +241,7 @@ export default function AttractionsScreen() {
             onSelectPark={setParkIndex}
             onClose={closeMap}
             getLiveQueue={getLiveQueue}
+            getLiveStatus={getLiveStatus}
           />
         )}
       </AnimatePresence>

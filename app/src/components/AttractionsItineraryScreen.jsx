@@ -13,16 +13,18 @@ import { setGlobalEditing } from '../hooks/useEditingState.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { updateParkStrategy } from '../api/itineraryApi.js';
 import { PARK_ICON_MAP } from '../data/parkIcons.js';
+import { ATTRACTION_STATUS_LABEL } from '../data/attractionStatus.js';
 import EditActionBar from './EditActionBar.jsx';
 import { FixedHeader, HScrollTabs, FieldLabel, inputStyle, ParkStrategyCard, Skeleton, color, radius, space, spacing, type } from '../design-system/index.js';
 
 // Mesmo badge já usado pro lugar vinculado a uma atividade do roteiro de
 // dias (ActivityItem.jsx) — padding/radius/background/fonte idênticos —, com
-// o ícone de relógio + valor + o mesmo pontinho verde pulsante do
-// AttractionCard (indica que o dado é ao vivo, não a estimativa da
-// planilha). Fixo no canto superior direito do card, na mesma altura do
-// título, em vez de inline — não devia empurrar o título nem quebrar linha.
-function LiveQueueTag({ value }) {
+// o ícone de relógio + valor + o pontinho verde pulsante do AttractionCard
+// (só quando isLive: indica tempo real, não um status tipo "Fechada"/"Em
+// manutenção", que também usa esta tag mas sem o pulso). Fixo no canto
+// superior direito do card, na mesma altura do título, em vez de inline —
+// não devia empurrar o título nem quebrar linha.
+function LiveQueueTag({ value, isLive }) {
   return (
     <div
       style={{
@@ -42,15 +44,17 @@ function LiveQueueTag({ value }) {
     >
       <ClockCircleIcon size={13} color={color.dark} />
       <span style={{ whiteSpace: 'nowrap' }}>{value}</span>
-      <span
-        style={{
-          width: 5,
-          height: 5,
-          borderRadius: 3,
-          background: color.success,
-          animation: 'pulse 1.6s ease-in-out infinite',
-        }}
-      />
+      {isLive && (
+        <span
+          style={{
+            width: 5,
+            height: 5,
+            borderRadius: 3,
+            background: color.success,
+            animation: 'pulse 1.6s ease-in-out infinite',
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -60,7 +64,10 @@ function LiveQueueTag({ value }) {
 // hora. useDragControls + dragListener=false no Reorder.Item: sem isso, o
 // item inteiro vira "arrastável" por qualquer toque, inclusive um scroll
 // vertical acidental na lista — só o handle deve iniciar o arrasto.
-function DraggableAttractionItem({ attraction, liveQueue }) {
+function DraggableAttractionItem({ attraction, liveQueue, liveStatus }) {
+  const hasLiveQueue = typeof liveQueue === 'number';
+  const statusLabel = !hasLiveQueue ? ATTRACTION_STATUS_LABEL[liveStatus] : null;
+  const tagValue = hasLiveQueue ? `${liveQueue} min` : statusLabel;
   const dragControls = useDragControls();
   return (
     <Reorder.Item
@@ -80,7 +87,7 @@ function DraggableAttractionItem({ attraction, liveQueue }) {
         borderRadius: radius.card,
       }}
     >
-      {typeof liveQueue === 'number' && <LiveQueueTag value={`${liveQueue} min`} />}
+      {tagValue && <LiveQueueTag value={tagValue} isLive={hasLiveQueue} />}
 
       <button
         type="button"
@@ -103,7 +110,7 @@ function DraggableAttractionItem({ attraction, liveQueue }) {
       </button>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ ...type.itemTitle, color: color.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: typeof liveQueue === 'number' ? 90 : 0 }}>
+        <div style={{ ...type.itemTitle, color: color.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: tagValue ? 90 : 0 }}>
           {attraction.name}
         </div>
         {attraction.bestTime && (
@@ -141,7 +148,7 @@ export default function AttractionsItineraryScreen() {
   const park = parks[selectedPark];
   const { ref: headerRef, height: headerHeight } = useElementHeight();
   const { scrollY, anchorRef } = useScrollY();
-  const { getLiveQueue } = useLiveQueueTimes();
+  const { getLiveQueue, getLiveStatus } = useLiveQueueTimes();
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -309,9 +316,13 @@ export default function AttractionsItineraryScreen() {
 
         {!loading && !editing && sequence.map((attraction, i) => {
           const liveQueue = getLiveQueue(attraction.name);
+          const hasLiveQueue = typeof liveQueue === 'number';
+          const statusLabel = !hasLiveQueue ? ATTRACTION_STATUS_LABEL[getLiveStatus(attraction.name)] : null;
+          const tagValue = hasLiveQueue ? `${liveQueue} min` : statusLabel;
           return (
             <div
               key={attraction.id}
+              onClick={() => navigate(`/atracoes/${attraction.id}`)}
               style={{
                 position: 'relative',
                 display: 'flex',
@@ -322,9 +333,10 @@ export default function AttractionsItineraryScreen() {
                 background: color.bg,
                 border: `1px solid ${color.border}`,
                 borderRadius: radius.card,
+                cursor: 'pointer',
               }}
             >
-              {typeof liveQueue === 'number' && <LiveQueueTag value={`${liveQueue} min`} />}
+              {tagValue && <LiveQueueTag value={tagValue} isLive={hasLiveQueue} />}
 
               <div
                 style={{
@@ -342,7 +354,7 @@ export default function AttractionsItineraryScreen() {
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ ...type.itemTitle, color: color.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: typeof liveQueue === 'number' ? 90 : 0 }}>
+                <div style={{ ...type.itemTitle, color: color.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: tagValue ? 90 : 0 }}>
                   {attraction.name}
                 </div>
                 {attraction.bestTime && (
@@ -364,7 +376,12 @@ export default function AttractionsItineraryScreen() {
             style={{ listStyle: 'none', margin: 0, padding: 0 }}
           >
             {draftSequence.map((attraction) => (
-              <DraggableAttractionItem key={attraction.id} attraction={attraction} liveQueue={getLiveQueue(attraction.name)} />
+              <DraggableAttractionItem
+                key={attraction.id}
+                attraction={attraction}
+                liveQueue={getLiveQueue(attraction.name)}
+                liveStatus={getLiveStatus(attraction.name)}
+              />
             ))}
           </Reorder.Group>
         )}

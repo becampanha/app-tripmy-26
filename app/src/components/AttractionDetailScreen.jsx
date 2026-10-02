@@ -3,13 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { InfoCircleIcon } from '@solar-icons/react/bold/info-circle';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
-import { AddCircleIcon } from '@solar-icons/react/bold/add-circle';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { updateAttraction } from '../api/itineraryApi.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { useAttractionsData } from '../hooks/useAttractionsData.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
-import { NavBar, navControlStyle, navControlTextColor, Skeleton, FieldLabel, inputStyle, color as tokenColor, radius, spacing } from '../design-system/index.js';
+import { NavBar, Toggle, navControlStyle, navControlTextColor, Skeleton, FieldLabel, inputStyle, color as tokenColor, radius, spacing } from '../design-system/index.js';
 
 // Aceita qualquer formato comum de link do YouTube (watch?v=, youtu.be/,
 // shorts/, embed/, ou já um ID puro de 11 caracteres) e devolve só o ID do
@@ -233,30 +232,7 @@ export default function AttractionDetailScreen() {
           ) : (
             <>
               <div style={{ minWidth: 0 }}>
-                <div
-                  onClick={() => handleToggleRequired(!attraction.required)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '3px 8px 3px 6px',
-                    borderRadius: 7,
-                    background: attraction.required ? tokenColor.success : tokenColor.dark,
-                    marginTop: 8,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {attraction.required ? (
-                    <CheckCircleIcon size={12} color="#fff" />
-                  ) : (
-                    <AddCircleIcon size={12} color="#fff" />
-                  )}
-                  <span style={{ color: '#fff', fontSize: 10.5, fontWeight: 700 }}>
-                    {attraction.required ? 'Está no roteiro' : 'Não está no roteiro'}
-                  </span>
-                </div>
-
-                <div style={{ color: '#1c1a17', fontSize: 22, fontWeight: 800, lineHeight: 1.2, marginTop: 6 }}>
+                <div style={{ color: '#1c1a17', fontSize: 22, fontWeight: 800, lineHeight: 1.2, marginTop: 8 }}>
                   {attraction.name}
                 </div>
                 {(attraction.type || attraction.intensity) && (
@@ -302,6 +278,44 @@ export default function AttractionDetailScreen() {
                   )}
                 </div>
               )}
+
+              {/* Card dedicado pro toggle "está no roteiro" — antes era uma
+                  pílula pequena no topo, difícil de perceber como um
+                  controle de verdade. Aqui ganha espaço próprio: texto
+                  maior e mais legível de um lado, Toggle grande do outro.
+                  Fundo sempre neutro (não verde) — um fundo colorido igual
+                  à cor do próprio Toggle ligado derrubava o contraste entre
+                  os dois. O verde fica só no ícone de check ao lado do
+                  título, quando ativo. */}
+              <div
+                onClick={() => handleToggleRequired(!attraction.required)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  marginTop: spacing.controlGap + 6,
+                  padding: spacing.cardPadding,
+                  borderRadius: radius.card,
+                  background: tokenColor.surfaceMuted,
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {attraction.required && <CheckCircleIcon size={16} color={tokenColor.success} />}
+                    <div style={{ color: tokenColor.dark, fontSize: 15.5, fontWeight: 800 }}>
+                      {attraction.required ? 'Está no roteiro' : 'Não está no roteiro'}
+                    </div>
+                  </div>
+                  <div style={{ color: tokenColor.muted, fontSize: 12.5, fontWeight: 600, marginTop: 2 }}>
+                    {attraction.required
+                      ? 'Essa atração aparece no seu roteiro de atrações'
+                      : 'Toque pra marcar como prioridade do seu roteiro'}
+                  </div>
+                </div>
+                <Toggle checked={attraction.required} onChange={handleToggleRequired} />
+              </div>
 
               <div style={{ marginTop: spacing.controlGap + 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

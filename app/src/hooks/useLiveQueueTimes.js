@@ -66,5 +66,15 @@ export function useLiveQueueTimes() {
     return entry.waitTime;
   }
 
-  return { getLiveQueue };
+  // Status real da atração na API externa (OPERATING, CLOSED, DOWN,
+  // REFURBISHMENT) — getLiveQueue sozinho não distingue "sem dado ainda"
+  // de "atração fechada agora", porque os dois casos retornam null. Quem
+  // precisa mostrar o motivo (não só omitir a tag) usa este helper.
+  function getLiveStatus(attractionName) {
+    if (!byName) return null;
+    const entry = byName[normalizeName(attractionName)];
+    return entry?.status ?? null;
+  }
+
+  return { getLiveQueue, getLiveStatus };
 }

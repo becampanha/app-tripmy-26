@@ -15,6 +15,7 @@ import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useGeolocation } from '../hooks/useGeolocation.js';
 import { useHidesTabBar } from '../hooks/useEditingState.js';
 import { PARK_ICON_MAP } from '../data/parkIcons.js';
+import { ATTRACTION_STATUS_LABEL } from '../data/attractionStatus.js';
 import { color, shellMaxWidth, spacing } from './tokens.js';
 
 // Mapa fullscreen de um parque — mesma estrutura/interação do mapa do dia
@@ -60,7 +61,7 @@ function myLocationHtml() {
   `;
 }
 
-export default function ParkMap({ parks, selectedPark, onSelectPark, onClose, getLiveQueue }) {
+export default function ParkMap({ parks, selectedPark, onSelectPark, onClose, getLiveQueue, getLiveStatus }) {
   useHidesTabBar(true);
   const navigate = useNavigate();
   const containerRef = useRef(null);
@@ -171,7 +172,9 @@ export default function ParkMap({ parks, selectedPark, onSelectPark, onClose, ge
 
     for (const pin of pins) {
       const liveQueue = getLiveQueue?.(pin.attraction.name);
-      const queueLabel = typeof liveQueue === 'number' ? `${liveQueue} min` : pin.attraction.queue;
+      const hasLiveQueue = typeof liveQueue === 'number';
+      const statusLabel = !hasLiveQueue ? ATTRACTION_STATUS_LABEL[getLiveStatus?.(pin.attraction.name)] : null;
+      const queueLabel = hasLiveQueue ? `${liveQueue} min` : statusLabel || pin.attraction.queue;
       const label = queueLabel || pin.attraction.name;
 
       const icon = leaflet.divIcon({
@@ -486,6 +489,7 @@ export default function ParkMap({ parks, selectedPark, onSelectPark, onClose, ge
                     <AttractionCard
                       attraction={pin.attraction}
                       liveQueue={getLiveQueue?.(pin.attraction.name)}
+                      liveStatus={getLiveStatus?.(pin.attraction.name)}
                       disableNavigate
                       bottomContent={
                         <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.gapMd }}>

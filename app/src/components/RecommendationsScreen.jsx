@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { AddIcon } from '@solar-icons/react/linear/add';
+import { ListIcon } from '@solar-icons/react/bold/list';
+import { LibraryIcon } from '@solar-icons/react/bold/library';
 import { useAllRecommendations } from '../hooks/useAllRecommendations.js';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
@@ -9,6 +11,7 @@ import { createRecommendation, updateRecommendation, deleteRecommendation, uploa
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import RecommendationModal from './RecommendationModal.jsx';
 import RecommendationEditModal from './RecommendationEditModal.jsx';
+import RecommendationCardStack from './RecommendationCardStack.jsx';
 import { FixedHeader, RecommendationCard, SectionHeader, Skeleton, color, radius, spacing } from '../design-system/index.js';
 
 const NO_AREA_LABEL = 'Outros lugares';
@@ -55,6 +58,63 @@ function groupByArea(recommendations) {
   return sections;
 }
 
+// Segmented control (pílula com 2 ícones, fundo destacado desliza atrás do
+// ativo) — alternativa compacta aos dois botões separados com texto, pedida
+// pelo usuário a partir de referência visual (estilo "Preview/Code" do
+// GitHub). layoutId faz o Framer Motion animar o fundo entre as posições
+// automaticamente quando viewMode muda, sem precisar calcular offset manual.
+function ViewModeSegmentedToggle({ viewMode, onChange }) {
+  const options = [
+    { key: 'list', Icon: ListIcon },
+    { key: 'cards', Icon: LibraryIcon },
+  ];
+  return (
+    <div
+      style={{
+        display: 'flex',
+        padding: 3,
+        borderRadius: 13,
+        background: color.surfaceMuted,
+        gap: 2,
+      }}
+    >
+      {options.map(({ key, Icon }) => {
+        const active = viewMode === key;
+        return (
+          <div
+            key={key}
+            onClick={() => onChange(key)}
+            style={{
+              position: 'relative',
+              width: 36,
+              height: 32,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            {active && (
+              <motion.div
+                layoutId="recommendations-viewmode-pill"
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius: 10,
+                  background: '#fff',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                }}
+              />
+            )}
+            <Icon size={16} color={active ? color.dark : color.muted} style={{ position: 'relative' }} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function RecommendationsSkeleton() {
   return (
     <>
@@ -81,6 +141,7 @@ export default function RecommendationsScreen() {
   const { ref: headerRef, height: headerHeight } = useElementHeight();
   const [editingRecommendation, setEditingRecommendation] = useState(null);
   const [creatingRecommendation, setCreatingRecommendation] = useState(false);
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'cards'
 
   const sections = useMemo(
     () => (recommendations ? groupByArea(recommendations) : null),
@@ -145,49 +206,59 @@ export default function RecommendationsScreen() {
         scrollY={scrollY}
         title="Dicas"
         right={
-          <div
-            onClick={() => setCreatingRecommendation(true)}
-            style={{
-              height: 38,
-              padding: '0 14px',
-              borderRadius: 13,
-              background: color.surfaceMuted,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              cursor: 'pointer',
-            }}
-          >
-            <AddIcon size={17} color={color.dark} />
-            <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Adicionar</span>
-          </div>
+          <>
+            <ViewModeSegmentedToggle viewMode={viewMode} onChange={setViewMode} />
+            <div
+              onClick={() => setCreatingRecommendation(true)}
+              style={{
+                height: 38,
+                padding: '0 14px',
+                borderRadius: 13,
+                background: color.surfaceMuted,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                cursor: 'pointer',
+              }}
+            >
+              <AddIcon size={17} color={color.dark} />
+              <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Adicionar</span>
+            </div>
+          </>
         }
       />
 
-      <div style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
-        {recommendations === null && <RecommendationsSkeleton />}
+      {viewMode === 'list' ? (
+        <div style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
+          {recommendations === null && <RecommendationsSkeleton />}
 
-        {recommendations && recommendations.length === 0 && (
-          <div style={{ padding: '30px 0', textAlign: 'center', color: color.faint, fontSize: 13.5, fontWeight: 600 }}>
-            Nenhuma dica publicada ainda.
-          </div>
-        )}
+          {recommendations && recommendations.length === 0 && (
+            <div style={{ padding: '30px 0', textAlign: 'center', color: color.faint, fontSize: 13.5, fontWeight: 600 }}>
+              Nenhuma dica publicada ainda.
+            </div>
+          )}
 
-        {sections && sections.map((section) => (
-          <div key={section.area}>
-            <SectionHeader style={{ top: headerHeight }}>{section.area}</SectionHeader>
-            {section.items.map((rec) => (
-              <RecommendationCard
-                key={rec.id}
-                recommendation={rec}
-                place={rec.place}
-                onClick={rec.place ? () => navigate(`/lugares/${rec.place.id}`) : undefined}
-                onEdit={() => setEditingRecommendation(rec)}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
+          {sections && sections.map((section) => (
+            <div key={section.area}>
+              <SectionHeader style={{ top: headerHeight }}>{section.area}</SectionHeader>
+              {section.items.map((rec) => (
+                <RecommendationCard
+                  key={rec.id}
+                  recommendation={rec}
+                  place={rec.place}
+                  onClick={rec.place ? () => navigate(`/lugares/${rec.place.id}`) : undefined}
+                  onEdit={() => setEditingRecommendation(rec)}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <RecommendationCardStack
+          recommendations={recommendations}
+          headerHeight={headerHeight}
+        />
+      )}
 
       <AnimatePresence>
         {editingRecommendation && (

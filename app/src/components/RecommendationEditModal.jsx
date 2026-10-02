@@ -4,6 +4,7 @@ import { CloseIcon } from '@solar-icons/react/linear/close';
 import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimalistic';
 import { TrashBinTrashIcon } from '@solar-icons/react/linear/trash-bin-trash';
 import { FieldLabel, inputStyle } from '../design-system/index.js';
+import { useHidesTabBar } from '../hooks/useEditingState.js';
 
 // Mesmo bottom sheet do RecommendationModal (criar), mas pré-preenchido com
 // os dados da recomendação — aberto pelo botão de editar do próprio
@@ -19,6 +20,8 @@ export default function RecommendationEditModal({ recommendation, onSave, onDele
   const [photoPreview, setPhotoPreview] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  useHidesTabBar(true);
 
   const handlePickPhoto = (file) => {
     if (!file) return;

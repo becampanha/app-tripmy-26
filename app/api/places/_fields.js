@@ -13,6 +13,7 @@ export const FIELD_MAP = {
   menuLabel: 'menu_label',
   reviewLabel: 'review_label',
   recommendation: 'recommendation',
+  menuUri: 'menu_uri',
   photo: 'photo',
   dishPhotos: 'dish_photos',
 };

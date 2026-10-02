@@ -5,6 +5,7 @@ import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimal
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import PlaceSelectorModal from './PlaceSelectorModal.jsx';
 import { FieldLabel, color, inputStyle, radius } from '../design-system/index.js';
+import { useHidesTabBar } from '../hooks/useEditingState.js';
 
 // Bottom sheet para publicar uma recomendação: título, descrição, autor e
 // foto, todos opcionais — basta um dos três campos de texto preenchido.
@@ -22,6 +23,8 @@ export default function RecommendationModal({ onSubmit, onClose, showPlaceField 
   const [publishing, setPublishing] = useState(false);
   const [place, setPlace] = useState(null);
   const [selectorOpen, setSelectorOpen] = useState(false);
+
+  useHidesTabBar(true);
 
   const handlePickPhoto = (file) => {
     if (!file) return;

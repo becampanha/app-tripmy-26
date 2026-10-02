@@ -139,16 +139,42 @@ async function locations(req, res) {
   return res.status(200).json(byName);
 }
 
+// PUT /api/attractions?action=update&id=<id> — alterna/edita o campo
+// `required` ("está no roteiro"). Único campo editável por aqui hoje; os
+// demais vêm só da planilha original importada.
+async function updateAttraction(req, res) {
+  const sql = getSql();
+  const { id } = req.query;
+  const body = req.body || {};
+
+  if (!id || body.required === undefined) {
+    return res.status(400).json({ error: 'Parâmetros "id" e "required" são obrigatórios' });
+  }
+
+  await sql.query('UPDATE attractions SET required = $1 WHERE id = $2', [body.required, id]);
+  return res.status(200).json({ ok: true });
+}
+
 const ACTIONS = { live: liveQueueTimes, locations };
+const WRITE_ACTIONS = { update: updateAttraction };
 
 // GET /api/attractions — retorna todas as atrações agrupadas por parque e
 // área, já ordenadas (park_sort_order, area_sort_order, sort_order — a
 // mesma ordem em que apareciam na planilha original).
 // GET /api/attractions?action=live — fila em tempo real (ver liveQueueTimes).
 // GET /api/attractions?action=locations&park=<id> — coordenadas (ver locations).
+// PUT /api/attractions?action=update&id=<id> — ver updateAttraction.
 export default async function handler(req, res) {
+  if (req.method === 'PUT') {
+    const writeAction = WRITE_ACTIONS[req.query.action];
+    if (!writeAction) {
+      return res.status(400).json({ error: 'Parâmetro "action" inválido para PUT' });
+    }
+    return writeAction(req, res);
+  }
+
   if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
+    res.setHeader('Allow', 'GET, PUT');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 

@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS places (
   menu_label TEXT,
   review_label TEXT,
   recommendation TEXT,
+  menu_uri TEXT,                     -- link do cardápio/site do restaurante (só exibido pra category='Restaurante')
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

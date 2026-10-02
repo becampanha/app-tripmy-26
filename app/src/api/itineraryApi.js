@@ -132,3 +132,10 @@ export function fetchLiveQueueTimes() {
 export function fetchAttractionLocations(parkId) {
   return request(`/api/attractions?action=locations&park=${encodeURIComponent(parkId)}`);
 }
+
+export function updateAttraction(id, fields) {
+  return request(`/api/attractions?action=update&id=${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(fields),
+  });
+}

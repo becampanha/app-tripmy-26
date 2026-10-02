@@ -306,7 +306,36 @@ async function importPhotos(req, res, apiKey) {
   });
 }
 
-const ACTIONS = { search, details, photo, map, geocode, distance, route, importPhotos };
+// Busca o `websiteUri` de um lugar — usado como aproximação do link do
+// menu do restaurante (a Places API não tem campo dedicado "menu"; o site
+// do estabelecimento costuma ser o que o Google Maps mostra como botão
+// "Menu" no app, mas nem sempre é exatamente a página do cardápio — por
+// isso é só um ponto de partida pra importação em lote, sujeito a revisão
+// manual depois). Usado pelo script db/import-menu-links.cjs.
+async function website(req, res, apiKey) {
+  const placeId = req.query.placeId;
+  if (!placeId || typeof placeId !== 'string') {
+    return res.status(400).json({ error: 'Parâmetro "placeId" é obrigatório' });
+  }
+
+  const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+    method: 'GET',
+    headers: {
+      'X-Goog-Api-Key': apiKey,
+      'X-Goog-FieldMask': 'websiteUri',
+    },
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    return res.status(response.status).json({ error: 'Erro ao buscar site do lugar', details: errorBody });
+  }
+
+  const data = await response.json();
+  return res.status(200).json({ websiteUri: data.websiteUri || null });
+}
+
+const ACTIONS = { search, details, photo, map, geocode, distance, route, importPhotos, website };
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

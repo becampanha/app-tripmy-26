@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
+import { Reorder, useDragControls } from 'motion/react';
 import { TrashBinTrashIcon } from '@solar-icons/react/linear/trash-bin-trash';
+import { HamburgerMenuIcon } from '@solar-icons/react/linear/hamburger-menu';
 import { AltArrowUpIcon } from '@solar-icons/react/linear/alt-arrow-up';
 import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
 import { PointOnMapIcon } from '@solar-icons/react/linear/point-on-map';
@@ -21,13 +23,19 @@ export default function ActivityItem({
   onMoveDown,
   isFirst,
   isLast,
+  footer,
 }) {
   const { place } = activity;
   const navigate = useNavigate();
   const clickable = !editing && !!place;
+  const dragControls = useDragControls();
 
   return (
-    <div
+    <>
+    <Reorder.Item
+      value={activity}
+      dragListener={false}
+      dragControls={dragControls}
       onClick={clickable ? () => navigate(`/lugares/${place.id}`) : undefined}
       style={{
         position: 'relative',
@@ -40,6 +48,7 @@ export default function ActivityItem({
         border: `1px solid ${color.border}`,
         borderRadius: radius.card,
         cursor: clickable ? 'pointer' : 'default',
+        listStyle: 'none',
       }}
     >
       {editing && (
@@ -68,11 +77,12 @@ export default function ActivityItem({
 
             <div>
               <FieldLabel>Descrição</FieldLabel>
-              <input
+              <textarea
                 value={activity.subtitle || ''}
                 onChange={(e) => onEditSubtitle(e.target.value)}
                 placeholder="Descrição (opcional)"
-                style={{ ...inputStyle, marginTop: 3 }}
+                rows={3}
+                style={{ ...inputStyle, marginTop: 3, resize: 'vertical', fontFamily: 'inherit' }}
               />
             </div>
 
@@ -220,6 +230,13 @@ export default function ActivityItem({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 'none', paddingTop: 2 }}>
           <button
             type="button"
+            onPointerDown={(e) => dragControls.start(e)}
+            style={{ border: 0, background: 'none', padding: 2, cursor: 'grab', touchAction: 'none' }}
+          >
+            <HamburgerMenuIcon size={16} color={color.dark} />
+          </button>
+          <button
+            type="button"
             onClick={onMoveUp}
             disabled={isFirst}
             style={{ border: 0, background: 'none', padding: 2, cursor: isFirst ? 'default' : 'pointer', opacity: isFirst ? 0.3 : 1 }}
@@ -239,6 +256,8 @@ export default function ActivityItem({
           </button>
         </div>
       )}
-    </div>
+    </Reorder.Item>
+    {footer}
+    </>
   );
 }

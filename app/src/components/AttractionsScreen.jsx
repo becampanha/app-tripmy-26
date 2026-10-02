@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence } from 'motion/react';
 import AttractionCard from './AttractionCard.jsx';
-import { fetchAttractions } from '../api/itineraryApi.js';
+import { fetchAttractions, updateAttraction } from '../api/itineraryApi.js';
+import { showErrorToast } from '../hooks/useToast.js';
 import { readCache, writeCache } from '../hooks/persistentCache.js';
 import { PARK_ICON_MAP } from '../data/parkIcons.js';
 import { useScrollY } from '../hooks/useScrollY.js';
@@ -37,6 +38,32 @@ export default function AttractionsScreen() {
   }, []);
 
   const park = parks[parkIndex];
+
+  // Otimista: atualiza a lista local na hora, só reverte se o PUT falhar —
+  // mesmo padrão de reação imediata usado nos outros toggles do app.
+  const applyRequired = (attractionId, required) =>
+    setParks((prev) => {
+      const next = prev.map((p) => ({
+        ...p,
+        areas: p.areas.map((a) => ({
+          ...a,
+          attractions: a.attractions.map((at) =>
+            at.id === attractionId ? { ...at, required } : at
+          ),
+        })),
+      }));
+      cachedParks = next;
+      writeCache('attractions', next);
+      return next;
+    });
+
+  const handleToggleRequired = (attractionId, required) => {
+    applyRequired(attractionId, required);
+    updateAttraction(attractionId, { required }).catch((err) => {
+      applyRequired(attractionId, !required);
+      showErrorToast(err, 'Não foi possível atualizar o status no roteiro.');
+    });
+  };
 
   const sections = useMemo(() => {
     if (!park) return [];
@@ -102,6 +129,7 @@ export default function AttractionsScreen() {
                 key={attraction.id}
                 attraction={attraction}
                 liveQueue={getLiveQueue(attraction.name)}
+                onToggleRequired={(required) => handleToggleRequired(attraction.id, required)}
               />
             ))}
           </div>

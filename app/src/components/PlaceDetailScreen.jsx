@@ -11,6 +11,7 @@ import { AddCircleIcon } from '@solar-icons/react/linear/add-circle';
 import { AddCircleIcon as AddCircleBoldIcon } from '@solar-icons/react/bold/add-circle';
 import { MagnifierIcon } from '@solar-icons/react/linear/magnifier';
 import { PointOnMapIcon } from '@solar-icons/react/bold/point-on-map';
+import { DocumentTextIcon } from '@solar-icons/react/bold/document-text';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
 import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
 import { AltArrowUpIcon } from '@solar-icons/react/linear/alt-arrow-up';
@@ -37,7 +38,7 @@ const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 
 
 const EDITABLE_FIELDS = [
   'name', 'category', 'subcategory', 'tag', 'address',
-  'cost', 'hours', 'recommendation', 'googleMapsUri',
+  'cost', 'hours', 'recommendation', 'googleMapsUri', 'menuUri',
 ];
 
 function placeFields(place) {
@@ -802,26 +803,17 @@ export default function PlaceDetailScreen() {
       {/* Espaçador puramente estrutural: reserva a altura da foto fixa no
           fluxo do documento, mas nunca deve interceptar cliques — senão rouba
           o toque/arrasto do carrossel, que fica visualmente por trás dele. */}
-      <div style={{ position: 'relative', height: HEADER_HEIGHT, zIndex: 0, pointerEvents: 'none' }}>
-        {/* Barra branca sobreposta à base da foto, com cantos superiores
-            arredondados — cria o efeito de "moldura subindo por cima da
-            imagem" sem depender de recortes/gradientes no elemento seguinte. */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: 24,
-            background: '#fff',
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            zIndex: 2,
-          }}
-        />
-      </div>
+      <div style={{ position: 'relative', height: HEADER_HEIGHT, zIndex: 0, pointerEvents: 'none' }} />
 
-      <div style={{ position: 'relative', background: '#fff' }}>
+      <div
+        style={{
+          position: 'relative',
+          background: '#fff',
+          marginTop: -24,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+        }}
+      >
         <div style={{ padding: '10px 22px 20px' }}>
 
         {loading ? (
@@ -965,6 +957,13 @@ export default function PlaceDetailScreen() {
               <input value={draft.googleMapsUri || ''} onChange={(e) => setDraftField('googleMapsUri')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} />
             </div>
 
+            {draft.category === 'Restaurante' && (
+              <div>
+                <FieldLabel>Link do menu</FieldLabel>
+                <input value={draft.menuUri || ''} onChange={(e) => setDraftField('menuUri')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} />
+              </div>
+            )}
+
             {!isNew && (
               <div
                 onClick={handleDelete}
@@ -991,7 +990,7 @@ export default function PlaceDetailScreen() {
         ) : (
           <>
             <div style={{ minWidth: 0 }}>
-              <div style={{ color: '#1c1a17', fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>
+              <div style={{ color: '#1c1a17', fontSize: 22, fontWeight: 800, lineHeight: 1.2, marginTop: 8 }}>
                 {place.name}
               </div>
               {place.recommendation && (
@@ -1021,6 +1020,63 @@ export default function PlaceDetailScreen() {
                   if (place.hours) cards.push({ key: 'hours', icon: '🕒', label: 'Horário', value: place.hours });
                   return cards.map(({ key, ...card }) => <InfoCard key={key} {...card} />);
                 })()}
+              </div>
+            )}
+
+            {(place.googleMapsUri || (place.category === 'Restaurante' && place.menuUri)) && (
+              <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.controlGap }}>
+                {place.googleMapsUri && (
+                  <a
+                    href={place.googleMapsUri}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      padding: '14px 12px',
+                      borderRadius: 16,
+                      background: '#1c1a17',
+                      color: '#fff',
+                      fontSize: 14.5,
+                      fontWeight: 700,
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <PointOnMapIcon size={17} color="#fff" />
+                    Ver no Google Maps
+                  </a>
+                )}
+
+                {place.category === 'Restaurante' && place.menuUri && (
+                  <a
+                    href={place.menuUri}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      padding: '14px 12px',
+                      borderRadius: 16,
+                      background: '#fff',
+                      border: '1px solid #ececec',
+                      color: '#1c1a17',
+                      fontSize: 14.5,
+                      fontWeight: 700,
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <DocumentTextIcon size={17} color="#1c1a17" />
+                    Ver cardápio
+                  </a>
+                )}
               </div>
             )}
 
@@ -1219,27 +1275,6 @@ export default function PlaceDetailScreen() {
               </div>
             )}
 
-            {place.googleMapsUri && (
-              <a
-                href={place.googleMapsUri}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: 'block',
-                  marginTop: spacing.controlGap,
-                  padding: '14px 18px',
-                  borderRadius: 16,
-                  background: '#1c1a17',
-                  color: '#fff',
-                  fontSize: 14.5,
-                  fontWeight: 700,
-                  textAlign: 'center',
-                  textDecoration: 'none',
-                }}
-              >
-                Ver no Google Maps
-              </a>
-            )}
           </>
         )}
         </div>

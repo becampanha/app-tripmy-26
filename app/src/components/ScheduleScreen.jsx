@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, Reorder } from 'motion/react';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { AddIcon } from '@solar-icons/react/linear/add';
 import { ListIcon } from '@solar-icons/react/linear/list';
@@ -35,6 +35,41 @@ function activityFields(act) {
 }
 
 let nextDraftId = -1;
+
+// Divisor clicável entre dois itens (ou antes do primeiro/depois do último)
+// pra inserir uma nova atividade naquela posição exata, em vez de só no fim
+// da lista. Fica discreto (sem borda tracejada grande) pra não parecer um
+// item de atividade de verdade no meio da lista.
+function AddActivityDivider({ onClick }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 22,
+        margin: '-4px 0 2px',
+        cursor: 'pointer',
+      }}
+    >
+      <div
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 13,
+          border: `1.5px dashed ${color.dashedBorder}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: color.bg,
+        }}
+      >
+        <AddIcon size={14} color={color.dark} />
+      </div>
+    </div>
+  );
+}
 
 function ActivitySkeleton() {
   return (
@@ -146,6 +181,10 @@ export default function ScheduleScreen() {
     patchDraftActivity(id, { placeId: null, place: null });
   };
 
+  const handleReorder = (activities) => {
+    setDraft((d) => ({ ...d, activities }));
+  };
+
   const handleMove = (index, delta) => {
     setDraft((d) => {
       const activities = d.activities.slice();
@@ -156,12 +195,15 @@ export default function ScheduleScreen() {
     });
   };
 
-  const handleAddActivity = () => {
+  const handleAddActivity = (atIndex) => {
     const id = nextDraftId--;
-    setDraft((d) => ({
-      ...d,
-      activities: [...d.activities, { id, time: '', title: '', subtitle: '', placeId: null, place: null }],
-    }));
+    const newActivity = { id, time: '', title: '', subtitle: '', placeId: null, place: null };
+    setDraft((d) => {
+      const activities = d.activities.slice();
+      const insertAt = atIndex === undefined ? activities.length : atIndex;
+      activities.splice(insertAt, 0, newActivity);
+      return { ...d, activities };
+    });
   };
 
   const handleSelectPlace = (place) => {
@@ -296,52 +338,55 @@ export default function ScheduleScreen() {
             gerada por API em tempo real, arquivo salvo em public/), sem
             overlay; o botão preto por cima leva pro mapa de verdade, com os
             pontos reais das atividades do dia, montado ao abrir o DayMap em
-            tela cheia. */}
-        <div
-          onClick={() => setMapOpen(true)}
-          style={{
-            position: 'relative',
-            marginBottom: 28,
-            borderRadius: 20,
-            overflow: 'hidden',
-            height: 110,
-            background: '#eee9df',
-            border: `1px solid ${color.border}`,
-            cursor: 'pointer',
-          }}
-        >
-          <img
-            src="/roteiro-mapa-card.png"
-            alt=""
-            loading="lazy"
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          />
+            tela cheia. Some durante a edição: não faz sentido abrir o mapa
+            enquanto o roteiro está sendo editado em rascunho local. */}
+        {!editing && (
           <div
+            onClick={() => setMapOpen(true)}
             style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              position: 'relative',
+              marginBottom: 28,
+              borderRadius: 20,
+              overflow: 'hidden',
+              height: 110,
+              background: '#eee9df',
+              border: `1px solid ${color.border}`,
+              cursor: 'pointer',
             }}
           >
+            <img
+              src="/roteiro-mapa-card.png"
+              alt=""
+              loading="lazy"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
             <div
               style={{
+                position: 'absolute',
+                inset: 0,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
-                padding: '10px 18px',
-                borderRadius: 14,
-                background: '#1c1a17',
+                justifyContent: 'center',
               }}
             >
-              <MapIcon size={17} color="#fff" />
-              <span style={{ color: '#fff', fontSize: 14.5, fontWeight: 800, letterSpacing: -0.1 }}>
-                Ver roteiro no mapa
-              </span>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '10px 18px',
+                  borderRadius: 14,
+                  background: '#1c1a17',
+                }}
+              >
+                <MapIcon size={17} color="#fff" />
+                <span style={{ color: '#fff', fontSize: 14.5, fontWeight: 800, letterSpacing: -0.1 }}>
+                  Ver roteiro no mapa
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, gap: 10 }}>
           {editing && draft ? (
@@ -384,59 +429,54 @@ export default function ScheduleScreen() {
 
         {!displayDay && Array.from({ length: 4 }).map((_, i) => <ActivitySkeleton key={i} />)}
 
-        {displayDay && displayDay.activities.map((act, i) => {
-          const next = displayDay.activities[i + 1];
-          return (
-            <div key={act.id}>
-              <ActivityItem
-                activity={act}
-                editing={editing}
-                isFirst={i === 0}
-                isLast={i === displayDay.activities.length - 1}
-                onEditTime={(time) => patchDraftActivity(act.id, { time })}
-                onEditTitle={(title) => patchDraftActivity(act.id, { title })}
-                onEditSubtitle={(subtitle) => patchDraftActivity(act.id, { subtitle })}
-                onSelectPlace={() => setSelectorFor(act.id)}
-                onUnlinkPlace={() => handleUnlinkPlace(act.id)}
-                onDelete={() => handleDelete(act.id)}
-                onMoveUp={() => handleMove(i, -1)}
-                onMoveDown={() => handleMove(i, 1)}
-              />
-              <div style={{ marginBottom: 10 }}>
-                {!editing && next && act.place && next.place && (
-                  <DistanceBetween from={act.place} to={next.place} />
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {displayDay && editing && (
+          <AddActivityDivider onClick={() => handleAddActivity(0)} />
+        )}
+
+        {displayDay && (
+          <Reorder.Group
+            as="div"
+            axis="y"
+            values={displayDay.activities}
+            onReorder={editing ? handleReorder : () => {}}
+            style={{ listStyle: 'none', margin: 0, padding: 0 }}
+          >
+            {displayDay.activities.map((act, i) => {
+              const next = displayDay.activities[i + 1];
+              return (
+                <ActivityItem
+                  key={act.id}
+                  activity={act}
+                  editing={editing}
+                  isFirst={i === 0}
+                  isLast={i === displayDay.activities.length - 1}
+                  onEditTime={(time) => patchDraftActivity(act.id, { time })}
+                  onEditTitle={(title) => patchDraftActivity(act.id, { title })}
+                  onEditSubtitle={(subtitle) => patchDraftActivity(act.id, { subtitle })}
+                  onSelectPlace={() => setSelectorFor(act.id)}
+                  onUnlinkPlace={() => handleUnlinkPlace(act.id)}
+                  onDelete={() => handleDelete(act.id)}
+                  onMoveUp={() => handleMove(i, -1)}
+                  onMoveDown={() => handleMove(i, 1)}
+                  footer={
+                    <>
+                      <div style={{ marginBottom: 10 }}>
+                        {!editing && next && act.place && next.place && (
+                          <DistanceBetween from={act.place} to={next.place} />
+                        )}
+                      </div>
+                      {editing && <AddActivityDivider onClick={() => handleAddActivity(i + 1)} />}
+                    </>
+                  }
+                />
+              );
+            })}
+          </Reorder.Group>
+        )}
 
         {displayDay && n === 0 && (
           <div style={{ padding: '30px 0', textAlign: 'center', color: color.faint, fontSize: 13.5, fontWeight: 600 }}>
             Sem atividades definidas para este dia.
-          </div>
-        )}
-
-        {displayDay && editing && (
-          <div
-            onClick={handleAddActivity}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              padding: 14,
-              marginTop: 4,
-              borderRadius: radius.card,
-              border: `1.5px dashed ${color.dashedBorder}`,
-              color: color.dark,
-              fontSize: 13.5,
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            <AddIcon size={16} color={color.dark} />
-            Adicionar item
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
+import { AddCircleIcon } from '@solar-icons/react/bold/add-circle';
 import { ClockCircleIcon } from '@solar-icons/react/bold/clock-circle';
 import { UsersGroupRoundedIcon } from '@solar-icons/react/bold/users-group-rounded';
 import { FerrisWheelIcon } from '@solar-icons/react/bold/ferris-wheel';
@@ -63,7 +64,7 @@ function LiveMiniStat({ icon: Icon, value }) {
   );
 }
 
-export default function AttractionCard({ attraction, liveQueue }) {
+export default function AttractionCard({ attraction, liveQueue, onToggleRequired }) {
   const intensityLabel = INTENSITY_LABEL[attraction.intensity] || attraction.intensity;
   const hasHeightRestriction = attraction.restrictions === 'Altura mínima';
   const hasLiveQueue = typeof liveQueue === 'number';
@@ -93,22 +94,31 @@ export default function AttractionCard({ attraction, liveQueue }) {
       <div style={{ flex: 1 }} />
 
       <div style={{ minWidth: 0 }}>
-        {attraction.required && (
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              padding: '3px 8px 3px 6px',
-              borderRadius: 7,
-              background: tokenColor.success,
-              marginBottom: 5,
-            }}
-          >
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleRequired?.(!attraction.required);
+          }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '3px 8px 3px 6px',
+            borderRadius: 7,
+            background: attraction.required ? tokenColor.success : tokenColor.dark,
+            marginBottom: 5,
+            cursor: onToggleRequired ? 'pointer' : 'default',
+          }}
+        >
+          {attraction.required ? (
             <CheckCircleIcon size={12} color="#fff" />
-            <span style={{ color: '#fff', fontSize: 10.5, fontWeight: 700 }}>Está no roteiro</span>
-          </div>
-        )}
+          ) : (
+            <AddCircleIcon size={12} color="#fff" />
+          )}
+          <span style={{ color: '#fff', fontSize: 10.5, fontWeight: 700 }}>
+            {attraction.required ? 'Está no roteiro' : 'Não está no roteiro'}
+          </span>
+        </div>
         <div style={{ color: '#fff', fontSize: 15, fontWeight: 800, lineHeight: 1.25, textShadow: '0 1px 4px rgba(0,0,0,0.35)' }}>
           {attraction.name}
         </div>

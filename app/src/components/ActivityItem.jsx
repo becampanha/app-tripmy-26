@@ -30,26 +30,35 @@ export default function ActivityItem({
   const clickable = !editing && !!place;
   const dragControls = useDragControls();
 
+  const cardStyle = {
+    position: 'relative',
+    display: 'flex',
+    gap: editing ? 12 : 0,
+    flexDirection: editing ? 'row' : 'column',
+    alignItems: editing ? 'flex-start' : 'stretch',
+    padding: 14,
+    background: color.bg,
+    border: `1px solid ${color.border}`,
+    borderRadius: radius.card,
+    cursor: clickable ? 'pointer' : 'default',
+    listStyle: 'none',
+  };
+
+  // Reorder.Item só funciona dentro de um Reorder.Group (motion/react lê
+  // contexto por useContext) — fora do modo de edição este componente é
+  // reaproveitado em telas sem Group (ex: card do lugar no mapa do dia,
+  // DayMap.jsx), então vira uma div comum pra não quebrar nesses casos.
+  const Container = editing ? Reorder.Item : 'div';
+  const containerProps = editing
+    ? { value: activity, dragListener: false, dragControls }
+    : {};
+
   return (
     <>
-    <Reorder.Item
-      value={activity}
-      dragListener={false}
-      dragControls={dragControls}
+    <Container
+      {...containerProps}
       onClick={clickable ? () => navigate(`/lugares/${place.id}`) : undefined}
-      style={{
-        position: 'relative',
-        display: 'flex',
-        gap: editing ? 12 : 0,
-        flexDirection: editing ? 'row' : 'column',
-        alignItems: editing ? 'flex-start' : 'stretch',
-        padding: 14,
-        background: color.bg,
-        border: `1px solid ${color.border}`,
-        borderRadius: radius.card,
-        cursor: clickable ? 'pointer' : 'default',
-        listStyle: 'none',
-      }}
+      style={cardStyle}
     >
       {editing && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', width: 64, flex: 'none', paddingTop: 2 }}>
@@ -256,7 +265,7 @@ export default function ActivityItem({
           </button>
         </div>
       )}
-    </Reorder.Item>
+    </Container>
     {footer}
     </>
   );

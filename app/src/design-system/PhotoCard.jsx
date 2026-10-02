@@ -6,7 +6,7 @@ import { color, cardPhotoGradient, cardPhotoGradientHeight, cardPhotoHeight, rad
 // já posicionado em fluxo normal dentro da área com padding.
 // `height` tem default único (cardPhotoHeight) — todo card com foto do app é
 // do mesmo tamanho a menos que a tela tenha um motivo explícito pra variar.
-export default function PhotoCard({ photo, height = cardPhotoHeight, onClick, children, contentStyle }) {
+export default function PhotoCard({ photo, height = cardPhotoHeight, onClick, children, contentStyle, style }) {
   return (
     <div
       onClick={onClick}
@@ -18,6 +18,8 @@ export default function PhotoCard({ photo, height = cardPhotoHeight, onClick, ch
         overflow: 'hidden',
         background: color.imagePlaceholder,
         cursor: onClick ? 'pointer' : 'default',
+        boxSizing: 'border-box',
+        ...style,
       }}
     >
       {photo && (

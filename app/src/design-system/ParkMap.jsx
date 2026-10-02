@@ -1,18 +1,30 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { CloseIcon } from '@solar-icons/react/linear/close';
+import useEmblaCarousel from 'embla-carousel-react';
+import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { RouteIcon } from '@solar-icons/react/bold/route';
+import { GpsIcon } from '@solar-icons/react/bold/gps';
+import { MagnifierZoomInIcon } from '@solar-icons/react/bold/magnifier-zoom-in';
+import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import AttractionCard from '../components/AttractionCard.jsx';
+import HScrollTabs from './HScrollTabs.jsx';
+import FixedHeader from './FixedHeader.jsx';
 import { useAttractionLocations } from '../hooks/useAttractionLocations.js';
+import { useElementHeight } from '../hooks/useElementHeight.js';
+import { useGeolocation } from '../hooks/useGeolocation.js';
 import { useHidesTabBar } from '../hooks/useEditingState.js';
-import { color, shellMaxWidth } from './tokens.js';
+import { PARK_ICON_MAP } from '../data/parkIcons.js';
+import { color, shellMaxWidth, spacing } from './tokens.js';
 
-// Mapa fullscreen de um parque com um marcador (balão com tempo de fila,
-// estilo apps oficiais de parque) por atração já cadastrada no catálogo —
-// as que a ThemeParks.wiki conseguiu casar por nome (ver
-// useAttractionLocations). Toque num marcador destaca o pino (fundo preto)
-// e abre o AttractionCard completo (mesmo componente da lista) fixo no
-// rodapé, sem fechar o mapa. Toque fora (no próprio mapa) fecha o card.
+// Mapa fullscreen de um parque — mesma estrutura/interação do mapa do dia
+// (DayMap.jsx): navbar real com abas (aqui, de PARQUES em vez de dias),
+// pino "você está aqui" + botão de GPS, carrossel de atrações no rodapé
+// (arrastar troca de pino/centraliza), seleção automática do primeiro item.
+// Continua em Leaflet + OpenStreetMap (não Google Maps como o DayMap), por
+// isso mantém as 3 features que só faziam sentido aqui: badge de atração
+// obrigatória no pino, fila ao vivo no pino, e rota sugerida do parque
+// inteiro (linha reta — OSM não tem as trilhas internas dos parques).
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -39,17 +51,34 @@ function pinHtml({ label, required, isSelected }) {
   `;
 }
 
-export default function ParkMap({ park, onClose, getLiveQueue }) {
+function myLocationHtml() {
+  return `
+    <div style="position:relative;width:18px;height:18px;transform:translate(-50%,-50%);">
+      <div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(66,133,244,0.25);"></div>
+      <div style="position:absolute;inset:0;border-radius:50%;background:#4285f4;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>
+    </div>
+  `;
+}
+
+export default function ParkMap({ parks, selectedPark, onSelectPark, onClose, getLiveQueue }) {
   useHidesTabBar(true);
+  const navigate = useNavigate();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef(new Map());
+  const myLocationMarkerRef = useRef(null);
   const routeLayerRef = useRef(null);
   const decoratorRef = useRef(null);
+  const { ref: headerRef, height: headerHeight } = useElementHeight();
+  const { position: myLocation, error: locationError } = useGeolocation();
   const [leaflet, setLeaflet] = useState(null);
   const [decoratorReady, setDecoratorReady] = useState(false);
   const [selected, setSelected] = useState(null);
   const [showRoute, setShowRoute] = useState(false);
+  const selectingFromMapRef = useRef(false);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: 'center', containScroll: 'trimSnaps' });
+
+  const park = parks[selectedPark];
   const { getLocation, loading, ready } = useAttractionLocations(park.id);
 
   const allAttractions = park.areas.flatMap((a) => a.attractions);
@@ -79,8 +108,46 @@ export default function ParkMap({ park, onClose, getLiveQueue }) {
     };
   }, []);
 
+  // Arrastar o carrossel troca o pino selecionado (preto no mapa) e
+  // centraliza suavemente nele — só quando a mudança veio do próprio
+  // arrasto, não de um setView disparado por clique no pino.
   useEffect(() => {
-    if (!leaflet || !containerRef.current || pins.length === 0 || mapRef.current) return;
+    if (!emblaApi) return;
+    const onSelect = () => {
+      if (selectingFromMapRef.current) {
+        selectingFromMapRef.current = false;
+        return;
+      }
+      const pin = pins[emblaApi.selectedScrollSnap()];
+      if (!pin) return;
+      setSelected(pin.attraction);
+      mapRef.current?.panTo([pin.coords.lat, pin.coords.lng]);
+    };
+    emblaApi.on('select', onSelect);
+    return () => emblaApi.off('select', onSelect);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emblaApi, pins.length]);
+
+  // Clicar um pino no mapa faz o carrossel pular pro card correspondente,
+  // sem animação de arrasto (jump: true) — já que o usuário não arrastou.
+  const selectPin = useCallback(
+    (attraction) => {
+      setSelected(attraction);
+      const index = pins.findIndex((p) => p.attraction.id === attraction.id);
+      if (index >= 0 && emblaApi) {
+        selectingFromMapRef.current = true;
+        emblaApi.scrollTo(index, true);
+      }
+    },
+    [pins, emblaApi]
+  );
+  const selectPinRef = useRef(selectPin);
+  useEffect(() => {
+    selectPinRef.current = selectPin;
+  }, [selectPin]);
+
+  useEffect(() => {
+    if (!leaflet || !containerRef.current || pins.length === 0) return;
 
     const map = leaflet.map(containerRef.current, {
       zoomControl: false,
@@ -94,7 +161,13 @@ export default function ParkMap({ park, onClose, getLiveQueue }) {
       .addTo(map);
 
     const bounds = leaflet.latLngBounds(pins.map((p) => [p.coords.lat, p.coords.lng]));
-    map.fitBounds(bounds, { padding: [32, 32] });
+    if (myLocation) bounds.extend([myLocation.lat, myLocation.lng]);
+    map.fitBounds(bounds, { paddingTopLeft: [32, (headerHeight || 80) + 16], paddingBottomRight: [32, 260] });
+
+    if (myLocation) {
+      const icon = leaflet.divIcon({ className: '', html: myLocationHtml(), iconSize: [0, 0], iconAnchor: [0, 0] });
+      myLocationMarkerRef.current = leaflet.marker([myLocation.lat, myLocation.lng], { icon, zIndexOffset: 1000 }).addTo(map);
+    }
 
     for (const pin of pins) {
       const liveQueue = getLiveQueue?.(pin.attraction.name);
@@ -117,7 +190,7 @@ export default function ParkMap({ park, onClose, getLiveQueue }) {
         .addTo(map)
         .on('click', (e) => {
           leaflet.DomEvent.stopPropagation(e);
-          setSelected(pin.attraction);
+          selectPinRef.current(pin.attraction);
         });
 
       markersRef.current.set(pin.attraction.id, { marker, label, required: pin.attraction.required });
@@ -127,8 +200,13 @@ export default function ParkMap({ park, onClose, getLiveQueue }) {
       map.remove();
       mapRef.current = null;
       markersRef.current.clear();
+      myLocationMarkerRef.current = null;
     };
-  }, [leaflet, pins.length]);
+    // selectedPark nas deps: força recriar o mapa inteiro ao trocar de
+    // parque pela navbar. !!myLocation (não o objeto inteiro) — mesmo
+    // motivo do DayMap: watchPosition emite muito, só recriar na transição
+    // "ainda não sei onde você está" -> "localização resolvida".
+  }, [leaflet, selectedPark, pins.length, !!myLocation]);
 
   // Redesenha só o pino selecionado (fundo preto) e o anterior (de volta ao
   // branco) — não recria o mapa inteiro, só troca o ícone dos dois marcadores.
@@ -171,10 +249,6 @@ export default function ParkMap({ park, onClose, getLiveQueue }) {
     if (!showRoute || routeCoords.length < 2) return;
 
     const latLngs = routeCoords.map((c) => [c.lat, c.lng]);
-    // Efeito "linha com contorno" (Waze/Google Maps): uma linha branca mais
-    // grossa por baixo, servindo de borda, e a linha escura mais fina por
-    // cima — não dá pra fazer isso com stroke+outline num só polyline do
-    // Leaflet, por isso são duas camadas sobrepostas.
     const outline = leaflet
       .polyline(latLngs, { color: '#fff', weight: 9, opacity: 1, lineCap: 'round', lineJoin: 'round' })
       .addTo(map);
@@ -198,6 +272,21 @@ export default function ParkMap({ park, onClose, getLiveQueue }) {
       })
       .addTo(map);
   }, [showRoute, routeCoords.length, leaflet, decoratorReady]);
+
+  // Entrar no mapa (ou trocar de parque pela navbar) sempre seleciona a
+  // primeira atração automaticamente — o card inferior nunca deve aparecer
+  // vazio/sem nada selecionado.
+  useEffect(() => {
+    setSelected(pins[0]?.attraction || null);
+    emblaApi?.reInit();
+    emblaApi?.scrollTo(0, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPark, pins.length, emblaApi]);
+
+  const tabItems = parks.map((p, i) => {
+    const mapped = PARK_ICON_MAP[p.name];
+    return { key: i, label: p.name, icon: mapped?.icon, iconColor: mapped?.color };
+  });
 
   return (
     <div
@@ -267,112 +356,188 @@ export default function ParkMap({ park, onClose, getLiveQueue }) {
         </div>
       )}
 
-      <div
-        onClick={onClose}
-        style={{
-          position: 'absolute',
-          top: 18,
-          right: 18,
-          zIndex: 10,
-          width: 38,
-          height: 38,
-          borderRadius: 19,
-          background: 'rgba(255,255,255,0.85)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          boxShadow: '0 2px 10px rgba(28,26,23,0.15)',
-        }}
-      >
-        <CloseIcon size={18} color={color.dark} />
-      </div>
+      <FixedHeader
+        headerRef={headerRef}
+        title={park.name}
+        titleSize="compact"
+        scrollY={9}
+        left={
+          <div
+            onClick={onClose}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 13,
+              background: color.surfaceMuted,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <AltArrowLeftIcon size={19} color={color.dark} />
+          </div>
+        }
+        tabs={
+          <HScrollTabs
+            items={tabItems}
+            activeKey={selectedPark}
+            onSelect={onSelectPark}
+            style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }}
+          />
+        }
+      />
 
-      <div
-        style={{
-          position: 'absolute',
-          top: 18,
-          left: 18,
-          zIndex: 10,
-          padding: '8px 14px',
-          borderRadius: 12,
-          background: 'rgba(255,255,255,0.85)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-          color: color.dark,
-          fontSize: 13,
-          fontWeight: 800,
-          boxShadow: '0 2px 10px rgba(28,26,23,0.15)',
-        }}
-      >
-        {park.name}
-      </div>
+      {ready && (myLocation || locationError) && (
+        <div
+          onClick={() => {
+            if (locationError) {
+              alert(`Localização indisponível: ${locationError.message}`);
+              return;
+            }
+            if (!mapRef.current) return;
+            mapRef.current.setView([myLocation.lat, myLocation.lng], 18);
+          }}
+          style={{
+            position: 'absolute',
+            top: headerHeight + 16,
+            right: 18,
+            zIndex: 8,
+            width: 38,
+            height: 38,
+            borderRadius: 13,
+            background: 'rgba(255,255,255,0.85)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            border: `1px solid ${color.border}`,
+            boxShadow: '0 2px 10px rgba(28,26,23,0.15)',
+            // locationError (sem geolocalização): botão continua visível,
+            // mas esmaecido — toca e mostra o motivo em vez de simplesmente
+            // sumir sem explicação.
+            opacity: locationError ? 0.4 : 1,
+          }}
+        >
+          <GpsIcon size={18} color={color.dark} />
+        </div>
+      )}
 
       {routeCoords.length >= 2 && (
         <div
           onClick={() => setShowRoute((v) => !v)}
           style={{
             position: 'absolute',
-            top: 64,
-            left: 18,
-            zIndex: 10,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '8px 14px',
-            borderRadius: 12,
+            top: headerHeight + 62,
+            right: 18,
+            zIndex: 8,
+            width: 38,
+            height: 38,
+            borderRadius: 13,
             background: showRoute ? color.dark : 'rgba(255,255,255,0.85)',
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)',
-            boxShadow: '0 2px 10px rgba(28,26,23,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             cursor: 'pointer',
+            border: showRoute ? 'none' : `1px solid ${color.border}`,
+            boxShadow: '0 2px 10px rgba(28,26,23,0.15)',
           }}
         >
-          <RouteIcon size={14} color={showRoute ? '#fff' : color.dark} />
-          <span style={{ color: showRoute ? '#fff' : color.dark, fontSize: 12.5, fontWeight: 700 }}>
-            Rota sugerida
-          </span>
+          <RouteIcon size={18} color={showRoute ? '#fff' : color.dark} />
         </div>
       )}
 
       <AnimatePresence>
         {selected && (
           <motion.div
-            key={selected.id}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
             style={{
               position: 'absolute',
-              left: 14,
-              right: 14,
+              left: 0,
+              right: 0,
               bottom: 14,
               zIndex: 10,
             }}
           >
-            <div style={{ position: 'relative' }}>
-              <AttractionCard attraction={selected} liveQueue={getLiveQueue?.(selected.name)} />
-              <div
-                onClick={() => setSelected(null)}
-                style={{
-                  position: 'absolute',
-                  top: -10,
-                  right: -10,
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  background: color.dark,
-                  boxShadow: '0 2px 8px rgba(28,26,23,0.35)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-              >
-                <CloseIcon size={15} color="#fff" />
+            {/* Carrossel horizontal: arrastar troca de card/pin, igual ao
+                mapa do roteiro — mesma lib (embla-carousel-react). Slide com
+                88% da largura (peek do próximo/anterior) só quando há mais
+                de uma atração. */}
+            <div ref={emblaRef} style={{ overflow: 'hidden' }}>
+              <div style={{ display: 'flex' }}>
+                {pins.map((pin) => (
+                  <div
+                    key={pin.attraction.id}
+                    style={{
+                      flex: pins.length > 1 ? '0 0 88%' : '0 0 100%',
+                      minWidth: 0,
+                      padding: '0 8px',
+                      boxSizing: 'border-box',
+                      display: 'flex',
+                    }}
+                  >
+                    <AttractionCard
+                      attraction={pin.attraction}
+                      liveQueue={getLiveQueue?.(pin.attraction.name)}
+                      disableNavigate
+                      bottomContent={
+                        <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.gapMd }}>
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!mapRef.current) return;
+                              mapRef.current.setView([pin.coords.lat, pin.coords.lng], 18);
+                            }}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 6,
+                              padding: 12,
+                              borderRadius: 16,
+                              background: 'rgba(255,255,255,0.12)',
+                              border: '1px solid rgba(255,255,255,0.3)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <MagnifierZoomInIcon size={15} color="#fff" />
+                            <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>Centralizar</span>
+                          </div>
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/atracoes/${pin.attraction.id}`);
+                            }}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 6,
+                              padding: 12,
+                              borderRadius: 16,
+                              background: 'rgba(255,255,255,0.12)',
+                              border: '1px solid rgba(255,255,255,0.3)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <AltArrowRightIcon size={15} color="#fff" />
+                            <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>Detalhes</span>
+                          </div>
+                        </div>
+                      }
+                      style={{ flex: 1, height: '100%' }}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           </motion.div>

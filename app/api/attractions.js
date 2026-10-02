@@ -64,6 +64,7 @@ async function listAttractions(req, res) {
       parentSwap: r.parent_swap,
       intensity: r.intensity,
       photo: r.photo,
+      youtubeVideoId: r.youtube_video_id,
     });
   }
 
@@ -139,24 +140,63 @@ async function locations(req, res) {
   return res.status(200).json(byName);
 }
 
-// PUT /api/attractions?action=update&id=<id> — alterna/edita o campo
-// `required` ("está no roteiro"). Único campo editável por aqui hoje; os
-// demais vêm só da planilha original importada.
+// PUT /api/attractions?action=update&id=<id> — edita campos de uma atração.
+// Só `required` ("está no roteiro") e `youtubeVideoId` (link do vídeo
+// mostrando a atração, cadastrado manualmente) são editáveis — os demais
+// campos vêm fixos da planilha original importada.
+const ATTRACTION_FIELD_MAP = { required: 'required', youtubeVideoId: 'youtube_video_id' };
+
 async function updateAttraction(req, res) {
   const sql = getSql();
   const { id } = req.query;
   const body = req.body || {};
 
-  if (!id || body.required === undefined) {
-    return res.status(400).json({ error: 'Parâmetros "id" e "required" são obrigatórios' });
+  const fields = [];
+  const values = [];
+  let i = 1;
+  for (const [key, column] of Object.entries(ATTRACTION_FIELD_MAP)) {
+    if (body[key] === undefined) continue;
+    fields.push(`${column} = $${i++}`);
+    values.push(body[key]);
   }
 
-  await sql.query('UPDATE attractions SET required = $1 WHERE id = $2', [body.required, id]);
+  if (!id || fields.length === 0) {
+    return res.status(400).json({ error: 'Parâmetro "id" e ao menos um campo editável são obrigatórios' });
+  }
+
+  values.push(id);
+  await sql.query(`UPDATE attractions SET ${fields.join(', ')} WHERE id = $${i}`, values);
+  return res.status(200).json({ ok: true });
+}
+
+// PUT /api/attractions?action=updateStrategy&park=<park_id> — edita o texto
+// de estratégia ("Como aproveitar o dia") e/ou a ordem sugerida de atrações
+// (route, array de nomes) de um parque. Upsert: alguns parques ainda não
+// têm linha em park_strategies (ver comentário em db/schema.sql).
+async function updateStrategy(req, res) {
+  const sql = getSql();
+  const parkId = req.query.park;
+  const body = req.body || {};
+
+  if (!parkId || (body.summary === undefined && body.route === undefined)) {
+    return res.status(400).json({ error: 'Parâmetro "park" e ao menos um campo (summary ou route) são obrigatórios' });
+  }
+
+  const current = await sql.query('SELECT summary, route FROM park_strategies WHERE park_id = $1', [parkId]);
+  const summary = body.summary !== undefined ? body.summary : current[0]?.summary || '';
+  const route = body.route !== undefined ? JSON.stringify(body.route) : current[0]?.route ? JSON.stringify(current[0].route) : null;
+
+  await sql.query(
+    `INSERT INTO park_strategies (park_id, summary, route, updated_at)
+     VALUES ($1, $2, $3, now())
+     ON CONFLICT (park_id) DO UPDATE SET summary = $2, route = $3, updated_at = now()`,
+    [parkId, summary, route]
+  );
   return res.status(200).json({ ok: true });
 }
 
 const ACTIONS = { live: liveQueueTimes, locations };
-const WRITE_ACTIONS = { update: updateAttraction };
+const WRITE_ACTIONS = { update: updateAttraction, updateStrategy };
 
 // GET /api/attractions — retorna todas as atrações agrupadas por parque e
 // área, já ordenadas (park_sort_order, area_sort_order, sort_order — a

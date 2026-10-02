@@ -1,24 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
+import { MapIcon } from '@solar-icons/react/bold/map';
+import { ListIcon } from '@solar-icons/react/linear/list';
 import AttractionCard from './AttractionCard.jsx';
-import { fetchAttractions, updateAttraction } from '../api/itineraryApi.js';
+import { updateAttraction } from '../api/itineraryApi.js';
 import { showErrorToast } from '../hooks/useToast.js';
-import { readCache, writeCache } from '../hooks/persistentCache.js';
+import { useAttractionsData } from '../hooks/useAttractionsData.js';
 import { PARK_ICON_MAP } from '../data/parkIcons.js';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
-import { FixedHeader, HScrollTabs, ParkMap, ParkStrategyCard, SearchInput, SectionHeader, Skeleton, Toggle, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
-
-// Espelho em memória de módulo do cache — evita reler e reparsear o
-// localStorage a cada render (mesmo padrão de useItinerary.js).
-let cachedParks = readCache('attractions');
+import { FixedHeader, HScrollTabs, ParkMap, SearchInput, SectionHeader, Skeleton, Toggle, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
 
 // Mesmo padrão visual/funcional da tela de Lugares: abas com scroll
 // horizontal (aqui, um parque por aba) + seções sticky por área + busca.
 export default function AttractionsScreen() {
-  const [parks, setParks] = useState(cachedParks || []);
-  const [loading, setLoading] = useState(cachedParks === null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { parks, setParks, loading } = useAttractionsData();
   const [parkIndex, setParkIndex] = useState(0);
   const [search, setSearch] = useState('');
   const [onlyInItinerary, setOnlyInItinerary] = useState(false);
@@ -27,23 +27,27 @@ export default function AttractionsScreen() {
   const { getLiveQueue } = useLiveQueueTimes();
   const [mapOpen, setMapOpen] = useState(false);
 
+  // Abrir o mapa empurra uma entrada real no histórico (mesmo padrão do
+  // ScheduleScreen/DayMap) — sem isso, clicar "Detalhes" dentro do mapa e
+  // depois "voltar" na tela de detalhe pulava o mapa direto pra lista.
+  const openMap = () => {
+    setMapOpen(true);
+    navigate(location.pathname, { state: { ...location.state, mapOpen: true } });
+  };
+  const closeMap = () => navigate(-1);
+
   useEffect(() => {
-    fetchAttractions()
-      .then((data) => {
-        cachedParks = data;
-        writeCache('attractions', data);
-        setParks(data);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    setMapOpen(!!location.state?.mapOpen);
+  }, [location.state]);
 
   const park = parks[parkIndex];
 
   // Otimista: atualiza a lista local na hora, só reverte se o PUT falhar —
   // mesmo padrão de reação imediata usado nos outros toggles do app.
+  // useAttractionsData sincroniza o espelho em memória/localStorage sozinho.
   const applyRequired = (attractionId, required) =>
-    setParks((prev) => {
-      const next = prev.map((p) => ({
+    setParks((prev) =>
+      prev.map((p) => ({
         ...p,
         areas: p.areas.map((a) => ({
           ...a,
@@ -51,11 +55,8 @@ export default function AttractionsScreen() {
             at.id === attractionId ? { ...at, required } : at
           ),
         })),
-      }));
-      cachedParks = next;
-      writeCache('attractions', next);
-      return next;
-    });
+      }))
+    );
 
   const handleToggleRequired = (attractionId, required) => {
     applyRequired(attractionId, required);
@@ -90,6 +91,24 @@ export default function AttractionsScreen() {
         scrollY={scrollY}
         title="Atrações"
         tabs={<HScrollTabs items={tabItems} activeKey={parkIndex} onSelect={setParkIndex} loading={loading} style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
+        right={
+          <div
+            onClick={() => navigate('/atracoes/roteiro', { state: { parkIndex } })}
+            style={{
+              height: 38,
+              padding: '0 14px',
+              borderRadius: 13,
+              background: color.surfaceMuted,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              cursor: 'pointer',
+            }}
+          >
+            <ListIcon size={17} color={color.dark} />
+            <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Roteiro</span>
+          </div>
+        }
       />
 
       <div
@@ -99,6 +118,59 @@ export default function AttractionsScreen() {
           padding: `2px ${space.screenGutter}px 120px`,
         }}
       >
+        {/* Call-to-action do mapa do parque — mesmo padrão visual/posição do
+            card "Ver roteiro no mapa" da tela de Roteiro (imagem estática,
+            sem overlay, botão preto centralizado por cima). Substituiu o
+            antigo botão "Ver mapa do parque" que ficava dentro do
+            ParkStrategyCard. */}
+        {!loading && park && (
+          <div
+            onClick={openMap}
+            style={{
+              position: 'relative',
+              marginBottom: 28,
+              borderRadius: 20,
+              overflow: 'hidden',
+              height: 110,
+              background: '#eee9df',
+              border: `1px solid ${color.border}`,
+              cursor: 'pointer',
+            }}
+          >
+            <img
+              src="/roteiro-mapa-card.png"
+              alt=""
+              loading="lazy"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '10px 18px',
+                  borderRadius: 14,
+                  background: '#1c1a17',
+                }}
+              >
+                <MapIcon size={17} color="#fff" />
+                <span style={{ color: '#fff', fontSize: 14.5, fontWeight: 800, letterSpacing: -0.1 }}>
+                  Ver mapa do parque
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar atração" />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: spacing.gapMd, marginBottom: 14 }}>
@@ -112,10 +184,6 @@ export default function AttractionsScreen() {
             </span>
           </div>
         </div>
-
-        {!loading && park && (
-          <ParkStrategyCard strategy={park.strategy} onOpenMap={() => setMapOpen(true)} />
-        )}
 
         {loading && parks.length === 0 && Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} height={cardPhotoHeight} radius={radius.cardPhoto} style={{ marginBottom: spacing.controlGap }} />
@@ -144,7 +212,14 @@ export default function AttractionsScreen() {
 
       <AnimatePresence>
         {mapOpen && park && (
-          <ParkMap key="park-map" park={park} onClose={() => setMapOpen(false)} getLiveQueue={getLiveQueue} />
+          <ParkMap
+            key="park-map"
+            parks={parks}
+            selectedPark={parkIndex}
+            onSelectPark={setParkIndex}
+            onClose={closeMap}
+            getLiveQueue={getLiveQueue}
+          />
         )}
       </AnimatePresence>
     </div>

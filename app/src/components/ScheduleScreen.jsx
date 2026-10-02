@@ -316,32 +316,34 @@ export default function ScheduleScreen() {
               <div
                 onClick={() => navigate('/roteiro/dias')}
                 style={{
-                  width: 38,
                   height: 38,
+                  padding: '0 14px',
                   borderRadius: 13,
                   background: color.surfaceMuted,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  gap: 6,
                   cursor: 'pointer',
                 }}
               >
                 <ListIcon size={17} color={color.dark} />
+                <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Roteiro</span>
               </div>
               <div
                 onClick={startEditing}
                 style={{
-                  width: 38,
                   height: 38,
+                  padding: '0 14px',
                   borderRadius: 13,
                   background: color.surfaceMuted,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  gap: 6,
                   cursor: 'pointer',
                 }}
               >
                 <PenIcon size={17} color={color.dark} />
+                <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Editar</span>
               </div>
             </>
           )

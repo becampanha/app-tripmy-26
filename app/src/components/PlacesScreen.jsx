@@ -158,17 +158,18 @@ export default function PlacesScreen() {
           <div
             onClick={() => navigate('/lugares/novo')}
             style={{
-              width: 38,
               height: 38,
+              padding: '0 14px',
               borderRadius: 13,
               background: color.surfaceMuted,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              gap: 6,
               cursor: 'pointer',
             }}
           >
             <AddIcon size={17} color={color.dark} />
+            <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Adicionar</span>
           </div>
         }
       />

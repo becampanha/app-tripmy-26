@@ -65,7 +65,10 @@ CREATE TABLE IF NOT EXISTS place_recommendations (
 -- na sessão original de importação da planilha — schema documentado aqui
 -- por consistência: park_id, park_name, park_emoji, park_sort_order, area,
 -- area_sort_order, name, sort_order, required, type, duration, queue_time,
--- best_time, restrictions, parent_swap, intensity, photo).
+-- best_time, restrictions, parent_swap, intensity, photo, youtube_video_id —
+-- esse último cadastrado manualmente por atração, link de um vídeo mostrando
+-- como é a atração na prática, exibido como player embutido na tela de
+-- detalhe).
 
 -- Resumo de estratégia de visita por parque (rope drop/ordem sugerida),
 -- escrito manualmente, cruzando as atrações marcadas required=true de cada

@@ -146,3 +146,10 @@ export function updateAttraction(id, fields) {
     body: JSON.stringify(fields),
   });
 }
+
+export function updateParkStrategy(parkId, fields) {
+  return request(`/api/attractions?action=updateStrategy&park=${encodeURIComponent(parkId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(fields),
+  });
+}

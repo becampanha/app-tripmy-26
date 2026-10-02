@@ -6,6 +6,8 @@ import AllDaysScreen from './components/AllDaysScreen.jsx';
 import PlacesScreen from './components/PlacesScreen.jsx';
 import PlaceDetailScreen from './components/PlaceDetailScreen.jsx';
 import AttractionsScreen from './components/AttractionsScreen.jsx';
+import AttractionDetailScreen from './components/AttractionDetailScreen.jsx';
+import AttractionsItineraryScreen from './components/AttractionsItineraryScreen.jsx';
 import RecommendationsScreen from './components/RecommendationsScreen.jsx';
 import MoreScreen from './components/MoreScreen.jsx';
 import DesignSystemScreen from './components/DesignSystemScreen.jsx';
@@ -32,7 +34,7 @@ import { isIOS, isStandalone } from './hooks/useIsStandalone.js';
 // global recalculado a cada render do Shell, que seria idêntico para as duas
 // instâncias simultâneas durante a transição.
 function depthOf(pathname) {
-  return pathname.startsWith('/lugares/') || pathname === '/roteiro/dias' ? 1 : 0;
+  return pathname.startsWith('/lugares/') || pathname.startsWith('/atracoes/') || pathname === '/roteiro/dias' ? 1 : 0;
 }
 
 const TRANSITION = { type: 'tween', ease: [0.32, 0.72, 0, 1], duration: 0.32 };
@@ -139,6 +141,8 @@ function Shell() {
             <Route path="/lugares/novo" element={<PlaceDetailScreen />} />
             <Route path="/lugares/:id" element={<PlaceDetailScreen />} />
             <Route path="/atracoes" element={<AttractionsScreen />} />
+            <Route path="/atracoes/roteiro" element={<AttractionsItineraryScreen />} />
+            <Route path="/atracoes/:id" element={<AttractionDetailScreen />} />
             <Route path="/mais" element={<MoreScreen />} />
             {/* Rota oculta de referência interna — não aparece na tab bar,
                 só acessível digitando /design-system na URL. */}

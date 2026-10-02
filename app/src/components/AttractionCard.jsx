@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
 import { AddCircleIcon } from '@solar-icons/react/bold/add-circle';
 import { ClockCircleIcon } from '@solar-icons/react/bold/clock-circle';
@@ -64,14 +65,20 @@ function LiveMiniStat({ icon: Icon, value }) {
   );
 }
 
-export default function AttractionCard({ attraction, liveQueue, onToggleRequired }) {
+export default function AttractionCard({ attraction, liveQueue, onToggleRequired, disableNavigate, bottomContent, style }) {
+  const navigate = useNavigate();
   const intensityLabel = INTENSITY_LABEL[attraction.intensity] || attraction.intensity;
   const hasHeightRestriction = attraction.restrictions === 'Altura mínima';
   const hasLiveQueue = typeof liveQueue === 'number';
   const queueValue = hasLiveQueue ? `${liveQueue} min` : attraction.queue;
 
   return (
-    <PhotoCard photo={attraction.photo} contentStyle={{ padding: 14, display: 'flex', flexDirection: 'column' }}>
+    <PhotoCard
+      photo={attraction.photo}
+      onClick={disableNavigate ? undefined : () => navigate(`/atracoes/${attraction.id}`)}
+      contentStyle={{ padding: 14, display: 'flex', flexDirection: 'column' }}
+      style={style}
+    >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
         {attraction.bestTime && (
           <div style={{ display: 'flex', gap: 6, flex: 'none' }}>
@@ -159,6 +166,8 @@ export default function AttractionCard({ attraction, liveQueue, onToggleRequired
             )}
           </div>
         )}
+
+        {bottomContent}
       </div>
     </PhotoCard>
   );

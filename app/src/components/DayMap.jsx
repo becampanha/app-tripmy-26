@@ -5,7 +5,6 @@ import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { RouteIcon } from '@solar-icons/react/bold/route';
 import { GpsIcon } from '@solar-icons/react/bold/gps';
 import { GlobeIcon } from '@solar-icons/react/bold/globe';
-import { Buildings2Icon } from '@solar-icons/react/bold/buildings-2';
 import { MagnifierZoomInIcon } from '@solar-icons/react/bold/magnifier-zoom-in';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import ActivityItem from './ActivityItem.jsx';
@@ -139,7 +138,6 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
   const [selected, setSelected] = useState(null);
   const [routeTarget, setRouteTarget] = useState(null);
   const [satellite, setSatellite] = useState(false);
-  const [tilt3d, setTilt3d] = useState(false);
   // Troca de slide pelo carrossel (arrastar) e troca por clique no pino do
   // mapa disparam o mesmo setSelected — esse ref distingue as duas origens
   // pra não ficar um "empurrando" o outro num loop (clicar pino -> scrollTo
@@ -319,16 +317,14 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
     // existia.
   }, [googleMaps, selectedDay, pins.length, !!myLocation]);
 
-  // Satélite/3D aplicados aqui (não na criação do mapa acima) porque esse
-  // outro useEffect recria o mapa do zero a cada troca de dia — setar aqui
-  // de novo preserva a escolha do usuário através dessas recriações, sem
-  // precisar guardar/restaurar manualmente. Tilt só faz efeito combinado com
-  // mapTypeId satellite/hybrid (no modo 'roadmap' a API ignora o tilt).
+  // Satélite aplicado aqui (não na criação do mapa acima) porque esse outro
+  // useEffect recria o mapa do zero a cada troca de dia — setar aqui de novo
+  // preserva a escolha do usuário através dessas recriações, sem precisar
+  // guardar/restaurar manualmente.
   useEffect(() => {
     if (!mapRef.current) return;
     mapRef.current.setMapTypeId(satellite ? 'hybrid' : 'roadmap');
-    mapRef.current.setTilt(satellite && tilt3d ? 45 : 0);
-  }, [satellite, tilt3d, selectedDay, pins.length]);
+  }, [satellite, selectedDay, pins.length]);
 
   // Redesenha só o pino selecionado (fundo preto) e o anterior (de volta ao
   // branco) — mesmo princípio do ParkMap, adaptado pra API de marker do
@@ -592,11 +588,9 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
         </div>
       )}
 
-      {/* Satélite/3D empilhados em cascata abaixo do botão de GPS — mesmo
-          padrão visual "quadradinho" (borderRadius 13 sobre 38x38) usado no
-          botão de voltar do header, não o círculo perfeito do GPS. Tilt 3D
-          só aparece quando satélite já está ativo: a API ignora tilt no modo
-          roadmap, então mostrar o botão nesse estado seria um controle morto. */}
+      {/* Satélite abaixo do botão de GPS — mesmo padrão visual "quadradinho"
+          (borderRadius 13 sobre 38x38) usado no botão de voltar do header,
+          não o círculo perfeito do GPS. */}
       <div
         onClick={() => setSatellite((v) => !v)}
         style={{
@@ -619,30 +613,6 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
         }}
       >
         <GlobeIcon size={18} color={satellite ? '#fff' : color.dark} />
-      </div>
-
-      <div
-        onClick={() => setTilt3d((v) => !v)}
-        style={{
-          position: 'absolute',
-          top: headerHeight + 108,
-          right: 18,
-          zIndex: 8,
-          width: 38,
-          height: 38,
-          borderRadius: 13,
-          background: tilt3d ? color.dark : 'rgba(255,255,255,0.85)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          border: tilt3d ? 'none' : `1px solid ${color.border}`,
-          boxShadow: '0 2px 10px rgba(28,26,23,0.15)',
-        }}
-      >
-        <Buildings2Icon size={18} color={tilt3d ? '#fff' : color.dark} />
       </div>
 
       <AnimatePresence>

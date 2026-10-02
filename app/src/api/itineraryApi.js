@@ -35,6 +35,13 @@ export function reorderActivities(items) {
   });
 }
 
+export function swapDays(dayIdA, dayIdB) {
+  return request('/api/days/0?action=swap', {
+    method: 'POST',
+    body: JSON.stringify({ dayIdA, dayIdB }),
+  });
+}
+
 export function fetchPlaces() {
   return request('/api/places');
 }

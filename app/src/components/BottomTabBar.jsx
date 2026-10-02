@@ -1,5 +1,4 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'motion/react';
 import { MapIcon } from '@solar-icons/react/bold/map';
 import { HeartIcon } from '@solar-icons/react/bold/heart';
 import { ShopIcon } from '@solar-icons/react/bold/shop';
@@ -20,13 +19,13 @@ export default function BottomTabBar() {
   const location = useLocation();
 
   return (
-    <motion.div
+    <FloatingBar
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 12 }}
       transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+      style={{ alignItems: 'stretch' }}
     >
-    <FloatingBar style={{ alignItems: 'stretch' }}>
       {TABS.map((tab) => {
         const isActive =
           tab.path === '/'
@@ -58,6 +57,5 @@ export default function BottomTabBar() {
         );
       })}
     </FloatingBar>
-    </motion.div>
   );
 }

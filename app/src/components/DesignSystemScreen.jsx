@@ -194,7 +194,7 @@ export default function DesignSystemScreen() {
           <div style={{ position: 'relative', height: 76 }}>
             <div style={{ position: 'absolute', inset: 0, background: '#333', borderRadius: radius.card }} />
             <div style={{ position: 'absolute', left: 12, right: 12, bottom: -6 }}>
-              <FloatingBar style={{ position: 'static', transform: 'none', width: 'auto' }}>
+              <FloatingBar style={{ position: 'static', left: 'auto', x: 0, width: 'auto' }}>
                 <div style={{ flex: 1, textAlign: 'center', color: color.white, fontSize: 12, fontWeight: 700 }}>Roteiro</div>
                 <div style={{ flex: 1, textAlign: 'center', color: color.white, fontSize: 12, fontWeight: 700 }}>Lugares</div>
               </FloatingBar>

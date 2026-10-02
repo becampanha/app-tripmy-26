@@ -24,10 +24,13 @@ export default function ActivityItem({
   isFirst,
   isLast,
   footer,
+  disableNavigate,
+  bottomContent,
+  style,
 }) {
   const { place } = activity;
   const navigate = useNavigate();
-  const clickable = !editing && !!place;
+  const clickable = !editing && !!place && !disableNavigate;
   const dragControls = useDragControls();
 
   const cardStyle = {
@@ -42,6 +45,8 @@ export default function ActivityItem({
     borderRadius: radius.card,
     cursor: clickable ? 'pointer' : 'default',
     listStyle: 'none',
+    boxSizing: 'border-box',
+    ...style,
   };
 
   // Reorder.Item só funciona dentro de um Reorder.Group (motion/react lê
@@ -265,6 +270,8 @@ export default function ActivityItem({
           </button>
         </div>
       )}
+
+      {bottomContent && <div style={{ marginTop: 'auto' }}>{bottomContent}</div>}
     </Container>
     {footer}
     </>

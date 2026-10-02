@@ -1,10 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { CloseIcon } from '@solar-icons/react/linear/close';
+import useEmblaCarousel from 'embla-carousel-react';
 import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { RouteIcon } from '@solar-icons/react/bold/route';
 import { GpsIcon } from '@solar-icons/react/bold/gps';
+import { GlobeIcon } from '@solar-icons/react/bold/globe';
+import { Buildings2Icon } from '@solar-icons/react/bold/buildings-2';
+import { MagnifierZoomInIcon } from '@solar-icons/react/bold/magnifier-zoom-in';
+import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import ActivityItem from './ActivityItem.jsx';
+import { useNavigate } from 'react-router-dom';
 import DayTabs from './DayTabs.jsx';
 import { useAddressesLocations } from '../hooks/useAddressesLocations.js';
 import { useGoogleMaps } from '../hooks/useGoogleMaps.js';
@@ -123,6 +128,7 @@ function pinElement({ label, isSelected }) {
 // novo automaticamente.
 export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
   useHidesTabBar(true);
+  const navigate = useNavigate();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef(new Map());
@@ -132,6 +138,14 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
   const { position: myLocation, error: locationError } = useGeolocation();
   const [selected, setSelected] = useState(null);
   const [routeTarget, setRouteTarget] = useState(null);
+  const [satellite, setSatellite] = useState(false);
+  const [tilt3d, setTilt3d] = useState(false);
+  // Troca de slide pelo carrossel (arrastar) e troca por clique no pino do
+  // mapa disparam o mesmo setSelected — esse ref distingue as duas origens
+  // pra não ficar um "empurrando" o outro num loop (clicar pino -> scrollTo
+  // -> evento select do embla -> tentaria setSelected de novo).
+  const selectingFromMapRef = useRef(false);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: 'center', containScroll: 'trimSnaps' });
 
   const day = days[selectedDay];
   const activitiesWithAddress = day.activities.filter((a) => a.place?.address || a.address);
@@ -143,6 +157,47 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
     .filter((p) => p.coords);
 
   const ready = !loading;
+
+  // Arrastar o carrossel troca o pin selecionado (preto no mapa) e centraliza
+  // suavemente nele — só quando a mudança veio do próprio arrasto, não de um
+  // scrollTo disparado por clique no pino (ver selectingFromMapRef acima).
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => {
+      if (selectingFromMapRef.current) {
+        selectingFromMapRef.current = false;
+        return;
+      }
+      const pin = pins[emblaApi.selectedScrollSnap()];
+      if (!pin) return;
+      setSelected(pin);
+      mapRef.current?.panTo({ lat: pin.coords.lat, lng: pin.coords.lng });
+    };
+    emblaApi.on('select', onSelect);
+    return () => emblaApi.off('select', onSelect);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emblaApi, pins.length]);
+
+  // Clicar um pino no mapa faz o carrossel pular pro card correspondente,
+  // sem animação de arrasto (jump: true) — já que o usuário não arrastou.
+  const selectPin = useCallback(
+    (pin) => {
+      setSelected(pin);
+      const index = pins.findIndex((p) => p.activity.id === pin.activity.id);
+      if (index >= 0 && emblaApi) {
+        selectingFromMapRef.current = true;
+        emblaApi.scrollTo(index, true);
+      }
+    },
+    [pins, emblaApi]
+  );
+  // Markers são criados dentro de um useEffect que não depende de selectPin
+  // (recriar o mapa inteiro a cada render seria caro) — a ref garante que o
+  // listener de clique sempre chama a versão mais recente da função.
+  const selectPinRef = useRef(selectPin);
+  useEffect(() => {
+    selectPinRef.current = selectPin;
+  }, [selectPin]);
 
   useEffect(() => {
     if (!googleMaps || !containerRef.current || pins.length === 0) return;
@@ -230,7 +285,7 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
           content: pinElement({ label, isSelected: false }),
           collisionBehavior: googleMaps.CollisionBehavior.REQUIRED,
         });
-        marker.addListener('click', () => setSelected(pin));
+        marker.addListener('click', () => selectPinRef.current(pin));
       } else {
         // Fallback se a lib "marker" não carregar: pino padrão do Google
         // (sem o balão customizado), ainda clicável.
@@ -239,7 +294,7 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
           position: { lat: pin.coords.lat, lng: pin.coords.lng },
           title: label,
         });
-        marker.addListener('click', () => setSelected(pin));
+        marker.addListener('click', () => selectPinRef.current(pin));
       }
 
       markersRef.current.set(pin.activity.id, { marker, label, usesAdvanced: !!AdvancedMarker });
@@ -263,6 +318,17 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
     // resolvida", pra desenhar o pino "você está aqui" que antes não
     // existia.
   }, [googleMaps, selectedDay, pins.length, !!myLocation]);
+
+  // Satélite/3D aplicados aqui (não na criação do mapa acima) porque esse
+  // outro useEffect recria o mapa do zero a cada troca de dia — setar aqui
+  // de novo preserva a escolha do usuário através dessas recriações, sem
+  // precisar guardar/restaurar manualmente. Tilt só faz efeito combinado com
+  // mapTypeId satellite/hybrid (no modo 'roadmap' a API ignora o tilt).
+  useEffect(() => {
+    if (!mapRef.current) return;
+    mapRef.current.setMapTypeId(satellite ? 'hybrid' : 'roadmap');
+    mapRef.current.setTilt(satellite && tilt3d ? 45 : 0);
+  }, [satellite, tilt3d, selectedDay, pins.length]);
 
   // Redesenha só o pino selecionado (fundo preto) e o anterior (de volta ao
   // branco) — mesmo princípio do ParkMap, adaptado pra API de marker do
@@ -383,10 +449,13 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
 
   // Entrar no mapa (ou trocar de dia pela navbar) sempre seleciona o
   // primeiro item do roteiro automaticamente — o card inferior nunca deve
-  // aparecer vazio/sem nada selecionado.
+  // aparecer vazio/sem nada selecionado. reInit porque trocar de dia troca
+  // a quantidade de slides do carrossel (embla não percebe isso sozinho).
   useEffect(() => {
     setSelected(pins[0] || null);
-  }, [selectedDay, pins.length]);
+    emblaApi?.reInit();
+    emblaApi?.scrollTo(0, true);
+  }, [selectedDay, pins.length, emblaApi]);
 
   return (
     <div
@@ -503,7 +572,7 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
             zIndex: 8,
             width: 38,
             height: 38,
-            borderRadius: 19,
+            borderRadius: 13,
             background: 'rgba(255,255,255,0.85)',
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)',
@@ -523,63 +592,182 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
         </div>
       )}
 
+      {/* Satélite/3D empilhados em cascata abaixo do botão de GPS — mesmo
+          padrão visual "quadradinho" (borderRadius 13 sobre 38x38) usado no
+          botão de voltar do header, não o círculo perfeito do GPS. Tilt 3D
+          só aparece quando satélite já está ativo: a API ignora tilt no modo
+          roadmap, então mostrar o botão nesse estado seria um controle morto. */}
+      <div
+        onClick={() => setSatellite((v) => !v)}
+        style={{
+          position: 'absolute',
+          top: headerHeight + 62,
+          right: 18,
+          zIndex: 8,
+          width: 38,
+          height: 38,
+          borderRadius: 13,
+          background: satellite ? color.dark : 'rgba(255,255,255,0.85)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          border: satellite ? 'none' : `1px solid ${color.border}`,
+          boxShadow: '0 2px 10px rgba(28,26,23,0.15)',
+        }}
+      >
+        <GlobeIcon size={18} color={satellite ? '#fff' : color.dark} />
+      </div>
+
+      <div
+        onClick={() => setTilt3d((v) => !v)}
+        style={{
+          position: 'absolute',
+          top: headerHeight + 108,
+          right: 18,
+          zIndex: 8,
+          width: 38,
+          height: 38,
+          borderRadius: 13,
+          background: tilt3d ? color.dark : 'rgba(255,255,255,0.85)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          border: tilt3d ? 'none' : `1px solid ${color.border}`,
+          boxShadow: '0 2px 10px rgba(28,26,23,0.15)',
+        }}
+      >
+        <Buildings2Icon size={18} color={tilt3d ? '#fff' : color.dark} />
+      </div>
+
       <AnimatePresence>
         {selected && (
           <motion.div
-            key={selected.activity.id}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
             style={{
               position: 'absolute',
-              left: 14,
-              right: 14,
+              left: 0,
+              right: 0,
               bottom: 14,
               zIndex: 10,
             }}
           >
-            <div style={{ position: 'relative' }}>
-              <ActivityItem activity={selected.activity} editing={false} />
-              <div
-                onClick={() => setSelected(null)}
-                style={{
-                  position: 'absolute',
-                  top: -10,
-                  right: -10,
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  background: color.dark,
-                  boxShadow: '0 2px 8px rgba(28,26,23,0.35)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-              >
-                <CloseIcon size={15} color="#fff" />
-              </div>
+            {/* Sem botão de fechar: clicar em qualquer ponto vazio do mapa já
+                fecha este card (ver map.addListener('click', ...) acima) —
+                um X fixo flutuando por cima do carrossel ficava redundante
+                com essa mesma ação, então foi removido daqui. */}
 
-              <div
-                onClick={() => setRouteTarget((v) => (v ? null : selected.coords))}
-                style={{
-                  marginTop: spacing.gapMd,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  padding: 12,
-                  borderRadius: 16,
-                  background: routeTarget ? color.dark : color.bg,
-                  border: routeTarget ? 'none' : `1px solid ${color.border}`,
-                  cursor: 'pointer',
-                }}
-              >
-                <RouteIcon size={15} color={routeTarget ? '#fff' : color.dark} />
-                <span style={{ color: routeTarget ? '#fff' : color.dark, ...type.button }}>
-                  {routeTarget ? 'Ocultar rota' : 'Traçar rota'}
-                </span>
+            {/* Carrossel horizontal: arrastar troca de card/pin (ver efeito
+                onSelect do embla acima), igual ao carrossel de fotos da tela
+                de detalhes do lugar — mesma lib (embla-carousel-react), mesmo
+                padrão de scroll-snap nativo. Slide com 88% da largura (em vez
+                de 100%) deixa a "pontinha" do próximo card visível na borda —
+                só assim dá pra perceber, sem instrução nenhuma, que dá pra
+                arrastar pros lados quando o dia tem mais de um ponto. */}
+            {/* items-stretch (default do flex) já faz cada slide esticar pra
+                altura do maior — só precisava que o conteúdo de dentro
+                (ActivityItem) também ocupasse 100% dessa altura esticada
+                (flex: 1, height: 100%), senão cada card continuava com a
+                própria altura de conteúdo mesmo dentro de um slide maior. */}
+            <div ref={emblaRef} style={{ overflow: 'hidden' }}>
+              <div style={{ display: 'flex' }}>
+                {pins.map((pin) => {
+                  const isActive = pin.activity.id === selected.activity.id;
+                  return (
+                    <div
+                      key={pin.activity.id}
+                      style={{
+                        flex: pins.length > 1 ? '0 0 88%' : '0 0 100%',
+                        minWidth: 0,
+                        padding: '0 8px',
+                        boxSizing: 'border-box',
+                        display: 'flex',
+                      }}
+                    >
+                      <ActivityItem
+                        activity={pin.activity}
+                        editing={false}
+                        disableNavigate
+                        style={{ flex: 1, height: '100%' }}
+                        bottomContent={
+                          <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.gapMd }}>
+                            <div
+                              onClick={() => {
+                                if (!mapRef.current) return;
+                                mapRef.current.panTo({ lat: pin.coords.lat, lng: pin.coords.lng });
+                                mapRef.current.setZoom(17);
+                              }}
+                              style={{
+                                flex: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 6,
+                                padding: 12,
+                                borderRadius: 16,
+                                background: color.bg,
+                                border: `1px solid ${color.border}`,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <MagnifierZoomInIcon size={15} color={color.dark} />
+                              <span style={{ color: color.dark, ...type.button }}>Centralizar</span>
+                            </div>
+                            {pin.activity.place && (
+                              <div
+                                onClick={() => navigate(`/lugares/${pin.activity.place.id}`)}
+                                style={{
+                                  flex: 1,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: 6,
+                                  padding: 12,
+                                  borderRadius: 16,
+                                  background: color.bg,
+                                  border: `1px solid ${color.border}`,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <AltArrowRightIcon size={15} color={color.dark} />
+                                <span style={{ color: color.dark, ...type.button }}>Detalhes</span>
+                              </div>
+                            )}
+                            {isActive && (
+                              <div
+                                onClick={() => setRouteTarget((v) => (v ? null : pin.coords))}
+                                style={{
+                                  flex: 1,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: 6,
+                                  padding: 12,
+                                  borderRadius: 16,
+                                  background: color.dark,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <RouteIcon size={15} color="#fff" />
+                                <span style={{ color: '#fff', ...type.button }}>
+                                  {routeTarget ? 'Ocultar' : 'Rota'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        }
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </motion.div>

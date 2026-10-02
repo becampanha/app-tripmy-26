@@ -136,6 +136,27 @@ export default function ScheduleScreen() {
   const originalRef = useRef(null); // snapshot pré-edição, para diff no Salvar
   const [mapOpen, setMapOpen] = useState(false);
 
+  // Abrir o mapa empurra uma entrada real no histórico (mesmo pathname, só
+  // muda o state) — sem isso, o mapa é só um overlay local, e ao clicar
+  // "Ver detalhes" lá dentro e depois "voltar" na tela de detalhes, o
+  // navigate(-1) pulava o mapa direto pra tela de Roteiro, porque o mapa
+  // nunca tinha existido como entrada de histórico. Com essa entrada, voltar
+  // (seja pelo botão da tela de detalhes, seja pelo gesto/botão físico do
+  // celular) resolve sozinho, sem lógica própria de "lembrar de onde vim".
+  const openMap = () => {
+    setMapOpen(true);
+    navigate(location.pathname, { state: { ...location.state, mapOpen: true } });
+  };
+  const closeMap = () => navigate(-1);
+
+  // location.state é a fonte da verdade: cobre tanto fechar pelo botão
+  // dentro do DayMap quanto o usuário apertar voltar no navegador/celular
+  // (gesto ou botão físico), que o React Router já traduz num novo valor de
+  // location sem passar pelo onClose do componente.
+  useEffect(() => {
+    setMapOpen(!!location.state?.mapOpen);
+  }, [location.state]);
+
   // Avisa o Shell (App.jsx) pra esconder a BottomTabBar enquanto esta tela
   // está em edição — ela some pra dar lugar à EditActionBar (Cancelar/Salvar).
   useEffect(() => {
@@ -342,7 +363,7 @@ export default function ScheduleScreen() {
             enquanto o roteiro está sendo editado em rascunho local. */}
         {!editing && (
           <div
-            onClick={() => setMapOpen(true)}
+            onClick={openMap}
             style={{
               position: 'relative',
               marginBottom: 28,
@@ -504,7 +525,7 @@ export default function ScheduleScreen() {
             days={days}
             selectedDay={selectedDay}
             onSelectDay={setSelectedDay}
-            onClose={() => setMapOpen(false)}
+            onClose={closeMap}
           />
         )}
       </AnimatePresence>

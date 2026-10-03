@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimalistic';
 import { TrashBinTrashIcon } from '@solar-icons/react/linear/trash-bin-trash';
-import { FieldLabel, inputStyle } from '../design-system/index.js';
+import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
+import PlaceSelectorModal from './PlaceSelectorModal.jsx';
+import { FieldLabel, color, inputStyle, radius } from '../design-system/index.js';
 import { useHidesTabBar } from '../hooks/useEditingState.js';
 
 // Mesmo bottom sheet do RecommendationModal (criar), mas pré-preenchido com
@@ -18,6 +20,8 @@ export default function RecommendationEditModal({ recommendation, onSave, onDele
   const [photo, setPhoto] = useState(recommendation.photo || null);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [place, setPlace] = useState(recommendation.place || null);
+  const [selectorOpen, setSelectorOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -48,6 +52,8 @@ export default function RecommendationEditModal({ recommendation, onSave, onDele
         description: description.trim(),
         photo,
         photoFile,
+        placeId: place?.id || null,
+        place,
       });
     } finally {
       setSaving(false);
@@ -122,6 +128,59 @@ export default function RecommendationEditModal({ recommendation, onSave, onDele
         </div>
 
         <div style={{ marginTop: 18 }}>
+          <FieldLabel>Lugar (opcional)</FieldLabel>
+          <div
+            onClick={() => setSelectorOpen(true)}
+            style={{
+              marginTop: 5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 14px',
+              borderRadius: radius.input,
+              background: '#f9f7f2',
+              cursor: 'pointer',
+            }}
+          >
+            {place ? (
+              <>
+                {place.tag && <span style={{ flex: 'none' }}>{place.tag.split(' ')[0]}</span>}
+                <span style={{ flex: 1, minWidth: 0, color: color.dark, fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {place.name}
+                </span>
+              </>
+            ) : (
+              <span style={{ flex: 1, color: color.faint, fontSize: 13, fontWeight: 600 }}>
+                Vincular a um lugar
+              </span>
+            )}
+            {place ? (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPlace(null);
+                }}
+                style={{
+                  flex: 'none',
+                  width: 22,
+                  height: 22,
+                  borderRadius: 11,
+                  background: color.border,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <CloseIcon size={12} color={color.dark} />
+              </div>
+            ) : (
+              <AltArrowRightIcon size={15} color={color.faintIcon} style={{ flex: 'none' }} />
+            )}
+          </div>
+        </div>
+
+        <div style={{ marginTop: 14 }}>
           <FieldLabel>Título</FieldLabel>
           <input
             value={title}
@@ -244,6 +303,20 @@ export default function RecommendationEditModal({ recommendation, onSave, onDele
           </div>
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {selectorOpen && (
+          <PlaceSelectorModal
+            key="place-selector"
+            zIndex={40}
+            onSelect={(p) => {
+              setPlace(p);
+              setSelectorOpen(false);
+            }}
+            onClose={() => setSelectorOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

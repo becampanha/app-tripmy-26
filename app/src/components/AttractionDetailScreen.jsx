@@ -1,14 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { PlayIcon } from '@solar-icons/react/bold/play';
+import { CloseIcon } from '@solar-icons/react/linear/close';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
-import { InfoCircleIcon } from '@solar-icons/react/bold/info-circle';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
 import { PenIcon } from '@solar-icons/react/linear/pen';
+import { CalendarMinimalisticIcon } from '@solar-icons/react/bold/calendar-minimalistic';
+import { FerrisWheelIcon } from '@solar-icons/react/bold/ferris-wheel';
+import { ClockCircleIcon } from '@solar-icons/react/bold/clock-circle';
+import { LockKeyholeMinimalisticIcon } from '@solar-icons/react/bold/lock-keyhole-minimalistic';
+import { RoundDoubleAltArrowRightIcon } from '@solar-icons/react/bold/round-double-alt-arrow-right';
+import { RulerIcon } from '@solar-icons/react/bold/ruler';
+import { SquareTransferHorizontalIcon } from '@solar-icons/react/bold/square-transfer-horizontal';
 import { updateAttraction } from '../api/itineraryApi.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { useAttractionsData } from '../hooks/useAttractionsData.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
+import { ATTRACTION_STATUS_LABEL } from '../data/attractionStatus.js';
+import EditActionBar from './EditActionBar.jsx';
 import { NavBar, Toggle, navControlStyle, navControlTextColor, Skeleton, FieldLabel, inputStyle, color as tokenColor, radius, spacing } from '../design-system/index.js';
+import { shellMaxWidth } from '../design-system/tokens.js';
 
 // Aceita qualquer formato comum de link do YouTube (watch?v=, youtu.be/,
 // shorts/, embed/, ou já um ID puro de 11 caracteres) e devolve só o ID do
@@ -32,6 +44,15 @@ const INTENSITY_LABEL = {
   Baixa: 'Pouco radical',
 };
 
+// Mesmos tokens já usados pra outros avisos no app (ver tokens.js: os
+// comentários de success/warning/danger já citam explicitamente
+// "intensidade alta/média" como um dos usos pretendidos).
+const INTENSITY_ACCENT = {
+  Alta: 'danger',
+  Média: 'warning',
+  Baixa: 'success',
+};
+
 function findAttraction(parks, id) {
   for (const park of parks || []) {
     for (const area of park.areas) {
@@ -45,21 +66,136 @@ function findAttraction(parks, id) {
   return null;
 }
 
-function InfoCard({ icon, label, value }) {
+// Ícone de play puro, branco, sem nenhum fundo/círculo — usado tanto sobre
+// a foto do header quanto na thumbnail do card de vídeo.
+function PlayButton({ size = 56 }) {
+  return (
+    <PlayIcon
+      size={size}
+      color="#fff"
+      style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.45))' }}
+    />
+  );
+}
+
+// Vídeo em tela cheia, aberto a partir do botão de play sobre a foto do
+// header — mostra direto o iframe com autoplay=1, então a capa nativa do
+// YouTube (título/canal/"Watch on YouTube"/compartilhar) nunca chega a
+// aparecer, já que ela só existe no estado parado do player.
+function VideoModal({ videoId, onClose }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.18 }}
+      style={{
+        position: 'fixed',
+        top: 0,
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: shellMaxWidth,
+        zIndex: 50,
+        background: '#000',
+        display: 'flex',
+        alignItems: 'center',
+      }}
+    >
+      <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
+        <iframe
+          // modestbranding: tira o logo do YouTube do canto. rel=0: ao
+          // acabar, só sugere vídeos do MESMO canal. iv_load_policy=3: sem
+          // anotações/cards clicáveis por cima do vídeo. autoplay=1: já
+          // entra tocando, direto em tela cheia.
+          src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&iv_load_policy=3&autoplay=1`}
+          title="Vídeo da atração"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+
+      <div
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: 18,
+          right: 18,
+          width: 38,
+          height: 38,
+          borderRadius: 19,
+          background: 'rgba(255,255,255,0.22)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+        }}
+      >
+        <CloseIcon size={18} color="#fff" />
+      </div>
+    </motion.div>
+  );
+}
+
+// Grid de 2 colunas — todos os cards do mesmo tamanho (sem flex/scroll
+// horizontal como antes), ícone sempre como componente Solar Icons (nunca
+// emoji), pra consistência visual com o resto do app.
+// `accent` controla a cor só do VALOR (nunca do ícone, que fica sempre na
+// cor normal escura): 'warning' (âmbar, ex: altura mínima obrigatória ou
+// intensidade média), 'success' (verde, ex: Parent Swap disponível ou
+// intensidade baixa), 'danger' (vermelho, intensidade alta) ou undefined
+// (cinza padrão). A fila em tempo real NÃO usa accent — o status (fechada/
+// indisponível) já é comunicado pelo próprio texto, sem precisar colorir.
+function InfoCard({ icon: Icon, label, value, isLive, isClosed, accent }) {
+  const valueColor = accent ? tokenColor[accent] : '#9a9186';
   return (
     <div
       style={{
-        flex: '0 0 auto',
-        minWidth: 108,
         padding: spacing.cardPadding,
         borderRadius: 16,
         border: '1px solid #ececec',
         boxSizing: 'border-box',
+        minWidth: 0,
       }}
     >
-      <div style={{ fontSize: 20, lineHeight: 1 }}>{icon}</div>
-      <div style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 800, marginTop: 10 }}>{label}</div>
-      <div style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 600, marginTop: 2, whiteSpace: 'nowrap' }}>{value}</div>
+      <Icon size={20} color={tokenColor.dark} />
+      <div style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 800, marginTop: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {label}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2, minWidth: 0 }}>
+        {/* Cadeado pequeno ao lado do texto quando a fila está fechada —
+            NÃO troca o ícone principal do card (que continua sempre o
+            relógio), só acrescenta esse indicador junto do valor. */}
+        {isClosed && <LockKeyholeMinimalisticIcon size={12} color="#9a9186" style={{ flex: 'none' }} />}
+        <span
+          style={{
+            color: valueColor,
+            fontSize: 12.5,
+            fontWeight: 600,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {value}
+        </span>
+        {isLive && (
+          <span
+            style={{
+              flex: 'none',
+              width: 5,
+              height: 5,
+              borderRadius: 3,
+              background: tokenColor.success,
+              animation: 'pulse 1.6s ease-in-out infinite',
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -75,7 +211,7 @@ export default function AttractionDetailScreen() {
   const navigate = useNavigate();
   const { parks, setParks, loading } = useAttractionsData();
   const [scrollY, setScrollY] = useState(0);
-  const { getLiveQueue } = useLiveQueueTimes();
+  const { getLiveQueue, getLiveStatus } = useLiveQueueTimes();
 
   const attraction = useMemo(() => findAttraction(parks, id), [parks, id]);
 
@@ -103,31 +239,48 @@ export default function AttractionDetailScreen() {
     });
   };
 
-  const [editingVideo, setEditingVideo] = useState(false);
+  // Modo de edição de tela inteira, mesmo padrão do PlaceDetailScreen.jsx:
+  // ícone de lápis no NavBar (não mais dentro do card de vídeo), que ao
+  // ativar esconde a ficha técnica inteira (vem toda da planilha original,
+  // não é editável — ver api/attractions.js) e mostra só o campo que de
+  // fato pode ser editado aqui (vídeo do YouTube), com EditActionBar fixo
+  // embaixo (Cancelar/Salvar) em vez de botões inline no próprio card.
+  const [editing, setEditing] = useState(false);
   const [videoDraft, setVideoDraft] = useState('');
-  const [savingVideo, setSavingVideo] = useState(false);
+  const [saving, setSaving] = useState(false);
+  // Modal de vídeo em tela cheia, aberto pelo botão de play sobre a foto do
+  // header — evitamos colocar o player ali dentro porque o header tem
+  // efeito parallax (`scale()` dinâmico conforme o scroll, ver headerScale
+  // abaixo), que deixaria o vídeo esticando/encolhendo enquanto a pessoa
+  // rola a tela.
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
 
-  const startEditingVideo = () => {
+  const startEditing = () => {
     setVideoDraft(attraction?.youtubeVideoId ? `https://youtu.be/${attraction.youtubeVideoId}` : '');
-    setEditingVideo(true);
+    setEditing(true);
   };
 
-  const handleSaveVideo = async () => {
+  const handleCancel = () => {
+    setEditing(false);
+    setVideoDraft('');
+  };
+
+  const handleSave = async () => {
     const videoId = extractYoutubeId(videoDraft);
     if (videoDraft.trim() && !videoId) {
       showToast('Link do YouTube inválido — cole a URL completa do vídeo.', 'error');
       return;
     }
-    setSavingVideo(true);
+    setSaving(true);
     try {
       await updateAttraction(id, { youtubeVideoId: videoId });
       applyField({ youtubeVideoId: videoId });
-      setEditingVideo(false);
-      showToast(videoId ? 'Vídeo atualizado' : 'Vídeo removido');
+      setEditing(false);
+      showToast('Edição realizada com sucesso');
     } catch (err) {
-      showErrorToast(err, 'Não foi possível salvar o vídeo.');
+      showErrorToast(err, 'Não foi possível salvar as alterações.');
     } finally {
-      setSavingVideo(false);
+      setSaving(false);
     }
   };
 
@@ -145,8 +298,17 @@ export default function AttractionDetailScreen() {
   const headerScale = 1 + pullDistance / HEADER_HEIGHT;
 
   const liveQueue = attraction ? getLiveQueue(attraction.name) : null;
+  const liveStatus = attraction ? getLiveStatus(attraction.name) : null;
   const hasLiveQueue = typeof liveQueue === 'number';
-  const queueValue = hasLiveQueue ? `${liveQueue} min` : attraction?.queue;
+  const statusLabel = !hasLiveQueue ? ATTRACTION_STATUS_LABEL[liveStatus] : null;
+  // Sem dado ao vivo (nem fila numérica, nem status fechada/manutenção):
+  // cai pra estimativa estática da planilha (attraction.queue), marcada com
+  // "~" na frente pra deixar claro que não é tempo real.
+  const queueValue = hasLiveQueue
+    ? `${liveQueue} min`
+    : statusLabel || (attraction?.queue
+        ? (attraction.queue.trim().startsWith('~') ? attraction.queue : `~ ${attraction.queue}`)
+        : null);
   const intensityLabel = attraction ? INTENSITY_LABEL[attraction.intensity] || attraction.intensity : null;
   const hasHeightRestriction = attraction?.restrictions === 'Altura mínima';
 
@@ -184,6 +346,22 @@ export default function AttractionDetailScreen() {
             pointerEvents: 'none',
           }}
         />
+
+        {!loading && attraction?.youtubeVideoId && (
+          <div
+            onClick={() => setVideoModalOpen(true)}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <PlayButton />
+          </div>
+        )}
       </div>
 
       <NavBar
@@ -194,7 +372,7 @@ export default function AttractionDetailScreen() {
             style={{
               width: 38,
               height: 38,
-              borderRadius: 19,
+              borderRadius: 13,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -204,6 +382,25 @@ export default function AttractionDetailScreen() {
           >
             <AltArrowLeftIcon size={20} color={navControlTextColor(navBarVisible)} />
           </div>
+        }
+        right={
+          attraction && !editing && (
+            <div
+              onClick={startEditing}
+              style={{
+                height: 38,
+                width: 38,
+                borderRadius: 13,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                ...navControlStyle(navBarVisible),
+              }}
+            >
+              <PenIcon size={17} color={navControlTextColor(navBarVisible)} />
+            </div>
+          )
         }
       />
 
@@ -235,58 +432,17 @@ export default function AttractionDetailScreen() {
                 <div style={{ color: '#1c1a17', fontSize: 22, fontWeight: 800, lineHeight: 1.2, marginTop: 8 }}>
                   {attraction.name}
                 </div>
-                {(attraction.type || attraction.intensity) && (
-                  <div style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 500, marginTop: 3, lineHeight: 1.35 }}>
-                    {[attraction.type, intensityLabel].filter(Boolean).join(' · ')}
+                {attraction.type && (
+                  <div style={{ color: tokenColor.muted, fontSize: 13.5, fontWeight: 600, marginTop: 3 }}>
+                    {attraction.type}
                   </div>
                 )}
               </div>
 
-              {(attraction.bestTime || attraction.duration || queueValue) && (
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: spacing.gapLg,
-                    marginTop: spacing.controlGap,
-                    overflowX: 'auto',
-                    WebkitOverflowScrolling: 'touch',
-                  }}
-                >
-                  {attraction.bestTime && <InfoCard icon="📅" label="Melhor horário" value={attraction.bestTime} />}
-                  {attraction.duration && <InfoCard icon="🎢" label="Duração" value={attraction.duration} />}
-                  {queueValue && <InfoCard icon="🕒" label="Fila" value={queueValue} />}
-                </div>
-              )}
-
-              {(hasHeightRestriction || attraction.parentSwap) && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: spacing.controlGap }}>
-                  {hasHeightRestriction && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <InfoCircleIcon size={13} color={tokenColor.warning} />
-                      <span style={{ color: tokenColor.warning, fontSize: 12.5, fontWeight: 600 }}>
-                        Atração requer altura mínima
-                      </span>
-                    </div>
-                  )}
-                  {hasHeightRestriction && attraction.parentSwap && (
-                    <span style={{ color: tokenColor.warning, opacity: 0.6, fontSize: 12.5 }}>•</span>
-                  )}
-                  {attraction.parentSwap && (
-                    <span style={{ color: tokenColor.warning, fontSize: 12.5, fontWeight: 600 }}>
-                      Possui Parent Swap
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* Card dedicado pro toggle "está no roteiro" — antes era uma
-                  pílula pequena no topo, difícil de perceber como um
-                  controle de verdade. Aqui ganha espaço próprio: texto
-                  maior e mais legível de um lado, Toggle grande do outro.
-                  Fundo sempre neutro (não verde) — um fundo colorido igual
-                  à cor do próprio Toggle ligado derrubava o contraste entre
-                  os dois. O verde fica só no ícone de check ao lado do
-                  título, quando ativo. */}
+              {/* Card dedicado pro toggle "está no roteiro" — continua fora
+                  do modo de edição (igual o toggle de favorito de um lugar):
+                  não é um campo de texto que precisa de rascunho/Salvar, o
+                  clique já aplica na hora, então fica visível sempre. */}
               <div
                 onClick={() => handleToggleRequired(!attraction.required)}
                 style={{
@@ -294,7 +450,7 @@ export default function AttractionDetailScreen() {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: 12,
-                  marginTop: spacing.controlGap + 6,
+                  marginTop: spacing.controlGap,
                   padding: spacing.cardPadding,
                   borderRadius: radius.card,
                   background: tokenColor.surfaceMuted,
@@ -317,29 +473,67 @@ export default function AttractionDetailScreen() {
                 <Toggle checked={attraction.required} onChange={handleToggleRequired} />
               </div>
 
-              <div style={{ marginTop: spacing.controlGap + 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ color: '#1c1a17', fontSize: 15, fontWeight: 800 }}>Vídeo da atração</div>
-                  {!editingVideo && (
+              {/* Ficha técnica inteira (grid + avisos) some em modo de
+                  edição — todo esse bloco vem fixo da planilha original
+                  (api/attractions.js), não é editável, então não faz
+                  sentido continuar visível competindo com o campo que de
+                  fato pode ser editado. */}
+              {!editing && (
+                <>
+                  {/* Grid de ficha técnica — 3 colunas, todos os cards do
+                      mesmo tamanho, 2 por linha (Tipo voltou a aparecer
+                      como texto embutido embaixo do título, não é mais um
+                      card aqui). */}
+                  <div style={{ marginTop: spacing.controlGap + 6 }}>
+                    <div style={{ color: '#1c1a17', fontSize: 15, fontWeight: 800, marginBottom: 10 }}>
+                      Informações
+                    </div>
                     <div
-                      onClick={startEditingVideo}
                       style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: 10,
-                        background: tokenColor.surfaceMuted,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, 1fr)',
+                        gap: spacing.gapMd,
                       }}
                     >
-                      <PenIcon size={14} color={tokenColor.dark} />
+                      {queueValue && (
+                        <InfoCard
+                          icon={ClockCircleIcon}
+                          label="Fila em tempo real"
+                          value={queueValue}
+                          isLive={hasLiveQueue}
+                          isClosed={!!statusLabel}
+                        />
+                      )}
+                      {attraction.duration && <InfoCard icon={FerrisWheelIcon} label="Duração" value={attraction.duration} />}
+                      <InfoCard
+                        icon={RulerIcon}
+                        label="Altura mínima"
+                        value={hasHeightRestriction ? 'Obrigatória' : 'Não exigida'}
+                        accent={hasHeightRestriction ? 'warning' : undefined}
+                      />
+                      <InfoCard
+                        icon={SquareTransferHorizontalIcon}
+                        label="Parent Swap"
+                        value={attraction.parentSwap ? 'Disponível' : 'Não disponível'}
+                        accent={attraction.parentSwap ? 'success' : undefined}
+                      />
+                      {attraction.bestTime && <InfoCard icon={CalendarMinimalisticIcon} label="Melhor horário" value={attraction.bestTime} />}
+                      {intensityLabel && (
+                        <InfoCard
+                          icon={RoundDoubleAltArrowRightIcon}
+                          label="Intensidade"
+                          value={intensityLabel}
+                          accent={INTENSITY_ACCENT[attraction.intensity]}
+                        />
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                </>
+              )}
 
-                {editingVideo ? (
+              {editing && (
+                <div style={{ marginTop: spacing.controlGap + 6 }}>
+                  <div style={{ color: '#1c1a17', fontSize: 15, fontWeight: 800 }}>Vídeo da atração</div>
                   <div style={{ marginTop: 8 }}>
                     <FieldLabel>Link do YouTube</FieldLabel>
                     <input
@@ -348,77 +542,21 @@ export default function AttractionDetailScreen() {
                       placeholder="https://youtu.be/..."
                       style={{ ...inputStyle, marginTop: 3 }}
                     />
-                    <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.gapMd }}>
-                      <div
-                        onClick={() => setEditingVideo(false)}
-                        style={{
-                          flex: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: 12,
-                          borderRadius: 16,
-                          border: `1px solid ${tokenColor.border}`,
-                          color: tokenColor.dark,
-                          fontSize: 14,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Cancelar
-                      </div>
-                      <div
-                        onClick={() => {
-                          if (!savingVideo) handleSaveVideo();
-                        }}
-                        style={{
-                          flex: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: 12,
-                          borderRadius: 16,
-                          background: tokenColor.dark,
-                          color: '#fff',
-                          fontSize: 14,
-                          fontWeight: 700,
-                          cursor: savingVideo ? 'default' : 'pointer',
-                          opacity: savingVideo ? 0.7 : 1,
-                        }}
-                      >
-                        {savingVideo ? 'Salvando...' : 'Salvar'}
-                      </div>
-                    </div>
                   </div>
-                ) : attraction.youtubeVideoId ? (
-                  <div
-                    style={{
-                      position: 'relative',
-                      marginTop: 8,
-                      paddingTop: '56.25%',
-                      borderRadius: radius.cardPhoto,
-                      overflow: 'hidden',
-                      background: '#000',
-                    }}
-                  >
-                    <iframe
-                      src={`https://www.youtube.com/embed/${attraction.youtubeVideoId}`}
-                      title="Vídeo da atração"
-                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                ) : (
-                  <div style={{ color: tokenColor.muted, fontSize: 13, fontWeight: 600, marginTop: 6 }}>
-                    Nenhum vídeo cadastrado ainda.
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </>
           )}
         </div>
       </div>
+
+      {editing && <EditActionBar key="edit-action-bar" onCancel={handleCancel} onSave={handleSave} saving={saving} />}
+
+      <AnimatePresence>
+        {videoModalOpen && attraction?.youtubeVideoId && (
+          <VideoModal videoId={attraction.youtubeVideoId} onClose={() => setVideoModalOpen(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

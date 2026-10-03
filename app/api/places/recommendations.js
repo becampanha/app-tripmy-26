@@ -93,14 +93,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Parâmetro "id" é obrigatório' });
     }
 
-    const { title, author, description, photo } = req.body || {};
+    const { title, author, description, photo, placeId } = req.body || {};
     if (!title && !author && !description) {
       return res.status(400).json({ error: 'Preencha ao menos título, descrição ou autor' });
     }
 
     await sql.query(
-      'UPDATE place_recommendations SET title = $1, author = $2, description = $3, photo = $4 WHERE id = $5',
-      [title || null, author || null, description || null, photo || null, id]
+      'UPDATE place_recommendations SET title = $1, author = $2, description = $3, photo = $4, place_id = $5 WHERE id = $6',
+      [title || null, author || null, description || null, photo || null, placeId || null, id]
     );
     return res.status(200).json({ ok: true });
   }

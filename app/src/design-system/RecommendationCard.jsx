@@ -53,12 +53,35 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
             {recommendation.description}
           </div>
         )}
-        {(meta || onEdit) && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 8 }}>
-            {meta && (
-              <div style={{ color: color.muted, fontSize: 11.5, fontWeight: 600, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {meta}
+        {meta && (
+          <div style={{ color: color.muted, fontSize: 11.5, fontWeight: 600, marginTop: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {meta}
+          </div>
+        )}
+        {(place || onEdit) && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 10 }}>
+            {place ? (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '4px 8px 4px 10px',
+                  borderRadius: radius.badge,
+                  background: color.surfaceMuted,
+                  color: color.dark,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  minWidth: 0,
+                  maxWidth: '100%',
+                }}
+              >
+                {place.tag && <span style={{ flex: 'none' }}>{place.tag.split(' ')[0]}</span>}
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{place.name}</span>
+                <AltArrowRightIcon size={13} color={color.dark} style={{ flex: 'none' }} />
               </div>
+            ) : (
+              <div />
             )}
             {onEdit && (
               <div
@@ -81,27 +104,6 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
                 <PenIcon size={13} color={color.dark} />
               </div>
             )}
-          </div>
-        )}
-        {place && (
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              marginTop: 10,
-              padding: '4px 8px 4px 10px',
-              borderRadius: radius.badge,
-              background: color.surfaceMuted,
-              color: color.dark,
-              fontSize: 11.5,
-              fontWeight: 700,
-              maxWidth: '100%',
-            }}
-          >
-            {place.tag && <span style={{ flex: 'none' }}>{place.tag.split(' ')[0]}</span>}
-            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{place.name}</span>
-            <AltArrowRightIcon size={13} color={color.dark} style={{ flex: 'none' }} />
           </div>
         )}
       </div>

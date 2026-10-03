@@ -30,9 +30,9 @@ function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function pinHtml({ label, required, isSelected }) {
+function pinHtml({ label, required, isSelected, isClosed }) {
   const bg = isSelected ? color.dark : '#fff';
-  const fg = isSelected ? '#fff' : color.dark;
+  const fg = isClosed ? color.warning : isSelected ? '#fff' : color.dark;
   const arrowColor = isSelected ? color.dark : '#fff';
   const checkBadge = required
     ? `<div style="position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:8px;background:${color.success};border:2px solid #fff;display:flex;align-items:center;justify-content:center;">
@@ -179,7 +179,7 @@ export default function ParkMap({ parks, selectedPark, onSelectPark, onClose, ge
 
       const icon = leaflet.divIcon({
         className: '',
-        html: pinHtml({ label, required: pin.attraction.required, isSelected: false }),
+        html: pinHtml({ label, required: pin.attraction.required, isSelected: false, isClosed: !!statusLabel }),
         // iconSize null + posicionamento via CSS (não iconAnchor em px
         // fixo): o balão muda de largura conforme o texto ("5 min" vs
         // "Sem fila"), e um anchor fixo desalinharia a ponta do balão do
@@ -196,7 +196,7 @@ export default function ParkMap({ parks, selectedPark, onSelectPark, onClose, ge
           selectPinRef.current(pin.attraction);
         });
 
-      markersRef.current.set(pin.attraction.id, { marker, label, required: pin.attraction.required });
+      markersRef.current.set(pin.attraction.id, { marker, label, required: pin.attraction.required, isClosed: !!statusLabel });
     }
 
     return () => {
@@ -220,7 +220,7 @@ export default function ParkMap({ parks, selectedPark, onSelectPark, onClose, ge
       entry.marker.setIcon(
         leaflet.divIcon({
           className: '',
-          html: pinHtml({ label: entry.label, required: entry.required, isSelected }),
+          html: pinHtml({ label: entry.label, required: entry.required, isSelected, isClosed: entry.isClosed }),
           iconSize: [0, 0],
           iconAnchor: [0, 0],
         })

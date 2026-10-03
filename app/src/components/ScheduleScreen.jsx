@@ -309,7 +309,7 @@ export default function ScheduleScreen() {
         headerRef={headerRef}
         scrollY={scrollY}
         title="Roteiro"
-        tabs={<DayTabs days={days} selected={selectedDay} onSelect={setSelectedDay} style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
+        tabs={!editing && <DayTabs days={days} selected={selectedDay} onSelect={setSelectedDay} style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
         right={
           !editing && (
             <>

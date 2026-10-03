@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { AddIcon } from '@solar-icons/react/linear/add';
 import { ListIcon } from '@solar-icons/react/bold/list';
-import { LibraryIcon } from '@solar-icons/react/bold/library';
+import { PostsCarouselHorizontalIcon } from '@solar-icons/react/bold/posts-carousel-horizontal';
 import { useAllRecommendations } from '../hooks/useAllRecommendations.js';
+import { getRecommendationsScreenState, saveRecommendationsScreenState } from '../hooks/useRecommendationsScreenState.js';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { createRecommendation, updateRecommendation, deleteRecommendation, uploadPlacePhoto } from '../api/itineraryApi.js';
@@ -65,8 +66,8 @@ function groupByArea(recommendations) {
 // automaticamente quando viewMode muda, sem precisar calcular offset manual.
 function ViewModeSegmentedToggle({ viewMode, onChange }) {
   const options = [
-    { key: 'list', Icon: ListIcon },
-    { key: 'cards', Icon: LibraryIcon },
+    { key: 'list', Icon: ListIcon, label: 'Lista' },
+    { key: 'cards', Icon: PostsCarouselHorizontalIcon, label: 'Carrossel' },
   ];
   return (
     <div
@@ -78,7 +79,7 @@ function ViewModeSegmentedToggle({ viewMode, onChange }) {
         gap: 2,
       }}
     >
-      {options.map(({ key, Icon }) => {
+      {options.map(({ key, Icon, label }) => {
         const active = viewMode === key;
         return (
           <div
@@ -86,11 +87,11 @@ function ViewModeSegmentedToggle({ viewMode, onChange }) {
             onClick={() => onChange(key)}
             style={{
               position: 'relative',
-              width: 36,
               height: 32,
+              padding: active ? '0 10px' : '0 8px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              gap: 6,
               cursor: 'pointer',
             }}
           >
@@ -108,6 +109,11 @@ function ViewModeSegmentedToggle({ viewMode, onChange }) {
               />
             )}
             <Icon size={16} color={active ? color.dark : color.muted} style={{ position: 'relative' }} />
+            {active && (
+              <span style={{ position: 'relative', color: color.dark, fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                {label}
+              </span>
+            )}
           </div>
         );
       })}
@@ -141,7 +147,14 @@ export default function RecommendationsScreen() {
   const { ref: headerRef, height: headerHeight } = useElementHeight();
   const [editingRecommendation, setEditingRecommendation] = useState(null);
   const [creatingRecommendation, setCreatingRecommendation] = useState(false);
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'cards'
+  // Padrão 'cards', mas lembra a última escolha do usuário entre navegações
+  // (ver useRecommendationsScreenState.js) — mesmo padrão de persistência já
+  // usado em Lugares/Atrações.
+  const [viewMode, setViewModeState] = useState(() => getRecommendationsScreenState().viewMode);
+  const setViewMode = (mode) => {
+    setViewModeState(mode);
+    saveRecommendationsScreenState({ viewMode: mode });
+  };
 
   const sections = useMemo(
     () => (recommendations ? groupByArea(recommendations) : null),
@@ -169,16 +182,20 @@ export default function RecommendationsScreen() {
     }
   };
 
-  const handleSaveRecommendation = async ({ title, author, description, photo, photoFile }) => {
+  const handleSaveRecommendation = async ({ title, author, description, photo, photoFile, placeId, place }) => {
     try {
       let finalPhoto = photo;
       if (photoFile) {
         const { url } = await uploadPlacePhoto(photoFile);
         finalPhoto = url;
       }
-      const fields = { title, author, description, photo: finalPhoto };
+      const fields = { title, author, description, photo: finalPhoto, placeId };
       await updateRecommendation(editingRecommendation.id, fields);
-      patchRecommendation(editingRecommendation.id, fields);
+      // A API de update não devolve o lugar aninhado — igual na criação
+      // (handlePublishRecommendation), o objeto `place` completo já veio do
+      // PlaceSelectorModal dentro do modal, então atualiza o estado local
+      // direto com ele, sem esperar o próximo refetch.
+      patchRecommendation(editingRecommendation.id, { ...fields, place: place || null });
       setEditingRecommendation(null);
       showToast('Dica atualizada com sucesso');
     } catch (err) {

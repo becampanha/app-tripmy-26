@@ -1,12 +1,28 @@
-import { useState } from 'react';
-import { motion } from 'motion/react';
+import { useEffect, useRef, useState } from 'react';
+import { motion, useMotionValue, animate } from 'motion/react';
 import { PhotoCard, Skeleton, color, radius, spacing } from '../design-system/index.js';
 
 // Modo de visualização alternativo da tela de Dicas — carrossel simples: os
 // cards ficam lado a lado num track horizontal, arrasta pra navegar, solta e
-// o track "gruda" (snap) no card mais próximo. Sem pilha, sem profundidade,
-// sem física de swipe — é só um carrossel comum.
+// o track "gruda" (snap) no card mais próximo.
+//
+// Padrão seguido (motion.dev/docs/react-drag + motion.dev/examples/react-drag):
+// - x é um useMotionValue (não um valor derivado só do `index` via
+//   `animate={{x:...}}` declarativo) — o track é movido imperativamente via
+//   `animate(x, alvo, {...})`, tanto no snap quanto na troca de slide. Isso
+//   evita recriar a interpolação a cada render e permite ler x.get() durante
+//   o próprio gesto sem precisar de re-render.
+// - dragConstraints é calculado a partir da largura REAL do track medida em
+//   runtime (containerWidth * (total - 1)), não um valor fixo em {0,0} — um
+//   valor fixo trava o elemento sempre voltando pro mesmo ponto de origem,
+//   que foi o "problema de scroll" relatado: o carrossel parecia preso /
+//   arrastava errado a partir do 2º card em diante.
+// - onDragEnd decide o snap usando DOIS sinais (distância percorrida E
+//   velocidade do gesto) — um arrasto curto mas rápido também deve virar
+//   página, não só um arrasto longo.
 const BOTTOM_GAP = 100; // espaço reservado pra tab bar flutuante não cobrir o card
+const DRAG_DISTANCE_THRESHOLD = 50; // px
+const DRAG_VELOCITY_THRESHOLD = 500; // px/s
 
 function RecommendationPhotoContent({ rec }) {
   return (
@@ -51,62 +67,156 @@ function RecommendationPhotoContent({ rec }) {
 }
 
 export default function RecommendationCardStack({ recommendations, headerHeight }) {
+  const containerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(0);
   const [index, setIndex] = useState(0);
+  const x = useMotionValue(0);
+  // Começa num slide aleatório a cada vez que entra na tela — a ORDEM da
+  // lista continua a mesma (não embaralha o array), só o ponto de partida
+  // do carrossel muda, pra dar a sensação de "dica nova" sem a
+  // imprevisibilidade de uma ordem totalmente aleatória. hasPickedStart
+  // garante que isso roda só 1x por montagem (quando os dados chegam),
+  // nunca de novo a cada re-render.
+  const hasPickedStartRef = useRef(false);
+
+  // Mede a largura real do container (não window.innerWidth) — o carrossel
+  // vive dentro de um container com max-width:480px centralizado (ver
+  // App.jsx), então em telas largas window.innerWidth estaria errado e os
+  // cálculos de constraint/threshold/snap ficariam todos deslocados.
+  //
+  // IMPORTANTE: o elemento com `ref={containerRef}` só existe depois dos
+  // early returns de loading/vazio mais abaixo. Se `recommendations` chega
+  // como `null` no primeiro render (estado normal de loading), o container
+  // ainda NÃO existe nesse momento — um `useEffect(() => {...}, [])` rodando
+  // 1x no mount nunca re-executaria quando os dados chegassem depois e o
+  // container finalmente montasse, deixando containerWidth travado em 0 pra
+  // sempre (carrossel "quebrado" só quando os dados demoram a carregar).
+  // Por isso a dependência inclui `recommendations` — o efeito roda de novo
+  // assim que os dados mudam de null pra array, quando o container já existe.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => setContainerWidth(el.offsetWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [recommendations]);
 
   const top = headerHeight + spacing.controlGap;
   const cardHeight = `calc(100dvh - ${top}px - ${BOTTOM_GAP}px)`;
 
+  const total = recommendations?.length ?? 0;
+
+  // Sorteia o slide inicial assim que os dados E a largura do container
+  // estiverem prontos (precisa de containerWidth pra já posicionar `x` no
+  // lugar certo, sem flash do primeiro card antes de pular pro aleatório).
+  // Roda só 1x por montagem real da tela — useRef (não state) evita
+  // disparar de novo em re-renders normais (ex: ao editar uma dica).
+  useEffect(() => {
+    if (hasPickedStartRef.current) return;
+    if (total === 0 || containerWidth === 0) return;
+    hasPickedStartRef.current = true;
+    const startIndex = Math.floor(Math.random() * total);
+    setIndex(startIndex);
+    x.set(-startIndex * containerWidth);
+  }, [total, containerWidth, x]);
+
+  // Move o track pro slide `i`, clampado nos limites — chamado tanto pelo
+  // snap do drag quanto por qualquer navegação futura (ex: botões).
+  const goToIndex = (i) => {
+    const clamped = Math.max(0, Math.min(i, total - 1));
+    setIndex(clamped);
+    animate(x, -clamped * containerWidth, { type: 'spring', stiffness: 300, damping: 32 });
+  };
+
+  const handleDragEnd = (_, info) => {
+    const passedDistance = Math.abs(info.offset.x) > DRAG_DISTANCE_THRESHOLD;
+    const passedVelocity = Math.abs(info.velocity.x) > DRAG_VELOCITY_THRESHOLD;
+    if (!passedDistance && !passedVelocity) {
+      goToIndex(index); // snap-back pro slide atual
+      return;
+    }
+    const wentLeft = info.offset.x < 0 || info.velocity.x < 0;
+    goToIndex(wentLeft ? index + 1 : index - 1);
+  };
+
   if (!recommendations) {
     return (
-      <div style={{ marginTop: top, padding: `0 ${spacing.screenGutter}px` }}>
+      <div
+        style={{
+          position: 'fixed',
+          top,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: 480,
+          padding: `0 ${spacing.screenGutter}px`,
+          boxSizing: 'border-box',
+        }}
+      >
         <Skeleton height={400} radius={radius.cardPhoto} />
       </div>
     );
   }
 
-  if (recommendations.length === 0) {
+  if (total === 0) {
     return (
-      <div style={{ marginTop: top, padding: '30px 0', textAlign: 'center', color: color.faint, fontSize: 13.5, fontWeight: 600 }}>
+      <div
+        style={{
+          position: 'fixed',
+          top,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: 480,
+          padding: '30px 0',
+          textAlign: 'center',
+          color: color.faint,
+          fontSize: 13.5,
+          fontWeight: 600,
+        }}
+      >
         Nenhuma dica publicada ainda.
       </div>
     );
   }
 
-  const total = recommendations.length;
-  const clampedIndex = Math.min(index, total - 1);
-
-  // Snap simples: cada slide ocupa 100% da largura do track; dragEnd decide
-  // pra qual índice "gruda" com base em quanto o arrasto percorreu, igual
-  // qualquer carrossel comum (sem física de swipe, sem threshold especial).
-  const handleDragEnd = (_, info) => {
-    const draggedRatio = info.offset.x / window.innerWidth;
-    if (draggedRatio < -0.2 && clampedIndex < total - 1) {
-      setIndex(clampedIndex + 1);
-    } else if (draggedRatio > 0.2 && clampedIndex > 0) {
-      setIndex(clampedIndex - 1);
-    }
-  };
+  // dragConstraints calculado a partir da largura REAL medida — nunca um
+  // valor fixo {0,0}. O limite direito é 0 (não deixa arrastar além do
+  // primeiro slide pra direita); o esquerdo é -(largura total do track menos
+  // um container), ou seja, o ponto onde o ÚLTIMO slide alinha à esquerda.
+  const trackWidth = containerWidth * total;
+  const maxDragLeft = -(trackWidth - containerWidth);
 
   return (
     <div
+      ref={containerRef}
       style={{
-        marginTop: top,
+        position: 'fixed',
+        top,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: 480,
         boxSizing: 'border-box',
         overflow: 'hidden',
       }}
     >
       <motion.div
-        drag={total > 1 ? 'x' : false}
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.15}
+        drag={total > 1 && containerWidth > 0 ? 'x' : false}
+        dragConstraints={{ left: maxDragLeft, right: 0 }}
+        dragElastic={0.1}
+        dragMomentum={false}
         onDragEnd={handleDragEnd}
-        animate={{ x: `-${clampedIndex * 100}%` }}
-        transition={{ type: 'spring', stiffness: 300, damping: 32 }}
-        style={{ display: 'flex', cursor: total > 1 ? 'grab' : 'default', touchAction: 'pan-y' }}
+        style={{ x, display: 'flex', width: trackWidth, cursor: total > 1 ? 'grab' : 'default', touchAction: 'pan-y' }}
         whileDrag={{ cursor: 'grabbing' }}
       >
         {recommendations.map((rec) => (
-          <div key={rec.id} style={{ flex: '0 0 100%', boxSizing: 'border-box', padding: `0 ${spacing.screenGutter}px` }}>
+          <div
+            key={rec.id}
+            style={{ flex: `0 0 ${containerWidth}px`, width: containerWidth, boxSizing: 'border-box', padding: `0 ${spacing.screenGutter}px` }}
+          >
             <PhotoCard
               photo={rec.photo}
               height={cardHeight}

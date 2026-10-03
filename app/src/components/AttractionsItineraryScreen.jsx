@@ -5,6 +5,7 @@ import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { HamburgerMenuIcon } from '@solar-icons/react/linear/hamburger-menu';
 import { ClockCircleIcon } from '@solar-icons/react/bold/clock-circle';
+import { LockKeyholeMinimalisticIcon } from '@solar-icons/react/bold/lock-keyhole-minimalistic';
 import { useAttractionsData } from '../hooks/useAttractionsData.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useScrollY } from '../hooks/useScrollY.js';
@@ -24,7 +25,8 @@ import { FixedHeader, HScrollTabs, FieldLabel, inputStyle, ParkStrategyCard, Ske
 // manutenção", que também usa esta tag mas sem o pulso). Fixo no canto
 // superior direito do card, na mesma altura do título, em vez de inline —
 // não devia empurrar o título nem quebrar linha.
-function LiveQueueTag({ value, isLive }) {
+function LiveQueueTag({ value, isLive, isClosed }) {
+  const tagColor = isClosed ? color.warning : color.dark;
   return (
     <div
       style={{
@@ -37,12 +39,16 @@ function LiveQueueTag({ value, isLive }) {
         padding: '4px 8px 4px 10px',
         borderRadius: radius.badge,
         background: color.surfaceMuted,
-        color: color.dark,
+        color: tagColor,
         fontSize: 11.5,
         fontWeight: 700,
       }}
     >
-      <ClockCircleIcon size={13} color={color.dark} />
+      {isClosed ? (
+        <LockKeyholeMinimalisticIcon size={13} color={tagColor} />
+      ) : (
+        <ClockCircleIcon size={13} color={tagColor} />
+      )}
       <span style={{ whiteSpace: 'nowrap' }}>{value}</span>
       {isLive && (
         <span
@@ -87,7 +93,7 @@ function DraggableAttractionItem({ attraction, liveQueue, liveStatus }) {
         borderRadius: radius.card,
       }}
     >
-      {tagValue && <LiveQueueTag value={tagValue} isLive={hasLiveQueue} />}
+      {tagValue && <LiveQueueTag value={tagValue} isLive={hasLiveQueue} isClosed={!!statusLabel} />}
 
       <button
         type="button"
@@ -336,7 +342,7 @@ export default function AttractionsItineraryScreen() {
                 cursor: 'pointer',
               }}
             >
-              {tagValue && <LiveQueueTag value={tagValue} isLive={hasLiveQueue} />}
+              {tagValue && <LiveQueueTag value={tagValue} isLive={hasLiveQueue} isClosed={!!statusLabel} />}
 
               <div
                 style={{

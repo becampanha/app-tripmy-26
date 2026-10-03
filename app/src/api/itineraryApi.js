@@ -117,10 +117,10 @@ export function createRecommendation({ placeId, title, author, description, phot
   });
 }
 
-export function updateRecommendation(id, { title, author, description, photo }) {
+export function updateRecommendation(id, { title, author, description, photo, placeId }) {
   return request(`/api/places/recommendations?id=${encodeURIComponent(id)}`, {
     method: 'PUT',
-    body: JSON.stringify({ title, author, description, photo }),
+    body: JSON.stringify({ title, author, description, photo, placeId }),
   });
 }
 

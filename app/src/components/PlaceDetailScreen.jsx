@@ -32,7 +32,7 @@ import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { subcategoriesFor } from '../data/subcategories.js';
 import { tagOptionsFor } from '../data/placeTagOptions.js';
 import { getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
-import { IconButton, NavBar, navControlStyle, navControlTextColor, FieldLabel, inputStyle, Select, RecommendationCard, PhotoLightbox, space, spacing } from '../design-system/index.js';
+import { IconButton, NavBar, navControlStyle, navControlTextColor, FieldLabel, inputStyle, Select, RecommendationCard, PhotoLightbox, color, space, spacing } from '../design-system/index.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
@@ -321,7 +321,7 @@ function MapFullscreen({ coords, name, address, photo, onClose }) {
           left: 18,
           width: 38,
           height: 38,
-          borderRadius: 19,
+          borderRadius: 13,
           background: 'rgba(255,255,255,0.85)',
           backdropFilter: 'blur(10px)',
           WebkitBackdropFilter: 'blur(10px)',
@@ -768,7 +768,7 @@ export default function PlaceDetailScreen() {
             style={{
               width: 38,
               height: 38,
-              borderRadius: 19,
+              borderRadius: 13,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -786,7 +786,7 @@ export default function PlaceDetailScreen() {
               style={{
                 height: 38,
                 width: 38,
-                borderRadius: 19,
+                borderRadius: 13,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1023,7 +1023,7 @@ export default function PlaceDetailScreen() {
               </div>
             )}
 
-            {(place.googleMapsUri || (place.category === 'Restaurante' && place.menuUri)) && (
+            {(place.googleMapsUri || place.category === 'Restaurante') && (
               <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.controlGap }}>
                 {place.googleMapsUri && (
                   <a
@@ -1051,31 +1051,58 @@ export default function PlaceDetailScreen() {
                   </a>
                 )}
 
-                {place.category === 'Restaurante' && place.menuUri && (
-                  <a
-                    href={place.menuUri}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      padding: '14px 12px',
-                      borderRadius: 16,
-                      background: '#fff',
-                      border: '1px solid #ececec',
-                      color: '#1c1a17',
-                      fontSize: 14.5,
-                      fontWeight: 700,
-                      textAlign: 'center',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    <DocumentTextIcon size={17} color="#1c1a17" />
-                    Ver cardápio
-                  </a>
+                {place.category === 'Restaurante' && (
+                  place.menuUri ? (
+                    <a
+                      href={place.menuUri}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        padding: '14px 12px',
+                        borderRadius: 16,
+                        background: '#fff',
+                        border: '1px solid #ececec',
+                        color: '#1c1a17',
+                        fontSize: 14.5,
+                        fontWeight: 700,
+                        textAlign: 'center',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <DocumentTextIcon size={17} color="#1c1a17" />
+                      Ver cardápio
+                    </a>
+                  ) : (
+                    // Desabilitado: sem menuUri cadastrado ainda. Não é <a>
+                    // (sem href pra não navegar a lugar nenhum), fica cinza e
+                    // sem cursor de clique — mesmo espírito do estado
+                    // disabled do CtaButton (ver design-system/CtaButton.jsx).
+                    <div
+                      style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        padding: '14px 12px',
+                        borderRadius: 16,
+                        background: color.toggleOff,
+                        color: color.faint,
+                        fontSize: 14.5,
+                        fontWeight: 700,
+                        textAlign: 'center',
+                        cursor: 'default',
+                      }}
+                    >
+                      <DocumentTextIcon size={17} color={color.faint} />
+                      Ver cardápio
+                    </div>
+                  )
                 )}
               </div>
             )}

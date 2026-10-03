@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
 import { AddCircleIcon } from '@solar-icons/react/bold/add-circle';
 import { ClockCircleIcon } from '@solar-icons/react/bold/clock-circle';
+import { LockKeyholeMinimalisticIcon } from '@solar-icons/react/bold/lock-keyhole-minimalistic';
 import { UsersGroupRoundedIcon } from '@solar-icons/react/bold/users-group-rounded';
 import { FerrisWheelIcon } from '@solar-icons/react/bold/ferris-wheel';
 import { CalendarMinimalisticIcon } from '@solar-icons/react/bold/calendar-minimalistic';
@@ -18,7 +19,7 @@ const INTENSITY_LABEL = {
 // Mini-card compacto: ícone + valor numa linha só, sem label separado.
 // Usado no canto superior direito para Duração e Fila, e no canto superior
 // esquerdo para Melhor horário e Restrições.
-function MiniStat({ icon: Icon, value }) {
+function MiniStat({ icon: Icon, value, color }) {
   if (!value) return null;
   return (
     <div
@@ -31,8 +32,8 @@ function MiniStat({ icon: Icon, value }) {
         background: 'rgba(28,26,23,0.55)',
       }}
     >
-      <Icon size={12} color="#fff" />
-      <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{value}</span>
+      <Icon size={12} color={color || '#fff'} />
+      <span style={{ color: color || '#fff', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{value}</span>
     </div>
   );
 }
@@ -93,6 +94,8 @@ export default function AttractionCard({ attraction, liveQueue, liveStatus, disa
             <MiniStat icon={FerrisWheelIcon} value={attraction.duration} />
             {hasLiveQueue ? (
               <LiveMiniStat icon={ClockCircleIcon} value={queueValue} />
+            ) : statusLabel ? (
+              <MiniStat icon={LockKeyholeMinimalisticIcon} value={statusLabel} color={tokenColor.warning} />
             ) : (
               <MiniStat icon={ClockCircleIcon} value={queueValue} />
             )}

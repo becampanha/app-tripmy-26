@@ -60,7 +60,10 @@ export default function MoreScreen() {
     }
   };
 
+  const pushBlocked = getNotificationPermission() === 'denied';
+
   const handleTogglePush = async (next) => {
+    if (pushBlocked) return; // navegador bloqueou — só reverte indo nas configurações dele, não tem o que o toggle faça
     if (next) {
       const result = await requestPushPermission();
       setPushEnabled(result === 'granted');
@@ -123,12 +126,12 @@ export default function MoreScreen() {
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: color.dark, fontSize: 14.5, fontWeight: 700 }}>Notificações de novas dicas</div>
-                <div style={{ color: color.muted, fontSize: 12, fontWeight: 500, marginTop: 1 }}>
-                  Avisa quando alguém publica uma dica nova
+                <div style={{ color: pushBlocked ? color.danger : pushEnabled ? color.success : color.muted, fontSize: 12, fontWeight: 600, marginTop: 1 }}>
+                  {pushBlocked ? 'Bloqueadas nas configurações do navegador' : pushEnabled ? 'Ativadas' : 'Desativadas'}
                 </div>
               </div>
             </div>
-            <Toggle checked={pushEnabled} onChange={handleTogglePush} />
+            <Toggle checked={pushEnabled && !pushBlocked} onChange={handleTogglePush} />
           </div>
         )}
 

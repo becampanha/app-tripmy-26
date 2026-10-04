@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, animate } from 'motion/react';
 import { PhotoCard, Skeleton, color, radius, spacing } from '../design-system/index.js';
 
-// Modo de visualização alternativo da tela de Dicas — carrossel simples: os
+// Modo de visualização alternativo da tela de Dicas — carrossel em loop: os
 // cards ficam lado a lado num track horizontal, arrasta pra navegar, solta e
-// o track "gruda" (snap) no card mais próximo.
+// o track "gruda" (snap) no card mais próximo; do último card dá pra
+// continuar arrastando e volta pro primeiro (e vice-versa), sem travar.
 //
 // Padrão seguido (motion.dev/docs/react-drag + motion.dev/examples/react-drag):
 // - x é um useMotionValue (não um valor derivado só do `index` via
@@ -13,13 +14,16 @@ import { PhotoCard, Skeleton, color, radius, spacing } from '../design-system/in
 //   evita recriar a interpolação a cada render e permite ler x.get() durante
 //   o próprio gesto sem precisar de re-render.
 // - dragConstraints é calculado a partir da largura REAL do track medida em
-//   runtime (containerWidth * (total - 1)), não um valor fixo em {0,0} — um
-//   valor fixo trava o elemento sempre voltando pro mesmo ponto de origem,
-//   que foi o "problema de scroll" relatado: o carrossel parecia preso /
-//   arrastava errado a partir do 2º card em diante.
+//   runtime, não um valor fixo em {0,0} — um valor fixo trava o elemento
+//   sempre voltando pro mesmo ponto de origem.
 // - onDragEnd decide o snap usando DOIS sinais (distância percorrida E
 //   velocidade do gesto) — um arrasto curto mas rápido também deve virar
 //   página, não só um arrasto longo.
+// - Loop infinito via clone nas pontas (abordagem padrão de carrosséis tipo
+//   Embla/Swiper): o track real inclui um clone do último card antes do
+//   primeiro e um clone do primeiro depois do último; ao assentar num desses
+//   clones, `goToIndex` teleporta `x` pro item real equivalente SEM animação
+//   (mesma posição visual, card idêntico) — o usuário nunca percebe o salto.
 const BOTTOM_GAP = 100; // espaço reservado pra tab bar flutuante não cobrir o card
 const DRAG_DISTANCE_THRESHOLD = 50; // px
 const DRAG_VELOCITY_THRESHOLD = 500; // px/s
@@ -69,7 +73,13 @@ function RecommendationPhotoContent({ rec }) {
 export default function RecommendationCardStack({ recommendations, headerHeight }) {
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [index, setIndex] = useState(0);
+  // `index` aqui é a posição no TRACK (não no array de recommendations) —
+  // o track tem um clone do último card na posição 0 e um clone do primeiro
+  // na última posição, então o índice "real" de recommendations é index - 1.
+  // Isso é o que permite o loop: ao assentar num desses clones, dá pra
+  // teleportar instantaneamente pro item real equivalente (ver goToIndex),
+  // criando a ilusão de um carrossel infinito.
+  const [index, setIndex] = useState(1);
   const x = useMotionValue(0);
   // Começa num slide aleatório a cada vez que entra na tela — a ORDEM da
   // lista continua a mesma (não embaralha o array), só o ponto de partida
@@ -108,6 +118,13 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
 
   const total = recommendations?.length ?? 0;
 
+  // Com 2+ dicas o track ganha um clone em cada ponta (ver trackItems mais
+  // abaixo), o que desloca todo índice "real" em +1 dentro do track. Com 0
+  // ou 1 dica não há clones nem loop — o índice do track é o próprio índice
+  // real, sem deslocamento.
+  const hasLoop = total > 1;
+  const indexOffset = hasLoop ? 1 : 0;
+
   // Sorteia o slide inicial assim que os dados E a largura do container
   // estiverem prontos (precisa de containerWidth pra já posicionar `x` no
   // lugar certo, sem flash do primeiro card antes de pular pro aleatório).
@@ -118,16 +135,36 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
     if (total === 0 || containerWidth === 0) return;
     hasPickedStartRef.current = true;
     const startIndex = Math.floor(Math.random() * total);
-    setIndex(startIndex);
-    x.set(-startIndex * containerWidth);
-  }, [total, containerWidth, x]);
+    setIndex(startIndex + indexOffset);
+    x.set(-(startIndex + indexOffset) * containerWidth);
+  }, [total, containerWidth, x, indexOffset]);
 
-  // Move o track pro slide `i`, clampado nos limites — chamado tanto pelo
-  // snap do drag quanto por qualquer navegação futura (ex: botões).
+  // Move o track pro slide `i` (posição no TRACK, já com o deslocamento do
+  // clone) — chamado tanto pelo snap do drag quanto por qualquer navegação
+  // futura. Sem loop, clampa nas pontas de verdade; com loop, os clones (0 e
+  // total+1) são posições alcançáveis — delas que vem o teleporte abaixo.
   const goToIndex = (i) => {
-    const clamped = Math.max(0, Math.min(i, total - 1));
-    setIndex(clamped);
-    animate(x, -clamped * containerWidth, { type: 'spring', stiffness: 300, damping: 32 });
+    if (!hasLoop) {
+      const clamped = Math.max(0, Math.min(i, total - 1));
+      setIndex(clamped);
+      animate(x, -clamped * containerWidth, { type: 'spring', stiffness: 300, damping: 32 });
+      return;
+    }
+
+    const target = Math.max(0, Math.min(i, total + 1));
+    setIndex(target);
+    animate(x, -target * containerWidth, { type: 'spring', stiffness: 300, damping: 32 }).then(() => {
+      // Assentou num clone (posição 0 = clone do último, total+1 = clone do
+      // primeiro) — teleporta sem animação pro item real equivalente, sem o
+      // usuário perceber, fechando o loop infinito.
+      if (target === 0) {
+        setIndex(total);
+        x.set(-total * containerWidth);
+      } else if (target === total + 1) {
+        setIndex(1);
+        x.set(-1 * containerWidth);
+      }
+    });
   };
 
   const handleDragEnd = (_, info) => {
@@ -182,12 +219,19 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
     );
   }
 
-  // dragConstraints calculado a partir da largura REAL medida — nunca um
-  // valor fixo {0,0}. O limite direito é 0 (não deixa arrastar além do
-  // primeiro slide pra direita); o esquerdo é -(largura total do track menos
-  // um container), ou seja, o ponto onde o ÚLTIMO slide alinha à esquerda.
-  const trackWidth = containerWidth * total;
+  // Track com loop: clone do último card antes do primeiro, clone do
+  // primeiro depois do último — são esses clones que tornam possível
+  // arrastar "além" das pontas sem travar (ver dragConstraints) e dão o
+  // material visual pro teleporte silencioso em goToIndex.
+  const trackItems = total > 1
+    ? [recommendations[total - 1], ...recommendations, recommendations[0]]
+    : recommendations;
+  const trackWidth = containerWidth * trackItems.length;
+  // Com loop, as duas pontas do drag têm folga de +1 card (o clone) — não
+  // mais 0/-(trackWidth-containerWidth) direto, já que agora dá pra passar
+  // do primeiro/último real pro clone do lado oposto.
   const maxDragLeft = -(trackWidth - containerWidth);
+  const maxDragRight = 0;
 
   return (
     <div
@@ -205,16 +249,16 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
     >
       <motion.div
         drag={total > 1 && containerWidth > 0 ? 'x' : false}
-        dragConstraints={{ left: maxDragLeft, right: 0 }}
+        dragConstraints={{ left: maxDragLeft, right: maxDragRight }}
         dragElastic={0.1}
         dragMomentum={false}
         onDragEnd={handleDragEnd}
         style={{ x, display: 'flex', width: trackWidth, cursor: total > 1 ? 'grab' : 'default', touchAction: 'pan-y' }}
         whileDrag={{ cursor: 'grabbing' }}
       >
-        {recommendations.map((rec) => (
+        {trackItems.map((rec, i) => (
           <div
-            key={rec.id}
+            key={`${rec.id}-${i}`}
             style={{ flex: `0 0 ${containerWidth}px`, width: containerWidth, boxSizing: 'border-box', padding: `0 ${spacing.screenGutter}px` }}
           >
             <PhotoCard

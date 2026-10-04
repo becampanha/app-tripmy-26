@@ -42,6 +42,16 @@ export function deleteActivity(id) {
   return request(`/api/activities/${id}`, { method: 'DELETE' });
 }
 
+// Move uma atividade pro final da lista de outro dia (ver ScheduleScreen.jsx,
+// handleMoveToDay) — sortOrder alto o bastante pra cair depois de qualquer
+// atividade já existente nesse dia, sem precisar saber o tamanho da lista.
+export function moveActivityToDay(id, dayId) {
+  return request(`/api/activities/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ dayId, sortOrder: 9999 }),
+  });
+}
+
 export function reorderActivities(items) {
   return request('/api/activities/reorder', {
     method: 'POST',

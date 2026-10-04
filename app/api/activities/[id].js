@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   const { id } = req.query;
 
   if (req.method === 'PUT') {
-    const { time, title, subtitle, address, placeId } = req.body || {};
+    const { time, title, subtitle, address, placeId, dayId, sortOrder } = req.body || {};
 
     const fields = [];
     const values = [];
@@ -18,6 +18,11 @@ export default async function handler(req, res) {
     if (subtitle !== undefined) { fields.push(`subtitle = $${i++}`); values.push(subtitle); }
     if (address !== undefined) { fields.push(`address = $${i++}`); values.push(address); }
     if (placeId !== undefined) { fields.push(`place_id = $${i++}`); values.push(placeId); }
+    // dayId: usado ao mover uma atividade de um dia pra outro (ver
+    // ScheduleScreen.jsx, handleMoveToDay) — sortOrder junto pra já cair no
+    // fim da lista do dia de destino, sem precisar de um reorder separado.
+    if (dayId !== undefined) { fields.push(`day_id = $${i++}`); values.push(dayId); }
+    if (sortOrder !== undefined) { fields.push(`sort_order = $${i++}`); values.push(sortOrder); }
 
     if (fields.length === 0) {
       return res.status(400).json({ error: 'Nenhum campo para atualizar' });

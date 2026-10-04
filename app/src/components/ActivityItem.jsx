@@ -4,6 +4,7 @@ import { TrashBinTrashIcon } from '@solar-icons/react/linear/trash-bin-trash';
 import { HamburgerMenuIcon } from '@solar-icons/react/linear/hamburger-menu';
 import { AltArrowUpIcon } from '@solar-icons/react/linear/alt-arrow-up';
 import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
+import { CalendarAddIcon } from '@solar-icons/react/linear/calendar-add';
 import { PointOnMapIcon } from '@solar-icons/react/linear/point-on-map';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
@@ -21,6 +22,7 @@ export default function ActivityItem({
   onDelete,
   onMoveUp,
   onMoveDown,
+  onMoveToDay,
   isFirst,
   isLast,
   footer,
@@ -265,6 +267,11 @@ export default function ActivityItem({
           >
             <AltArrowDownIcon size={16} color={color.dark} />
           </button>
+          {onMoveToDay && (
+            <button type="button" onClick={onMoveToDay} style={{ border: 0, background: 'none', padding: 2, cursor: 'pointer' }}>
+              <CalendarAddIcon size={16} color={color.dark} />
+            </button>
+          )}
           <button type="button" onClick={onDelete} style={{ border: 0, background: 'none', padding: 2, cursor: 'pointer' }}>
             <TrashBinTrashIcon size={16} color={color.danger} />
           </button>

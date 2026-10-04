@@ -9,6 +9,7 @@ import DayTabs from './DayTabs.jsx';
 import ActivityItem from './ActivityItem.jsx';
 import DistanceBetween from './DistanceBetween.jsx';
 import PlaceSelectorModal from './PlaceSelectorModal.jsx';
+import MoveToDayModal from './MoveToDayModal.jsx';
 import DayMap from './DayMap.jsx';
 import EditActionBar from './EditActionBar.jsx';
 import { useItinerary } from '../hooks/useItinerary.js';
@@ -18,7 +19,7 @@ import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { getScheduleScreenState, saveScheduleScreenState } from '../hooks/useScheduleScreenState.js';
-import { createActivity, updateActivity, deleteActivity, reorderActivities, updateDay } from '../api/itineraryApi.js';
+import { createActivity, updateActivity, deleteActivity, reorderActivities, updateDay, moveActivityToDay } from '../api/itineraryApi.js';
 import { weatherEmoji } from '../data/weatherCodes.js';
 import { FixedHeader, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
 
@@ -96,6 +97,8 @@ export default function ScheduleScreen() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectorFor, setSelectorFor] = useState(null); // activity id (ou id negativo temporário de item recém-criado)
+  const [movingActivity, setMovingActivity] = useState(null); // activity sendo movida de dia (abre o MoveToDayModal)
+  const [moving, setMoving] = useState(false);
   const { days, loading, reload } = useItinerary();
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
@@ -214,6 +217,27 @@ export default function ScheduleScreen() {
       [activities[index], activities[targetIndex]] = [activities[targetIndex], activities[index]];
       return { ...d, activities };
     });
+  };
+
+  // Mover pra outro dia persiste na hora (diferente das outras edições, que
+  // só mexem no draft local até o Salvar geral) — o dia de destino não faz
+  // parte do draft desta tela, então não dá pra "ficar pendente" até salvar
+  // sem reimplementar o diff de dois dias ao mesmo tempo. Só é oferecido
+  // para atividades já existentes (id positivo); um item recém-criado ainda
+  // não tem contrapartida no banco pra mover.
+  const handleMoveToDay = async (activity, targetDay) => {
+    setMoving(true);
+    try {
+      await moveActivityToDay(activity.id, targetDay.id);
+      setDraft((d) => ({ ...d, activities: d.activities.filter((a) => a.id !== activity.id) }));
+      setMovingActivity(null);
+      await reload(true);
+      showToast(`Movido para ${targetDay.weekday} · ${targetDay.date}`);
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível mover a atividade.');
+    } finally {
+      setMoving(false);
+    }
   };
 
   const handleAddActivity = (atIndex) => {
@@ -481,6 +505,7 @@ export default function ScheduleScreen() {
                   onDelete={() => handleDelete(act.id)}
                   onMoveUp={() => handleMove(i, -1)}
                   onMoveDown={() => handleMove(i, 1)}
+                  onMoveToDay={act.id > 0 ? () => setMovingActivity(act) : undefined}
                   footer={
                     <>
                       <div style={{ marginBottom: 10 }}>
@@ -510,6 +535,18 @@ export default function ScheduleScreen() {
             key="place-selector"
             onSelect={handleSelectPlace}
             onClose={() => setSelectorFor(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {movingActivity && (
+          <MoveToDayModal
+            key="move-to-day"
+            days={days}
+            currentDayId={draft.dayId}
+            onSelect={(targetDay) => !moving && handleMoveToDay(movingActivity, targetDay)}
+            onClose={() => !moving && setMovingActivity(null)}
           />
         )}
       </AnimatePresence>

@@ -1,10 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RefreshIcon } from '@solar-icons/react/bold/refresh';
 import { PlayCircleIcon } from '@solar-icons/react/bold/play-circle';
+import { BellIcon } from '@solar-icons/react/bold/bell';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import WelcomeScreen from './WelcomeScreen.jsx';
-import { FixedHeader, color, spacing, type } from '../design-system/index.js';
+import { isStandalone } from '../hooks/useIsStandalone.js';
+import {
+  disablePushNotifications,
+  getNotificationPermission,
+  isPushSupported,
+  requestPushPermission,
+} from '../hooks/usePushNotifications.js';
+import { FixedHeader, Toggle, color, spacing, type } from '../design-system/index.js';
 
 function formatBuildDate(iso) {
   if (!iso) return '';
@@ -33,8 +41,15 @@ async function hardRefresh() {
 export default function MoreScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(() => getNotificationPermission() === 'granted');
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
+
+  // Sincroniza o toggle se a permissão for revogada por fora do app (ex:
+  // configurações do sistema) entre uma visita e outra a esta tela.
+  useEffect(() => {
+    setPushEnabled(getNotificationPermission() === 'granted');
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -42,6 +57,16 @@ export default function MoreScreen() {
       await hardRefresh();
     } catch {
       setRefreshing(false);
+    }
+  };
+
+  const handleTogglePush = async (next) => {
+    if (next) {
+      const result = await requestPushPermission();
+      setPushEnabled(result === 'granted');
+    } else {
+      await disablePushNotifications();
+      setPushEnabled(false);
     }
   };
 
@@ -66,6 +91,46 @@ export default function MoreScreen() {
             Publicada em {formatBuildDate(__BUILD_INFO__.builtAt)}
           </div>
         </div>
+
+        {isStandalone() && isPushSupported() && (
+          <div
+            style={{
+              marginTop: spacing.gapLg,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: spacing.gapMd,
+              padding: spacing.cardPadding,
+              background: color.bg,
+              border: `1px solid ${color.border}`,
+              borderRadius: 18,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+              <div
+                style={{
+                  flex: 'none',
+                  width: 32,
+                  height: 32,
+                  borderRadius: 10,
+                  background: color.surfaceMuted,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <BellIcon size={16} color={color.dark} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ color: color.dark, fontSize: 14.5, fontWeight: 700 }}>Notificações de novas dicas</div>
+                <div style={{ color: color.muted, fontSize: 12, fontWeight: 500, marginTop: 1 }}>
+                  Avisa quando alguém publica uma dica nova
+                </div>
+              </div>
+            </div>
+            <Toggle checked={pushEnabled} onChange={handleTogglePush} />
+          </div>
+        )}
 
         <div
           onClick={handleRefresh}

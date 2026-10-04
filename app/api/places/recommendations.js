@@ -1,15 +1,43 @@
 import { getSql } from '../_db.js';
+import { sendPushToAll } from '../_push.js';
 
 // GET    /api/places/recommendations?placeId=... — lista as recomendações de um lugar
 // GET    /api/places/recommendations (sem placeId) — lista TODAS as recomendações,
 //        de todos os lugares, cada uma já com os dados do lugar (nome/foto/tag/endereço)
-// POST   /api/places/recommendations — cria uma nova recomendação
+// POST   /api/places/recommendations — cria uma nova recomendação (dispara push pra quem
+//        se inscreveu, ver sendPushToAll)
 // PUT    /api/places/recommendations?id=... — edita título/autor/descrição de uma recomendação
 // DELETE /api/places/recommendations?id=... — remove uma recomendação
-//        (rota consolidada aqui, não em [id].js, por causa do limite de 12
+// POST   /api/places/recommendations?action=subscribe — salva uma inscrição de Web Push
+// POST   /api/places/recommendations?action=unsubscribe — remove uma inscrição de Web Push
+//        (tudo consolidado aqui, não em rotas próprias, por causa do limite de 12
 //        Serverless Functions do plano Hobby da Vercel — ver api/places/google.js)
 export default async function handler(req, res) {
   const sql = getSql();
+  const { action } = req.query;
+
+  if (req.method === 'POST' && action === 'subscribe') {
+    const { endpoint, keys } = req.body || {};
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      return res.status(400).json({ error: 'Inscrição de push inválida' });
+    }
+    await sql.query(
+      `INSERT INTO push_subscriptions (endpoint, p256dh, auth)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (endpoint) DO UPDATE SET p256dh = $2, auth = $3`,
+      [endpoint, keys.p256dh, keys.auth]
+    );
+    return res.status(201).json({ ok: true });
+  }
+
+  if (req.method === 'POST' && action === 'unsubscribe') {
+    const { endpoint } = req.body || {};
+    if (!endpoint) {
+      return res.status(400).json({ error: 'Parâmetro "endpoint" é obrigatório' });
+    }
+    await sql.query('DELETE FROM push_subscriptions WHERE endpoint = $1', [endpoint]);
+    return res.status(200).json({ ok: true });
+  }
 
   if (req.method === 'GET') {
     const { placeId } = req.query;
@@ -77,6 +105,17 @@ export default async function handler(req, res) {
     );
 
     const r = rows[0];
+
+    // Precisa de await aqui, mesmo não afetando a resposta: a Serverless
+    // Function pode ser congelada assim que a resposta é enviada, matando
+    // qualquer promise "fire-and-forget" ainda pendente antes dela terminar
+    // de enviar os pushes.
+    await sendPushToAll({
+      title: 'Nova dica no Family Trip',
+      body: title || description || 'Alguém acabou de adicionar uma nova dica.',
+      url: '/dicas',
+    }).catch(() => {});
+
     return res.status(201).json({
       id: r.id,
       title: r.title,

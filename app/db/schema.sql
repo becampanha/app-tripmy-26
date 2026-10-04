@@ -83,3 +83,15 @@ CREATE TABLE IF NOT EXISTS park_strategies (
 );
 
 CREATE INDEX IF NOT EXISTS idx_place_recommendations_place_id ON place_recommendations(place_id);
+
+-- Inscrições de Web Push (uma por navegador/dispositivo instalado como PWA).
+-- `endpoint` já é o identificador único de cada inscrição (gerado pelo
+-- push service do navegador) — chave primária natural, sem precisar de id
+-- próprio; reinscrever o mesmo endpoint (ex: trocou as chaves) sobrescreve
+-- via ON CONFLICT em vez de duplicar.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  endpoint TEXT PRIMARY KEY,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

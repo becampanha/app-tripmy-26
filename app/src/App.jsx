@@ -17,6 +17,7 @@ import AddToHomeScreenPrompt, { wasAddToHomeScreenDismissed } from './components
 import WelcomeScreen, { wasWelcomeScreenSeen } from './components/WelcomeScreen.jsx';
 import { useIsEditingAnywhere, useIsFullscreenOverlayOpen } from './hooks/useEditingState.js';
 import { isIOS, isStandalone } from './hooks/useIsStandalone.js';
+import { getNotificationPermission, isPushSupported, requestPushPermission } from './hooks/usePushNotifications.js';
 
 // Hierarquia simples de navegação: Roteiro e Lugares são telas "raiz" das
 // abas (sem transição de push/pop entre si); a tela de detalhe de um lugar
@@ -192,7 +193,25 @@ export default function App() {
         )}
       </AnimatePresence>
       <AnimatePresence>
-        {showWelcome && <WelcomeScreen key="welcome" onClose={() => setShowWelcome(false)} />}
+        {showWelcome && (
+          <WelcomeScreen
+            key="welcome"
+            onClose={() => {
+              setShowWelcome(false);
+              // Só pergunta se já estiver instalado como PWA — pedida como
+              // aba comum do navegador, a permissão nativa tende a ser
+              // negada e, uma vez negada, não dá pra perguntar de novo (o
+              // usuário precisaria reativar manualmente nas configurações).
+              // 'granted' sem 'default' também entra aqui (não só a primeira
+              // vez): cobre o caso de permissão concedida por fora, mas sem
+              // subscription salva ainda (ex: reinstalou o PWA) — ver
+              // requestPushPermission, que já lida com subscription existente.
+              if (isStandalone() && isPushSupported() && getNotificationPermission() !== 'denied') {
+                requestPushPermission().catch(() => {});
+              }
+            }}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

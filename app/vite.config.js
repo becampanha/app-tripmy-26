@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -21,61 +21,47 @@ const BUILD_INFO = {
   builtAt: new Date().toISOString(),
 };
 
-export default defineConfig({
-  define: {
-    __BUILD_INFO__: JSON.stringify(BUILD_INFO),
-  },
-  plugins: [
-    react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
-      devOptions: { enabled: true, type: 'module' },
-      workbox: {
-        cleanupOutdatedCaches: true,
-        runtimeCaching: [
-          {
-            // Fotos dos lugares (fachada/pratos), servidas como estáticos em
-            // /places/: uma vez baixadas quase nunca mudam, então serve
-            // direto do cache assim que a primeira visita as baixar — não
-            // pré-carrega todas de uma vez, só as que você realmente abrir.
-            urlPattern: ({ url }) => url.pathname.startsWith('/places/'),
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'place-photos',
-              expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 90 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            // Dados do roteiro/lugares: tenta buscar atualizado na rede,
-            // mas cai pro cache instantaneamente se a rede estiver lenta ou
-            // offline, e sempre guarda a última resposta boa.
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-data',
-              networkTimeoutSeconds: 4,
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
-      },
-      manifest: {
-        name: 'Family Trip',
-        short_name: 'Family Trip',
-        description: 'Roteiro, dicas, lugares e atrações da viagem em família a Orlando.',
-        start_url: '/',
-        display: 'standalone',
-        background_color: '#151210',
-        theme_color: '#151210',
-        icons: [
-          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-        ],
-      },
-    }),
-  ],
+export default defineConfig(({ mode }) => {
+  // process.env (populado pela Vercel em build/produção) não inclui o
+  // .env.local em dev — `vercel dev` roda este arquivo como processo Node
+  // puro, sem injetar o .env.local nele (só nas functions de api/). loadEnv
+  // lê esse arquivo direto do disco, cobrindo os dois ambientes.
+  const env = { ...process.env, ...loadEnv(mode, process.cwd(), '') };
+
+  return {
+    define: {
+      __BUILD_INFO__: JSON.stringify(BUILD_INFO),
+      // Mesma var usada no servidor (ver api/_push.js) — só a chave PÚBLICA
+      // VAPID é exposta ao bundle do cliente, a privada nunca sai da function.
+      'import.meta.env.VITE_VAPID_PUBLIC_KEY': JSON.stringify(env.VAPID_PUBLIC_KEY || ''),
+    },
+    plugins: [
+      react(),
+      VitePWA({
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.js',
+        registerType: 'autoUpdate',
+        includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
+        devOptions: { enabled: true, type: 'module' },
+        // O cache (CacheFirst/NetworkFirst) agora é escrito à mão dentro do
+        // próprio src/sw.js — precisou virar um SW customizado (em vez do
+        // generateSW anterior) só pra poder ouvir o evento 'push' de Web Push.
+        manifest: {
+          name: 'Family Trip',
+          short_name: 'Family Trip',
+          description: 'Roteiro, dicas, lugares e atrações da viagem em família a Orlando.',
+          start_url: '/',
+          display: 'standalone',
+          background_color: '#151210',
+          theme_color: '#151210',
+          icons: [
+            { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+            { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+            { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          ],
+        },
+      }),
+    ],
+  };
 });

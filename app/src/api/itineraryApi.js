@@ -10,6 +10,20 @@ async function request(url, options) {
   return res.json();
 }
 
+export function subscribeToPush(subscription) {
+  return request('/api/places/recommendations?action=subscribe', {
+    method: 'POST',
+    body: JSON.stringify(subscription),
+  });
+}
+
+export function unsubscribeFromPush(endpoint) {
+  return request('/api/places/recommendations?action=unsubscribe', {
+    method: 'POST',
+    body: JSON.stringify({ endpoint }),
+  });
+}
+
 export function createActivity({ dayId, time, title, subtitle, address, placeId }) {
   return request('/api/activities', {
     method: 'POST',

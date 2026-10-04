@@ -1,4 +1,5 @@
 import { put } from '@vercel/blob';
+import { periodsToHoursSchedule } from './_hours.js';
 
 // Proxy consolidado para as APIs do Google usadas no app — mantido num único
 // arquivo (roteado por ?action=) para caber no limite de 12 Serverless
@@ -265,7 +266,7 @@ async function importPhotos(req, res, apiKey) {
     method: 'GET',
     headers: {
       'X-Goog-Api-Key': apiKey,
-      'X-Goog-FieldMask': 'photos,editorialSummary',
+      'X-Goog-FieldMask': 'photos,editorialSummary,regularOpeningHours',
     },
   });
 
@@ -276,9 +277,10 @@ async function importPhotos(req, res, apiKey) {
 
   const detailsData = await detailsResponse.json();
   const recommendation = detailsData.editorialSummary?.text || null;
+  const hoursSchedule = periodsToHoursSchedule(detailsData.regularOpeningHours?.periods);
   const photoRefs = (detailsData.photos || []).slice(0, 3);
   if (photoRefs.length === 0) {
-    return res.status(200).json({ photo: null, dishPhotos: [], recommendation });
+    return res.status(200).json({ photo: null, dishPhotos: [], recommendation, hoursSchedule });
   }
 
   const uploaded = [];
@@ -303,6 +305,7 @@ async function importPhotos(req, res, apiKey) {
     photo: uploaded[0] || null,
     dishPhotos: uploaded.slice(1),
     recommendation,
+    hoursSchedule,
   });
 }
 

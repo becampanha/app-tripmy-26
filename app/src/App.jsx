@@ -9,7 +9,9 @@ import AttractionsScreen from './components/AttractionsScreen.jsx';
 import AttractionDetailScreen from './components/AttractionDetailScreen.jsx';
 import AttractionsItineraryScreen from './components/AttractionsItineraryScreen.jsx';
 import RecommendationsScreen from './components/RecommendationsScreen.jsx';
+import ShoppingScreen from './components/ShoppingScreen.jsx';
 import MoreScreen from './components/MoreScreen.jsx';
+import TravelersScreen from './components/TravelersScreen.jsx';
 import DesignSystemScreen from './components/DesignSystemScreen.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import ToastHost from './components/ToastHost.jsx';
@@ -19,9 +21,10 @@ import { useIsEditingAnywhere, useIsFullscreenOverlayOpen } from './hooks/useEdi
 import { isIOS, isStandalone } from './hooks/useIsStandalone.js';
 import { getNotificationPermission, isPushSupported, requestPushPermission } from './hooks/usePushNotifications.js';
 
-// Hierarquia simples de navegação: Roteiro e Lugares são telas "raiz" das
-// abas (sem transição de push/pop entre si); a tela de detalhe de um lugar
-// é "empilhada" sobre Lugares, como uma navigation stack do iOS.
+// Hierarquia simples de navegação: Roteiro, Dicas, Lugares, Atrações, Compras
+// e Mais são telas "raiz" (sem transição de push/pop entre si); a tela de
+// detalhe de um lugar/atração/viajantes é "empilhada" sobre sua tela raiz,
+// como uma navigation stack do iOS.
 //
 // No iOS real, ao empurrar uma tela: a tela nova desliza 100% da direita até
 // cobrir a tela atual; a tela de baixo NÃO acompanha com a mesma
@@ -35,7 +38,12 @@ import { getNotificationPermission, isPushSupported, requestPushPermission } fro
 // global recalculado a cada render do Shell, que seria idêntico para as duas
 // instâncias simultâneas durante a transição.
 function depthOf(pathname) {
-  return pathname.startsWith('/lugares/') || pathname.startsWith('/atracoes/') || pathname === '/roteiro/dias' ? 1 : 0;
+  return (
+    pathname.startsWith('/lugares/') ||
+    pathname.startsWith('/atracoes/') ||
+    pathname === '/roteiro/dias' ||
+    pathname === '/viajantes'
+  ) ? 1 : 0;
 }
 
 const TRANSITION = { type: 'tween', ease: [0.32, 0.72, 0, 1], duration: 0.32 };
@@ -144,7 +152,9 @@ function Shell() {
             <Route path="/atracoes" element={<AttractionsScreen />} />
             <Route path="/atracoes/roteiro" element={<AttractionsItineraryScreen />} />
             <Route path="/atracoes/:id" element={<AttractionDetailScreen />} />
+            <Route path="/compras" element={<ShoppingScreen />} />
             <Route path="/mais" element={<MoreScreen />} />
+            <Route path="/viajantes" element={<TravelersScreen />} />
             {/* Rota oculta de referência interna — não aparece na tab bar,
                 só acessível digitando /design-system na URL. */}
             <Route path="/design-system" element={<DesignSystemScreen />} />

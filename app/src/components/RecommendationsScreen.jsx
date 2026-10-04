@@ -13,6 +13,7 @@ import { showToast, showErrorToast } from '../hooks/useToast.js';
 import RecommendationModal from './RecommendationModal.jsx';
 import RecommendationEditModal from './RecommendationEditModal.jsx';
 import RecommendationCardStack from './RecommendationCardStack.jsx';
+import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import { FixedHeader, RecommendationCard, SectionHeader, Skeleton, color, radius, spacing } from '../design-system/index.js';
 
 const NO_AREA_LABEL = 'Outros lugares';
@@ -222,6 +223,7 @@ export default function RecommendationsScreen() {
         headerRef={headerRef}
         scrollY={scrollY}
         title="Dicas"
+        left={<HamburgerMenuButton />}
         right={
           <>
             <ViewModeSegmentedToggle viewMode={viewMode} onChange={setViewMode} />

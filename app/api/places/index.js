@@ -21,7 +21,7 @@ async function create(req, res) {
     if (body[key] === undefined) continue;
     columns.push(column);
     placeholders.push(`$${i++}`);
-    values.push(key === 'dishPhotos' ? JSON.stringify(body[key]) : body[key]);
+    values.push(key === 'dishPhotos' || key === 'hoursSchedule' ? JSON.stringify(body[key]) : body[key]);
   }
 
   await sql.query(`INSERT INTO places (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`, values);
@@ -54,6 +54,7 @@ export default async function handler(req, res) {
     dishPhotos: r.dish_photos || [],
     cost: r.cost,
     hours: r.hours,
+    hoursSchedule: r.hours_schedule,
     menuLabel: r.menu_label,
     reviewLabel: r.review_label,
     recommendation: r.recommendation,

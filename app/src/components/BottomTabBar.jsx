@@ -3,7 +3,7 @@ import { MapIcon } from '@solar-icons/react/bold/map';
 import { HeartIcon } from '@solar-icons/react/bold/heart';
 import { ShopIcon } from '@solar-icons/react/bold/shop';
 import { FerrisWheelIcon } from '@solar-icons/react/bold/ferris-wheel';
-import { MenuDotsIcon } from '@solar-icons/react/bold/menu-dots';
+import { CartLargeMinimalisticIcon } from '@solar-icons/react/bold/cart-large-minimalistic';
 import { FloatingBar, color, overlay, radius } from '../design-system/index.js';
 
 const TABS = [
@@ -11,7 +11,7 @@ const TABS = [
   { key: 'recomendacoes', label: 'Dicas', icon: HeartIcon, path: '/recomendacoes' },
   { key: 'lugares', label: 'Lugares', icon: ShopIcon, path: '/lugares' },
   { key: 'atracoes', label: 'Atrações', icon: FerrisWheelIcon, path: '/atracoes' },
-  { key: 'mais', label: 'Mais', icon: MenuDotsIcon, path: '/mais' },
+  { key: 'compras', label: 'Compras', icon: CartLargeMinimalisticIcon, path: '/compras' },
 ];
 
 export default function BottomTabBar() {

@@ -12,6 +12,7 @@ import PlaceSelectorModal from './PlaceSelectorModal.jsx';
 import MoveToDayModal from './MoveToDayModal.jsx';
 import DayMap from './DayMap.jsx';
 import EditActionBar from './EditActionBar.jsx';
+import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import { useItinerary } from '../hooks/useItinerary.js';
 import { useDayWeather } from '../hooks/useDayWeather.js';
 import { setGlobalEditing } from '../hooks/useEditingState.js';
@@ -333,6 +334,7 @@ export default function ScheduleScreen() {
         headerRef={headerRef}
         scrollY={scrollY}
         title="Roteiro"
+        left={!editing && <HamburgerMenuButton />}
         tabs={!editing && <DayTabs days={days} selected={selectedDay} onSelect={setSelectedDay} style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
         right={
           !editing && (

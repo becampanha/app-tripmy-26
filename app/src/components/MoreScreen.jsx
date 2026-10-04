@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { RefreshIcon } from '@solar-icons/react/bold/refresh';
 import { PlayCircleIcon } from '@solar-icons/react/bold/play-circle';
 import { BellIcon } from '@solar-icons/react/bold/bell';
+import { UsersGroupRoundedIcon } from '@solar-icons/react/bold/users-group-rounded';
+import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
+import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import WelcomeScreen from './WelcomeScreen.jsx';
@@ -39,6 +43,7 @@ async function hardRefresh() {
 }
 
 export default function MoreScreen() {
+  const navigate = useNavigate();
   const [refreshing, setRefreshing] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(() => getNotificationPermission() === 'granted');
@@ -75,11 +80,55 @@ export default function MoreScreen() {
 
   return (
     <div ref={anchorRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
-      <FixedHeader headerRef={headerRef} scrollY={scrollY} title="Mais" />
+      <FixedHeader
+        headerRef={headerRef}
+        scrollY={scrollY}
+        title="Mais"
+        left={
+          <div
+            onClick={() => navigate(-1)}
+            style={{ width: 38, height: 38, borderRadius: 13, background: color.surfaceMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            <AltArrowLeftIcon size={20} color={color.dark} />
+          </div>
+        }
+      />
 
       <div style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
         <div
+          onClick={() => navigate('/viajantes')}
           style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: spacing.cardPadding,
+            background: color.bg,
+            border: `1px solid ${color.border}`,
+            borderRadius: 18,
+            cursor: 'pointer',
+          }}
+        >
+          <div
+            style={{
+              flex: 'none',
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              background: color.surfaceMuted,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <UsersGroupRoundedIcon size={16} color={color.dark} />
+          </div>
+          <div style={{ flex: 1, color: color.dark, fontSize: 14.5, fontWeight: 700 }}>Viajantes</div>
+          <AltArrowRightIcon size={16} color={color.muted} />
+        </div>
+
+        <div
+          style={{
+            marginTop: spacing.gapLg,
             padding: spacing.cardPadding,
             background: color.bg,
             border: `1px solid ${color.border}`,

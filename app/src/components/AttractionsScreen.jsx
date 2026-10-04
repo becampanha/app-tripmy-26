@@ -10,6 +10,7 @@ import { PARK_ICON_MAP } from '../data/parkIcons.js';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
+import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import { FixedHeader, HScrollTabs, ParkMap, SearchInput, SectionHeader, Skeleton, Toggle, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
 
 // area vem em CAIXA ALTA da planilha original importada (ex: "ADVENTURELAND",
@@ -112,6 +113,7 @@ export default function AttractionsScreen() {
         headerRef={headerRef}
         scrollY={scrollY}
         title="Atrações"
+        left={<HamburgerMenuButton />}
         tabs={<HScrollTabs items={tabItems} activeKey={parkIndex} onSelect={setParkIndex} loading={loading} style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
         right={
           <div

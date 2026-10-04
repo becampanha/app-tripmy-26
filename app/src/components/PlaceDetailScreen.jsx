@@ -32,7 +32,8 @@ import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { subcategoriesFor } from '../data/subcategories.js';
 import { tagOptionsFor } from '../data/placeTagOptions.js';
 import { getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
-import { IconButton, NavBar, navControlStyle, navControlTextColor, FieldLabel, inputStyle, Select, RecommendationCard, PhotoLightbox, color, space, spacing } from '../design-system/index.js';
+import { DAY_KEYS, DAY_LABELS, emptySchedule, summarizeSchedule, allDaysList } from '../data/hoursSchedule.js';
+import { IconButton, NavBar, navControlStyle, navControlTextColor, FieldLabel, inputStyle, Select, Toggle, RecommendationCard, PhotoLightbox, color, space, spacing } from '../design-system/index.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
@@ -44,6 +45,10 @@ const EDITABLE_FIELDS = [
 function placeFields(place) {
   const out = {};
   for (const f of EDITABLE_FIELDS) out[f] = place[f] ?? '';
+  // hoursSchedule é objeto/null, não string — fora do loop genérico acima
+  // pra não virar '' (o '??' trataria até um {} vazio como valor válido,
+  // então a checagem explícita evita essa pegadinha também).
+  out.hoursSchedule = place.hoursSchedule ?? null;
   return out;
 }
 
@@ -74,7 +79,7 @@ function GoogleSearchPanel({ onSelect }) {
     if (importingId) return;
     setImportingId(place.id);
     try {
-      const photos = await importGooglePlacePhotos(place.id).catch(() => ({ photo: null, dishPhotos: [], recommendation: null }));
+      const photos = await importGooglePlacePhotos(place.id).catch(() => ({ photo: null, dishPhotos: [], recommendation: null, hoursSchedule: null }));
       onSelect({
         id: place.id,
         name: place.displayName?.text || '',
@@ -83,6 +88,7 @@ function GoogleSearchPanel({ onSelect }) {
         photo: photos.photo,
         dishPhotos: photos.dishPhotos || [],
         recommendation: photos.recommendation,
+        hoursSchedule: photos.hoursSchedule || null,
       });
     } finally {
       setImportingId(null);
@@ -572,6 +578,7 @@ export default function PlaceDetailScreen() {
       address: picked.address,
       cost: '',
       hours: '',
+      hoursSchedule: picked.hoursSchedule || null,
       recommendation: picked.recommendation || '',
       googleMapsUri: picked.googleMapsUri,
     };
@@ -610,6 +617,7 @@ export default function PlaceDetailScreen() {
             ? Number(draft[f])
             : draft[f] || null;
         }
+        fields.hoursSchedule = draft.hoursSchedule || null;
         const { photo, dishPhotos, id: newId } = newPlacePhotos;
         const created = await createPlace({ id: newId, ...fields, photo, dishPhotos });
         const freshPlaces = await fetchPlaces();
@@ -625,7 +633,10 @@ export default function PlaceDetailScreen() {
     }
 
     const original = originalRef.current;
-    const changed = EDITABLE_FIELDS.some((f) => String(draft[f]) !== String(original[f]));
+    // hoursSchedule é objeto — comparado via JSON.stringify (não String(),
+    // que daria "[object Object]" pros dois lados e nunca detectaria mudança).
+    const hoursScheduleChanged = JSON.stringify(draft.hoursSchedule) !== JSON.stringify(original.hoursSchedule);
+    const changed = hoursScheduleChanged || EDITABLE_FIELDS.some((f) => String(draft[f]) !== String(original[f]));
     setSaving(true);
     try {
       if (changed) {
@@ -635,6 +646,7 @@ export default function PlaceDetailScreen() {
             ? Number(draft[f])
             : draft[f] || null;
         }
+        fields.hoursSchedule = draft.hoursSchedule || null;
         await updatePlace(id, fields);
         await reload(true);
       }
@@ -889,8 +901,10 @@ export default function PlaceDetailScreen() {
             </div>
 
             <div>
-              <FieldLabel>Horário</FieldLabel>
-              <input value={draft.hours || ''} onChange={(e) => setDraftField('hours')(e.target.value)} style={{ ...inputStyle, marginTop: 3 }} placeholder="ex: 11h-22h" />
+              <FieldLabel>Horário de funcionamento</FieldLabel>
+              <div style={{ marginTop: 5 }}>
+                <HoursScheduleEditor value={draft.hoursSchedule} onChange={setDraftField('hoursSchedule')} />
+              </div>
             </div>
 
             <div>
@@ -1000,7 +1014,7 @@ export default function PlaceDetailScreen() {
               )}
             </div>
 
-            {(place.tag || place.cost != null || place.hours) && (
+            {(place.tag || place.cost != null || (place.hours && !place.hoursSchedule)) && (
               <div
                 style={{
                   display: 'flex',
@@ -1017,11 +1031,15 @@ export default function PlaceDetailScreen() {
                     cards.push({ key: 'tag', icon: emoji, label: 'Tipo', value: rest.join(' ') || place.tag });
                   }
                   if (place.cost != null) cards.push({ key: 'cost', icon: '💵', label: 'Custo', value: `US$ ${place.cost}` });
-                  if (place.hours) cards.push({ key: 'hours', icon: '🕒', label: 'Horário', value: place.hours });
+                  // Campo legado de texto livre — só exibido enquanto o lugar
+                  // não tiver o horário estruturado novo (ver HoursScheduleSection).
+                  if (place.hours && !place.hoursSchedule) cards.push({ key: 'hours', icon: '🕒', label: 'Horário', value: place.hours });
                   return cards.map(({ key, ...card }) => <InfoCard key={key} {...card} />);
                 })()}
               </div>
             )}
+
+            {place.hoursSchedule && <HoursScheduleSection schedule={place.hoursSchedule} />}
 
             {(place.googleMapsUri || place.category === 'Restaurante') && (
               <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.controlGap }}>
@@ -1393,6 +1411,152 @@ function InfoCard({ icon, label, value }) {
       <div style={{ fontSize: 20, lineHeight: 1 }}>{icon}</div>
       <div style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 800, marginTop: 10 }}>{label}</div>
       <div style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 600, marginTop: 2, whiteSpace: 'nowrap' }}>{value}</div>
+    </div>
+  );
+}
+
+// Horário de funcionamento estruturado: mostra o resumo de hoje numa linha,
+// com um botão pra expandir (acordeão inline, sem modal) e ver o horário
+// combinado de todos os dias da semana — dias consecutivos com o mesmo
+// horário aparecem juntos numa faixa só (ex: "Seg a Sex: 11h–22h"), igual
+// ao Google Maps, em vez de repetir a mesma linha várias vezes.
+function HoursScheduleSection({ schedule }) {
+  const [expanded, setExpanded] = useState(false);
+  const groups = summarizeSchedule(schedule);
+  if (groups.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: spacing.controlGap, padding: spacing.cardPadding, borderRadius: 16, border: '1px solid #ececec', boxSizing: 'border-box' }}>
+      <div
+        onClick={() => setExpanded((v) => !v)}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <div style={{ fontSize: 20, lineHeight: 1, flex: 'none' }}>🕒</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 800 }}>Horário</div>
+            {!expanded && (
+              <div style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 600, marginTop: 2 }}>
+                {groups.map((g) => `${g.label}: ${g.value}`).join(' · ')}
+              </div>
+            )}
+          </div>
+        </div>
+        {expanded ? <AltArrowUpIcon size={16} color="#9a9186" /> : <AltArrowDownIcon size={16} color="#9a9186" />}
+      </div>
+
+      {expanded && (
+        <div style={{ marginTop: spacing.controlGap, paddingTop: spacing.controlGap, borderTop: '1px solid #ececec' }}>
+          {allDaysList(schedule).map((day, i, arr) => (
+            <div
+              key={day.key}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: '6px 0',
+                borderBottom: i === arr.length - 1 ? 'none' : '1px solid #f3f1ee',
+              }}
+            >
+              <span style={{ color: '#1c1a17', fontSize: 13, fontWeight: 600 }}>{day.label}</span>
+              <span style={{ color: '#9a9186', fontSize: 13, fontWeight: 600 }}>{day.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Edição manual do horário por dia da semana — um toggle aberto/fechado por
+// dia, com um par abre/fecha por período (suporta mais de um período no
+// mesmo dia, ex: almoço e jantar separados, via "+ adicionar período").
+// "Copiar para todos os dias" existe pra cobrir o caso mais comum (mesmo
+// horário a semana toda) sem precisar preencher 7 vezes à mão.
+function HoursScheduleEditor({ value, onChange }) {
+  const schedule = value || emptySchedule();
+
+  const setDayPeriods = (dayKey, periods) => {
+    onChange({ ...schedule, [dayKey]: periods });
+  };
+
+  const toggleDay = (dayKey, isOpen) => {
+    setDayPeriods(dayKey, isOpen ? [{ open: '09:00', close: '18:00' }] : []);
+  };
+
+  const updatePeriod = (dayKey, periodIndex, field, time) => {
+    const periods = (schedule[dayKey] || []).map((p, i) => (i === periodIndex ? { ...p, [field]: time } : p));
+    setDayPeriods(dayKey, periods);
+  };
+
+  const addPeriod = (dayKey) => {
+    setDayPeriods(dayKey, [...(schedule[dayKey] || []), { open: '09:00', close: '18:00' }]);
+  };
+
+  const removePeriod = (dayKey, periodIndex) => {
+    setDayPeriods(dayKey, (schedule[dayKey] || []).filter((_, i) => i !== periodIndex));
+  };
+
+  const copyToAllDays = (dayKey) => {
+    const periods = schedule[dayKey] || [];
+    const next = { ...schedule };
+    for (const d of DAY_KEYS) next[d] = periods.map((p) => ({ ...p }));
+    onChange(next);
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.gapMd }}>
+      {DAY_KEYS.map((dayKey) => {
+        const periods = schedule[dayKey] || [];
+        const isOpen = periods.length > 0;
+        return (
+          <div key={dayKey} style={{ padding: spacing.cardPadding, borderRadius: 14, background: color.surfaceMuted }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>{DAY_LABELS[dayKey]}</span>
+              <Toggle checked={isOpen} onChange={(next) => toggleDay(dayKey, next)} />
+            </div>
+
+            {isOpen && (
+              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {periods.map((period, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input
+                      type="time"
+                      value={period.open}
+                      onChange={(e) => updatePeriod(dayKey, i, 'open', e.target.value)}
+                      style={{ ...inputStyle, flex: 1, padding: '7px 8px', fontSize: 12.5 }}
+                    />
+                    <span style={{ color: color.muted, fontSize: 12 }}>até</span>
+                    <input
+                      type="time"
+                      value={period.close}
+                      onChange={(e) => updatePeriod(dayKey, i, 'close', e.target.value)}
+                      style={{ ...inputStyle, flex: 1, padding: '7px 8px', fontSize: 12.5 }}
+                    />
+                    {periods.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removePeriod(dayKey, i)}
+                        style={{ flex: 'none', border: 0, background: 'none', padding: 4, cursor: 'pointer' }}
+                      >
+                        <CloseIcon size={14} color={color.danger} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                <div style={{ display: 'flex', gap: 12, marginTop: 2 }}>
+                  <div onClick={() => addPeriod(dayKey)} style={{ color: color.dark, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                    + Adicionar período
+                  </div>
+                  <div onClick={() => copyToAllDays(dayKey)} style={{ color: color.dark, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                    Copiar p/ todos os dias
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

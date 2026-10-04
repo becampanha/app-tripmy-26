@@ -12,6 +12,15 @@ CREATE TABLE IF NOT EXISTS places (
   dish_photos JSONB DEFAULT '[]',    -- array de caminhos de fotos de prato/produto
   cost REAL,
   hours TEXT,
+  -- Horário estruturado por dia da semana, substituindo gradualmente o
+  -- campo `hours` (texto livre) acima — mantido lado a lado por enquanto
+  -- pra não quebrar lugares antigos sem esse dado. Formato:
+  -- { mon: [{open:"11:00", close:"22:00"}], tue: [...], ..., sun: [...] }
+  -- Array vazio = fechado nesse dia. Mais de um período no mesmo dia cobre
+  -- casos tipo almoço/jantar separados (ex: fecha 14h-18h no meio-tarde).
+  -- chave ausente (lugar nunca editado com o novo formato) é tratada igual
+  -- a array vazio em todo o código que lê isso.
+  hours_schedule JSONB,
   distance_from_hotel REAL,
   menu_label TEXT,
   review_label TEXT,

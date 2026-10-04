@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     for (const [key, column] of Object.entries(FIELD_MAP)) {
       if (body[key] === undefined) continue;
       fields.push(`${column} = $${i++}`);
-      values.push(key === 'dishPhotos' ? JSON.stringify(body[key]) : body[key]);
+      values.push(key === 'dishPhotos' || key === 'hoursSchedule' ? JSON.stringify(body[key]) : body[key]);
     }
 
     if (fields.length === 0) {

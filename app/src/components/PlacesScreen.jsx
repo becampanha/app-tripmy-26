@@ -9,6 +9,7 @@ import { usePlacesInItinerary } from '../hooks/usePlacesInItinerary.js';
 import { getPlacesScreenState, savePlacesScreenState, getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
+import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import { FixedHeader, HScrollTabs, SearchInput, Toggle, SectionHeader, Skeleton, Select, color, radius, space, spacing } from '../design-system/index.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
@@ -143,6 +144,7 @@ export default function PlacesScreen() {
         headerRef={headerRef}
         scrollY={scrollY}
         title="Lugares"
+        left={<HamburgerMenuButton />}
         tabs={
           <HScrollTabs
             items={tabItems}

@@ -10,6 +10,7 @@ export const FIELD_MAP = {
   googleMapsUri: 'google_maps_uri',
   cost: 'cost',
   hours: 'hours',
+  hoursSchedule: 'hours_schedule',
   menuLabel: 'menu_label',
   reviewLabel: 'review_label',
   recommendation: 'recommendation',

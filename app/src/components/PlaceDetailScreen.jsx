@@ -950,8 +950,6 @@ export default function PlaceDetailScreen() {
               </div>
             )}
 
-            {place.hoursSchedule && <HoursScheduleSection schedule={place.hoursSchedule} />}
-
             {(place.googleMapsUri || place.category === 'Restaurante') && (
               <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.controlGap }}>
                 {place.googleMapsUri && (
@@ -1033,6 +1031,15 @@ export default function PlaceDetailScreen() {
                     </div>
                   )
                 )}
+              </div>
+            )}
+
+            {place.hoursSchedule && (
+              <div style={{ marginTop: 22 }}>
+                <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1, marginBottom: spacing.controlGap }}>
+                  Horário de funcionamento
+                </div>
+                <HoursScheduleSection schedule={place.hoursSchedule} />
               </div>
             )}
 
@@ -1333,21 +1340,13 @@ function HoursScheduleSection({ schedule }) {
   if (groups.length === 0) return null;
 
   return (
-    <div style={{ marginTop: spacing.controlGap, padding: spacing.cardPadding, borderRadius: 16, border: '1px solid #ececec', boxSizing: 'border-box' }}>
+    <div style={{ padding: spacing.cardPadding, borderRadius: 16, border: '1px solid #ececec', boxSizing: 'border-box' }}>
       <div
         onClick={() => setExpanded((v) => !v)}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <div style={{ fontSize: 20, lineHeight: 1, flex: 'none' }}>🕒</div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 800 }}>Horário</div>
-            {!expanded && (
-              <div style={{ color: '#9a9186', fontSize: 12.5, fontWeight: 600, marginTop: 2 }}>
-                {groups.map((g) => `${g.label}: ${g.value}`).join(' · ')}
-              </div>
-            )}
-          </div>
+        <div style={{ minWidth: 0, color: '#1c1a17', fontSize: 13.5, fontWeight: 700 }}>
+          {groups.map((g) => `${g.label}: ${g.value}`).join(' · ')}
         </div>
         {expanded ? <AltArrowUpIcon size={16} color="#9a9186" /> : <AltArrowDownIcon size={16} color="#9a9186" />}
       </div>
@@ -1360,7 +1359,7 @@ function HoursScheduleSection({ schedule }) {
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
-                padding: '6px 0',
+                padding: '10px 0',
                 borderBottom: i === arr.length - 1 ? 'none' : '1px solid #f3f1ee',
               }}
             >

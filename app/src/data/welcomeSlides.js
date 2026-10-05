@@ -2,6 +2,7 @@ import { MapIcon } from '@solar-icons/react/bold/map';
 import { HeartIcon } from '@solar-icons/react/bold/heart';
 import { ShopIcon } from '@solar-icons/react/bold/shop';
 import { FerrisWheelIcon } from '@solar-icons/react/bold/ferris-wheel';
+import { CartLargeMinimalisticIcon } from '@solar-icons/react/bold/cart-large-minimalistic';
 
 // Conteúdo do carrossel de boas-vindas — fotos reais já hospedadas no
 // projeto (a da capa é da própria viagem da família; as demais vêm dos
@@ -50,5 +51,14 @@ export const WELCOME_SLIDES = [
     title: 'Atrações',
     description:
       'As 133 atrações dos 7 parques, com fila em tempo real, mapa interativo e uma estratégia de visita pensada pra aproveitar cada dia sem perder tempo na fila errada.',
+  },
+  {
+    key: 'compras',
+    photo: '/places/orlando-vineland-premium-outlets.jpg',
+    icon: CartLargeMinimalisticIcon,
+    iconColor: '#8a7fc2',
+    title: 'Compras',
+    description:
+      'Cada um da família tem sua própria lista de compras — com link, preço, foto e marca de cada produto. Dá pra marcar o que já foi comprado e acompanhar o total gasto por categoria.',
   },
 ];

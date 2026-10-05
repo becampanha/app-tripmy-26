@@ -358,18 +358,17 @@ export default function ScheduleScreen() {
               <div
                 onClick={startEditing}
                 style={{
+                  width: 38,
                   height: 38,
-                  padding: '0 14px',
                   borderRadius: 13,
                   background: color.surfaceMuted,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
+                  justifyContent: 'center',
                   cursor: 'pointer',
                 }}
               >
                 <PenIcon size={17} color={color.dark} />
-                <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Editar</span>
               </div>
             </>
           )

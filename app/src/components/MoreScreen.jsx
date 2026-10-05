@@ -221,22 +221,33 @@ export default function MoreScreen() {
         <div
           onClick={() => setShowWelcome(true)}
           style={{
-            marginTop: spacing.screenGutter,
+            marginTop: spacing.gapLg,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
+            gap: 10,
             padding: spacing.cardPadding,
-            borderRadius: 16,
-            background: color.surfaceMuted,
-            color: color.dark,
-            fontSize: 14.5,
-            fontWeight: 700,
+            background: color.bg,
+            border: `1px solid ${color.border}`,
+            borderRadius: 18,
             cursor: 'pointer',
           }}
         >
-          <PlayCircleIcon size={17} color={color.dark} />
-          Ver tela de boas-vindas
+          <div
+            style={{
+              flex: 'none',
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              background: color.surfaceMuted,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <PlayCircleIcon size={16} color={color.dark} />
+          </div>
+          <div style={{ flex: 1, color: color.dark, fontSize: 14.5, fontWeight: 700 }}>Ver tela de boas-vindas</div>
+          <AltArrowRightIcon size={16} color={color.muted} />
         </div>
       </div>
 

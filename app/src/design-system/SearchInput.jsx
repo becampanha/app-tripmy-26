@@ -1,5 +1,5 @@
 import { MagnifierIcon } from '@solar-icons/react/linear/magnifier';
-import { CloseCircleIcon } from '@solar-icons/react/linear/close-circle';
+import { CloseCircleIcon } from '@solar-icons/react/bold/close-circle';
 import { color, radius, spacing, type } from './tokens.js';
 
 // Campo de busca com lupa e botão de limpar — usado em Atrações, Lugares e
@@ -36,7 +36,7 @@ export default function SearchInput({ value, onChange, placeholder = 'Buscar', s
       />
       {value && (
         <div onClick={() => onChange('')} style={{ flex: 'none', cursor: 'pointer', display: 'flex' }}>
-          <CloseCircleIcon size={14} color={color.faintIcon} />
+          <CloseCircleIcon size={14} color={color.dark} />
         </div>
       )}
     </div>

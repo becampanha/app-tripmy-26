@@ -167,7 +167,18 @@ export default function ShoppingScreen() {
     if (!viewingTraveler) return;
     setItems(null);
     fetchShoppingItems(viewingTraveler)
-      .then(setItems)
+      .then((data) => {
+        setItems(data);
+        // A aba selecionada pode não existir mais pra essa lista (ex: trocou
+        // de viajante, ou a categoria atual ficou sem nenhum item) — como só
+        // mostramos abas com pelo menos 1 item, cai pra primeira categoria
+        // que de fato tiver algo, senão a tela ficaria presa numa aba que
+        // nem aparece mais.
+        setCategory((current) => {
+          const withItems = SHOPPING_CATEGORIES.filter((c) => data.some((i) => i.category === c));
+          return withItems.includes(current) ? current : withItems[0] || SHOPPING_CATEGORIES[0];
+        });
+      })
       .catch((err) => showErrorToast(err, 'Não foi possível carregar a lista.'));
   }, [viewingTraveler]);
 
@@ -186,7 +197,13 @@ export default function ShoppingScreen() {
     [itemsInCategory]
   );
 
-  const tabItems = SHOPPING_CATEGORIES.map((c) => ({
+  // Só mostra como aba a categoria que tiver pelo menos 1 item — nada de
+  // listar as 7 categorias fixas sempre, a maioria vazia pra maioria das
+  // listas (cada viajante só usa algumas).
+  const categoriesWithItems = SHOPPING_CATEGORIES.filter(
+    (c) => (items || []).some((i) => i.category === c)
+  );
+  const tabItems = categoriesWithItems.map((c) => ({
     key: c,
     label: c,
     count: (items || []).filter((i) => i.category === c).length || undefined,
@@ -203,7 +220,17 @@ export default function ShoppingScreen() {
 
       if (editingItem && editingItem !== 'new') {
         await updateShoppingItem(editingItem.id, { ...fields, photo, photoFile: undefined });
-        setItems((current) => current.map((i) => (i.id === editingItem.id ? { ...i, ...fields, photo } : i)));
+        setItems((current) => {
+          const next = current.map((i) => (i.id === editingItem.id ? { ...i, ...fields, photo } : i));
+          // Editar pode ter mudado a categoria do item pra outra, esvaziando
+          // a aba que estava aberta — mesmo fallback do handleDeleteItem.
+          const stillHasCurrentCategory = next.some((i) => i.category === category);
+          if (!stillHasCurrentCategory) {
+            const withItems = SHOPPING_CATEGORIES.filter((c) => next.some((i) => i.category === c));
+            setCategory(withItems[0] || SHOPPING_CATEGORIES[0]);
+          }
+          return next;
+        });
         showToast('Item atualizado');
       } else {
         const created = await createShoppingItem({ ...fields, photo, photoFile: undefined, traveler: viewingTraveler });
@@ -222,7 +249,18 @@ export default function ShoppingScreen() {
     if (!editingItem || editingItem === 'new') return;
     try {
       await deleteShoppingItem(editingItem.id);
-      setItems((current) => current.filter((i) => i.id !== editingItem.id));
+      setItems((current) => {
+        const next = current.filter((i) => i.id !== editingItem.id);
+        // Se esse era o último item da categoria aberta, a aba dela some —
+        // cai pra primeira categoria que ainda tiver algo (ou volta ao
+        // padrão se a lista ficou totalmente vazia).
+        const stillHasCurrentCategory = next.some((i) => i.category === category);
+        if (!stillHasCurrentCategory) {
+          const withItems = SHOPPING_CATEGORIES.filter((c) => next.some((i) => i.category === c));
+          setCategory(withItems[0] || SHOPPING_CATEGORIES[0]);
+        }
+        return next;
+      });
       setEditingItem(null);
       showToast('Item removido');
     } catch (err) {

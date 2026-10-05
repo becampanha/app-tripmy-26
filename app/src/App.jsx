@@ -14,6 +14,7 @@ import MoreScreen from './components/MoreScreen.jsx';
 import TravelersScreen from './components/TravelersScreen.jsx';
 import DesignSystemScreen from './components/DesignSystemScreen.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
+import UpdateBanner from './components/UpdateBanner.jsx';
 import ToastHost from './components/ToastHost.jsx';
 import AddToHomeScreenPrompt, { wasAddToHomeScreenDismissed } from './components/AddToHomeScreenPrompt.jsx';
 import WelcomeScreen, { wasWelcomeScreenSeen } from './components/WelcomeScreen.jsx';
@@ -160,6 +161,11 @@ function Shell() {
             <Route path="/design-system" element={<DesignSystemScreen />} />
           </Routes>
         </Screen>
+      </AnimatePresence>
+      <AnimatePresence>
+        {currentDepth === 0 && !isEditing && !isOverlayOpen && location.pathname !== '/design-system' && (
+          <UpdateBanner key="update-banner" />
+        )}
       </AnimatePresence>
       <AnimatePresence>
         {currentDepth === 0 && !isEditing && !isOverlayOpen && location.pathname !== '/design-system' && (

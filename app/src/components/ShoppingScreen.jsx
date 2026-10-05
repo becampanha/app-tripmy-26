@@ -313,12 +313,21 @@ export default function ShoppingScreen() {
         left={<HamburgerMenuButton />}
         right={
           identity && (
-            <div
-              onClick={() => setEditingItem('new')}
-              style={{ height: 38, width: 38, borderRadius: 13, background: color.surfaceMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-            >
-              <AddIcon size={18} color={color.dark} />
-            </div>
+            <>
+              <Select
+                value={viewingTraveler}
+                onChange={setViewingTraveler}
+                options={TRAVELERS.map(travelerOption)}
+                align="right"
+                buttonStyle={{ padding: '7px 10px', fontSize: 12.5 }}
+              />
+              <div
+                onClick={() => setEditingItem('new')}
+                style={{ height: 38, width: 38, flex: 'none', borderRadius: 13, background: color.surfaceMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              >
+                <AddIcon size={18} color={color.dark} />
+              </div>
+            </>
           )
         }
         tabs={identity && <HScrollTabs items={tabItems} activeKey={category} onSelect={setCategory} style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
@@ -330,15 +339,6 @@ export default function ShoppingScreen() {
         </div>
       ) : (
         <div style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
-          <div style={{ marginBottom: spacing.controlGap }}>
-            <Select
-              value={viewingTraveler}
-              onChange={setViewingTraveler}
-              options={TRAVELERS.map(travelerOption)}
-              fullWidth
-            />
-          </div>
-
           {items === null && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {Array.from({ length: 3 }).map((_, i) => (

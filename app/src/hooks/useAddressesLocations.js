@@ -25,10 +25,36 @@ function cacheSet(address, value) {
   }
 }
 
-// Geocodifica uma lista de endereços em paralelo (um fetch por endereço não
-// cacheado), para plotar vários pontos de uma vez no mapa do dia — diferente
-// do useGeocode, que resolve um endereço só. Retorna um Map endereço -> coords
-// (entradas que falharam simplesmente não aparecem no Map).
+// Processa até BATCH_SIZE fetches por vez, não todos de uma vez — telas com
+// muitos endereços não cacheados (ex: mapa de Lugares, 100+ restaurantes de
+// uma categoria) disparando uma rajada enorme de requisições simultâneas
+// trava o servidor de dev local (vercel dev) e deixa a Promise.all inteira
+// pendurada pra sempre, sem nunca resolver nem rejeitar — sintoma observado:
+// "Carregando mapa..." eterno, mesmo com a API respondendo bem quando
+// testada isoladamente via curl.
+const BATCH_SIZE = 16;
+
+async function geocodeInBatches(addresses, onBatchDone) {
+  for (let i = 0; i < addresses.length; i += BATCH_SIZE) {
+    const batch = addresses.slice(i, i + BATCH_SIZE);
+    const results = await Promise.all(
+      batch.map((address) =>
+        fetch(`/api/places/google?action=geocode&address=${encodeURIComponent(address)}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((coords) => ({ address, coords }))
+          .catch(() => ({ address, coords: null }))
+      )
+    );
+    onBatchDone(results);
+  }
+}
+
+// Geocodifica uma lista de endereços em lotes (não todos de uma vez — ver
+// geocodeInBatches), para plotar vários pontos de uma vez num mapa —
+// diferente do useGeocode, que resolve um endereço só. Retorna um Map
+// endereço -> coords (entradas que falharam simplesmente não aparecem no
+// Map); atualiza incrementalmente a cada lote, então pinos já cacheados ou
+// resolvidos cedo aparecem no mapa antes dos demais terminarem.
 export function useAddressesLocations(addresses) {
   const key = addresses.join('|');
   const [byAddress, setByAddress] = useState(() => {
@@ -60,14 +86,8 @@ export function useAddressesLocations(addresses) {
 
     let cancelled = false;
     setLoading(true);
-    Promise.all(
-      pending.map((address) =>
-        fetch(`/api/places/google?action=geocode&address=${encodeURIComponent(address)}`)
-          .then((res) => (res.ok ? res.json() : null))
-          .then((coords) => ({ address, coords }))
-          .catch(() => ({ address, coords: null }))
-      )
-    ).then((results) => {
+
+    geocodeInBatches(pending, (results) => {
       if (cancelled) return;
       setByAddress((prev) => {
         const merged = new Map(prev);
@@ -79,7 +99,8 @@ export function useAddressesLocations(addresses) {
         }
         return merged;
       });
-      setLoading(false);
+    }).then(() => {
+      if (!cancelled) setLoading(false);
     });
 
     return () => {

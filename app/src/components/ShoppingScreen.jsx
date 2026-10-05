@@ -242,7 +242,7 @@ function ShoppingSummary({ items }) {
       ))}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-        <div style={{ flex: 1, padding: spacing.cardPadding, background: color.dark, borderRadius: 16 }}>
+        <div style={{ flex: 1, padding: spacing.cardPadding, background: color.mutedDeep, borderRadius: 16 }}>
           <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 700 }}>
             Cadastrado ({grandTotal.totalCount})
           </div>

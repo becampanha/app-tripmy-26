@@ -18,6 +18,10 @@ import { FixedHeader, FieldLabel, HScrollTabs, Select, Skeleton, color, radius, 
 
 const SUMMARY_KEY = '__summary__';
 
+function formatUSD(value) {
+  return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function travelerOption(t) {
   return { value: t.name, label: `${t.emoji} ${t.name}` };
 }
@@ -153,7 +157,7 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
       <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
         {item.price != null && (
           <div style={{ color: color.dark, fontSize: 14, fontWeight: 800 }}>
-            US$ {item.price}
+            US$ {formatUSD(item.price)}
           </div>
         )}
         <div
@@ -182,7 +186,7 @@ function SummaryStatRow({ label, count, value, valueColor }) {
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
       <div style={{ color: color.muted, fontSize: 12.5, fontWeight: 700 }}>{label} ({count})</div>
       <div style={{ color: valueColor, fontSize: 13.5, fontWeight: 800 }}>
-        US$ {value.toFixed(2)}
+        US$ {formatUSD(value)}
       </div>
     </div>
   );
@@ -247,7 +251,7 @@ function ShoppingSummary({ items }) {
             Cadastrado ({grandTotal.totalCount})
           </div>
           <div style={{ color: color.dark, fontSize: 19, fontWeight: 800, marginTop: 6 }}>
-            US$ {grandTotal.totalValue.toFixed(2)}
+            US$ {formatUSD(grandTotal.totalValue)}
           </div>
         </div>
         <div style={{ flex: 1, padding: spacing.cardPadding, background: color.success, borderRadius: 16 }}>
@@ -255,7 +259,7 @@ function ShoppingSummary({ items }) {
             Comprado ({grandTotal.purchasedCount})
           </div>
           <div style={{ color: '#fff', fontSize: 19, fontWeight: 800, marginTop: 6 }}>
-            US$ {grandTotal.purchasedValue.toFixed(2)}
+            US$ {formatUSD(grandTotal.purchasedValue)}
           </div>
         </div>
       </div>
@@ -457,7 +461,7 @@ export default function ShoppingScreen() {
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.controlGap }}>
                 <div style={{ color: color.muted, fontSize: 12.5, fontWeight: 700 }}>{itemsInCategory.length} item(ns)</div>
-                <div style={{ color: color.dark, fontSize: 14, fontWeight: 800 }}>Total: US$ {totalInCategory.toFixed(2)}</div>
+                <div style={{ color: color.dark, fontSize: 14, fontWeight: 800 }}>Total: US$ {formatUSD(totalInCategory)}</div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {itemsInCategory.map((item) => (

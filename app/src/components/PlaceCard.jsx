@@ -59,7 +59,7 @@ export default function PlaceCard({ place, onAction, inItinerary }) {
             {place.name}
           </div>
           {place.recommendation && (
-            <div style={{ color: 'rgba(255,255,255,0.92)', fontSize: 12, fontWeight: 600, marginTop: 3, lineHeight: 1.3, textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+            <div style={{ color: 'rgba(255,255,255,0.92)', fontSize: 12, fontWeight: 600, marginTop: 3, lineHeight: 1.3, textShadow: '0 1px 4px rgba(0,0,0,0.4)', overflowWrap: 'anywhere' }}>
               {place.recommendation}
             </div>
           )}

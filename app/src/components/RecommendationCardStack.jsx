@@ -57,7 +57,7 @@ function RecommendationPhotoContent({ rec }) {
         </div>
       )}
       {rec.description && (
-        <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: 500, lineHeight: 1.4, marginTop: 6, textShadow: '0 1px 4px rgba(0,0,0,0.35)' }}>
+        <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: 500, lineHeight: 1.4, marginTop: 6, textShadow: '0 1px 4px rgba(0,0,0,0.35)', overflowWrap: 'anywhere' }}>
           {rec.description}
         </div>
       )}

@@ -49,7 +49,7 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
           </div>
         )}
         {recommendation.description && (
-          <div style={{ color: color.dark, fontSize: 14, fontWeight: 500, marginTop: recommendation.title ? 2 : 0, lineHeight: 1.35 }}>
+          <div style={{ color: color.dark, fontSize: 14, fontWeight: 500, marginTop: recommendation.title ? 2 : 0, lineHeight: 1.35, overflowWrap: 'anywhere' }}>
             {recommendation.description}
           </div>
         )}

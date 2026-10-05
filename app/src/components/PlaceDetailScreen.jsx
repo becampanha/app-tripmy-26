@@ -1008,7 +1008,7 @@ export default function PlaceDetailScreen() {
                 {place.name}
               </div>
               {place.recommendation && (
-                <div style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 500, marginTop: 3, lineHeight: 1.35 }}>
+                <div style={{ color: '#1c1a17', fontSize: 13.5, fontWeight: 500, marginTop: 3, lineHeight: 1.35, overflowWrap: 'anywhere' }}>
                   {place.recommendation}
                 </div>
               )}

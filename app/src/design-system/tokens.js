@@ -1,5 +1,5 @@
 // Tokens visuais do Family Trip — extraídos dos padrões já em uso no app
-// (ver SESSION_LOG.md e /design-system para o catálogo vivo).
+// (ver CLAUDE.md e /design-system para o catálogo vivo).
 // Qualquer cor/raio/tipografia nova deve nascer aqui, não inline num componente.
 
 export const color = {

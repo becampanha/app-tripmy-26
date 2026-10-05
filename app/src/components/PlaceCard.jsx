@@ -7,12 +7,12 @@ function shortAddress(address) {
   return address.split(',')[0].trim();
 }
 
-export default function PlaceCard({ place, onAction, inItinerary }) {
+export default function PlaceCard({ place, onAction, inItinerary, bottomContent, style }) {
   const facadePhoto = place.photo;
   const dishPhotos = place.dishPhotos || [];
 
   return (
-    <PhotoCard photo={facadePhoto} onClick={onAction}>
+    <PhotoCard photo={facadePhoto} onClick={onAction} style={style}>
       <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, pointerEvents: 'none' }}>
         <Badge>{place.tag || place.category}</Badge>
       </div>
@@ -31,10 +31,18 @@ export default function PlaceCard({ place, onAction, inItinerary }) {
           right: 14,
           bottom: 12,
           display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          zIndex: 2,
+          pointerEvents: bottomContent ? 'auto' : 'none',
+        }}
+      >
+      <div
+        style={{
+          display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'space-between',
           gap: 10,
-          zIndex: 2,
           pointerEvents: 'none',
         }}
       >
@@ -98,6 +106,9 @@ export default function PlaceCard({ place, onAction, inItinerary }) {
             ))}
           </div>
         )}
+      </div>
+
+      {bottomContent}
       </div>
     </PhotoCard>
   );

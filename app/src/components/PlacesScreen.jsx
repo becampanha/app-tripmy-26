@@ -1,7 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'motion/react';
 import PlaceCard from './PlaceCard.jsx';
+import PlacesMap from './PlacesMap.jsx';
 import { AddIcon } from '@solar-icons/react/linear/add';
+import { MapIcon } from '@solar-icons/react/bold/map';
 import { fetchPlaces } from '../api/itineraryApi.js';
 import { CATEGORY_ICON_MAP } from '../data/placeTags.js';
 import { subcategoriesFor } from '../data/subcategories.js';
@@ -38,11 +41,27 @@ export default function PlacesScreen() {
   const [subcategory, setSubcategory] = useState(savedState.subcategory);
   const [onlyInItinerary, setOnlyInItinerary] = useState(savedState.onlyInItinerary);
   const [search, setSearch] = useState(savedState.search);
+  const [mapOpen, setMapOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const placesInItinerary = usePlacesInItinerary();
   const rootRef = useRef(null);
   const { scrollY } = useScrollY(rootRef);
   const { ref: headerRef, height: headerHeight } = useElementHeight();
+
+  // Mesmo padrão do mapa do Roteiro (ver ScheduleScreen.jsx): abrir o mapa
+  // empurra uma entrada real no histórico, pra "voltar" (botão dentro do
+  // mapa, gesto ou botão físico do celular) sempre funcionar sozinho, sem
+  // lógica própria de "lembrar de onde vim".
+  const openMap = () => {
+    setMapOpen(true);
+    navigate(location.pathname, { state: { ...location.state, mapOpen: true } });
+  };
+  const closeMap = () => navigate(-1);
+
+  useEffect(() => {
+    setMapOpen(!!location.state?.mapOpen);
+  }, [location.state]);
 
   // Salva filtros a cada mudança, pra sobreviver à desmontagem ao navegar
   // para a tela de detalhes e voltar.
@@ -157,21 +176,39 @@ export default function PlacesScreen() {
           />
         }
         right={
-          <div
-            onClick={() => navigate('/lugares/novo')}
-            style={{
-              height: 38,
-              padding: '0 14px',
-              borderRadius: 13,
-              background: color.surfaceMuted,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              cursor: 'pointer',
-            }}
-          >
-            <AddIcon size={17} color={color.dark} />
-            <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Adicionar</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div
+              onClick={openMap}
+              style={{
+                height: 38,
+                padding: '0 14px',
+                borderRadius: 13,
+                background: color.surfaceMuted,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                cursor: 'pointer',
+              }}
+            >
+              <MapIcon size={17} color={color.dark} />
+              <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Mapa</span>
+            </div>
+            <div
+              onClick={() => navigate('/lugares/novo')}
+              style={{
+                height: 38,
+                padding: '0 14px',
+                borderRadius: 13,
+                background: color.surfaceMuted,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                cursor: 'pointer',
+              }}
+            >
+              <AddIcon size={17} color={color.dark} />
+              <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Adicionar</span>
+            </div>
           </div>
         }
       />
@@ -241,6 +278,10 @@ export default function PlacesScreen() {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {mapOpen && <PlacesMap key="places-map" places={places} onClose={closeMap} />}
+      </AnimatePresence>
     </div>
   );
 }

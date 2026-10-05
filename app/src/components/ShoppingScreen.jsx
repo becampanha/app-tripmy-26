@@ -255,7 +255,7 @@ export default function ShoppingScreen() {
           <WhoAreYouContent onConfirm={handleConfirmIdentity} />
         </div>
       ) : (
-        <div style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 40px` }}>
+        <div style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
           <div style={{ marginBottom: spacing.controlGap }}>
             <Select
               value={viewingTraveler}
@@ -289,12 +289,23 @@ export default function ShoppingScreen() {
 
           {items !== null && itemsInCategory.length === 0 && (
             <div style={{ padding: '40px 0', textAlign: 'center' }}>
-              <div style={{ color: color.faint, fontSize: 13.5, fontWeight: 600 }}>Nenhum item na sua lista ainda.</div>
+              <div style={{ color: color.faint, fontSize: 13.5, fontWeight: 600, marginBottom: spacing.gapMd }}>Nenhum item na sua lista ainda.</div>
               <div
                 onClick={() => setEditingItem('new')}
-                style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6, color: color.dark, fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '12px 22px',
+                  borderRadius: radius.button,
+                  background: color.dark,
+                  color: '#fff',
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
               >
-                <AddIcon size={15} color={color.dark} />
+                <AddIcon size={15} color="#fff" />
                 Adicionar item
               </div>
             </div>

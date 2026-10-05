@@ -204,7 +204,7 @@ function SummaryCategoryRow({ category, stats }) {
         </div>
         <div style={{ color: color.dark, fontSize: 14.5, fontWeight: 800 }}>{category}</div>
       </div>
-      <SummaryStatRow label="Cadastrado" count={stats.totalCount} value={stats.totalValue} valueColor={color.dark} />
+      <SummaryStatRow label="Para comprar" count={stats.totalCount} value={stats.totalValue} valueColor={color.dark} />
       <div style={{ height: 1, background: color.border }} />
       <SummaryStatRow label="Comprado" count={stats.purchasedCount} value={stats.purchasedValue} valueColor={color.success} />
     </div>
@@ -248,7 +248,7 @@ function ShoppingSummary({ items }) {
       <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
         <div style={{ flex: 1, padding: spacing.cardPadding, background: color.surfaceMuted, borderRadius: 16 }}>
           <div style={{ color: color.muted, fontSize: 12, fontWeight: 700 }}>
-            Cadastrado ({grandTotal.totalCount})
+            Para comprar ({grandTotal.totalCount})
           </div>
           <div style={{ color: color.dark, fontSize: 19, fontWeight: 800, marginTop: 6 }}>
             US$ {formatUSD(grandTotal.totalValue)}

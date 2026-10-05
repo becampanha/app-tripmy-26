@@ -180,9 +180,9 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
 function SummaryStatRow({ label, count, value, valueColor }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
-      <div style={{ color: color.muted, fontSize: 12.5, fontWeight: 700 }}>{label}</div>
+      <div style={{ color: color.muted, fontSize: 12.5, fontWeight: 700 }}>{label} ({count})</div>
       <div style={{ color: valueColor, fontSize: 13.5, fontWeight: 800 }}>
-        {count} item(ns) · US$ {value.toFixed(2)}
+        US$ {value.toFixed(2)}
       </div>
     </div>
   );
@@ -242,11 +242,11 @@ function ShoppingSummary({ items }) {
       ))}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-        <div style={{ flex: 1, padding: spacing.cardPadding, background: color.mutedDeep, borderRadius: 16 }}>
-          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 700 }}>
+        <div style={{ flex: 1, padding: spacing.cardPadding, background: color.surfaceMuted, borderRadius: 16 }}>
+          <div style={{ color: color.muted, fontSize: 12, fontWeight: 700 }}>
             Cadastrado ({grandTotal.totalCount})
           </div>
-          <div style={{ color: '#fff', fontSize: 19, fontWeight: 800, marginTop: 6 }}>
+          <div style={{ color: color.dark, fontSize: 19, fontWeight: 800, marginTop: 6 }}>
             US$ {grandTotal.totalValue.toFixed(2)}
           </div>
         </div>

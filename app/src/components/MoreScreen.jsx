@@ -4,6 +4,7 @@ import { RefreshIcon } from '@solar-icons/react/bold/refresh';
 import { PlayCircleIcon } from '@solar-icons/react/bold/play-circle';
 import { BellIcon } from '@solar-icons/react/bold/bell';
 import { UsersGroupRoundedIcon } from '@solar-icons/react/bold/users-group-rounded';
+import { InfoCircleIcon } from '@solar-icons/react/bold/info-circle';
 import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import { useScrollY } from '../hooks/useScrollY.js';
@@ -129,18 +130,51 @@ export default function MoreScreen() {
         <div
           style={{
             marginTop: spacing.gapLg,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
             padding: spacing.cardPadding,
             background: color.bg,
             border: `1px solid ${color.border}`,
             borderRadius: 18,
           }}
         >
-          <div style={{ ...type.eyebrow, color: color.faintIcon }}>Versão instalada</div>
-          <div style={{ color: color.dark, fontSize: 15, fontWeight: 700, marginTop: 4 }}>
-            {__BUILD_INFO__.commit}
+          <div
+            style={{
+              flex: 'none',
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              background: color.surfaceMuted,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <InfoCircleIcon size={16} color={color.dark} />
           </div>
-          <div style={{ color: color.muted, fontSize: 12.5, fontWeight: 600, marginTop: 2 }}>
-            Publicada em {formatBuildDate(__BUILD_INFO__.builtAt)}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: color.dark, fontSize: 14.5, fontWeight: 700 }}>
+              Versão {__BUILD_INFO__.commit}
+            </div>
+            <div style={{ color: color.muted, fontSize: 12, fontWeight: 600, marginTop: 1 }}>
+              Publicada em {formatBuildDate(__BUILD_INFO__.builtAt)}
+            </div>
+          </div>
+          <div
+            onClick={handleRefresh}
+            style={{
+              flex: 'none',
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: refreshing ? 'default' : 'pointer',
+            }}
+          >
+            <RefreshIcon size={17} color={refreshing ? color.faint : color.dark} />
           </div>
         </div>
 
@@ -183,32 +217,6 @@ export default function MoreScreen() {
             <Toggle checked={pushEnabled && !pushBlocked} onChange={handleTogglePush} />
           </div>
         )}
-
-        <div
-          onClick={handleRefresh}
-          style={{
-            marginTop: spacing.gapLg,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            padding: spacing.cardPadding,
-            borderRadius: 16,
-            background: refreshing ? color.toggleOff : color.dark,
-            color: color.white,
-            fontSize: 14.5,
-            fontWeight: 700,
-            cursor: refreshing ? 'default' : 'pointer',
-          }}
-        >
-          <RefreshIcon size={17} color={color.white} />
-          {refreshing ? 'Atualizando…' : 'Forçar atualização (hard refresh)'}
-        </div>
-
-        <div style={{ color: color.faint, fontSize: 12, fontWeight: 500, marginTop: spacing.gapLg, lineHeight: 1.4, textAlign: 'center' }}>
-          Limpa o cache local e recarrega o app do zero — use se o app parecer
-          desatualizado depois de uma publicação nova.
-        </div>
 
         <div
           onClick={() => setShowWelcome(true)}

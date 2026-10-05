@@ -5,6 +5,8 @@ import PlaceCard from './PlaceCard.jsx';
 import PlacesMap from './PlacesMap.jsx';
 import { AddIcon } from '@solar-icons/react/linear/add';
 import { MapIcon } from '@solar-icons/react/bold/map';
+import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
+import { MapPointIcon } from '@solar-icons/react/bold/map-point';
 import { fetchPlaces } from '../api/itineraryApi.js';
 import { CATEGORY_ICON_MAP } from '../data/placeTags.js';
 import { subcategoriesFor } from '../data/subcategories.js';
@@ -13,7 +15,7 @@ import { getPlacesScreenState, savePlacesScreenState, getCachedPlaces, setCached
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
-import { FixedHeader, HScrollTabs, SearchInput, Toggle, SectionHeader, Skeleton, Select, color, radius, space, spacing } from '../design-system/index.js';
+import { FixedHeader, HScrollTabs, SearchInput, SectionHeader, Skeleton, Select, color, radius, space, spacing } from '../design-system/index.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
@@ -220,17 +222,25 @@ export default function PlacesScreen() {
           padding: `2px ${space.screenGutter}px 120px`,
         }}
       >
-        <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nome" />
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: spacing.gapMd, marginBottom: 14 }}>
+          <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nome" style={{ flex: 1, marginBottom: 0 }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spacing.gapLg, marginBottom: 14 }}>
           <div
             onClick={() => setOnlyInItinerary((v) => !v)}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none', flex: 'none' }}
+            title="Lugares que estão no roteiro"
+            style={{
+              flex: 'none',
+              width: 38,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: radius.input,
+              border: `1px solid ${onlyInItinerary ? color.dark : color.border}`,
+              background: onlyInItinerary ? color.dark : color.bg,
+              cursor: 'pointer',
+            }}
           >
-            <Toggle checked={onlyInItinerary} onChange={setOnlyInItinerary} />
-            <span style={{ color: onlyInItinerary ? color.dark : color.muted, fontSize: 12.5, fontWeight: 600 }}>
-              Lugares que estão no roteiro
-            </span>
+            <CheckCircleIcon size={17} color={onlyInItinerary ? '#fff' : color.faintIcon} />
           </div>
 
           {subcategoryOptions.length > 0 && (
@@ -240,7 +250,8 @@ export default function PlacesScreen() {
               value={subcategory}
               onChange={setSubcategory}
               options={subcategoryOptions}
-              buttonStyle={{ padding: '7px 12px', fontSize: 12.5 }}
+              icon={MapPointIcon}
+              buttonStyle={{ height: 38, boxSizing: 'border-box' }}
             />
           )}
         </div>

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { MapIcon } from '@solar-icons/react/bold/map';
 import { ListIcon } from '@solar-icons/react/linear/list';
+import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
 import AttractionCard from './AttractionCard.jsx';
 import { useAttractionsData } from '../hooks/useAttractionsData.js';
 import { getAttractionsScreenState, saveAttractionsScreenState } from '../hooks/useAttractionsScreenState.js';
@@ -11,7 +12,7 @@ import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
-import { FixedHeader, HScrollTabs, ParkMap, SearchInput, SectionHeader, Skeleton, Toggle, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
+import { FixedHeader, HScrollTabs, ParkMap, SearchInput, SectionHeader, Skeleton, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
 
 // area vem em CAIXA ALTA da planilha original importada (ex: "ADVENTURELAND",
 // "DIAGON ALLEY") — aqui só pra exibição, sem mexer no dado em si (usado
@@ -195,17 +196,25 @@ export default function AttractionsScreen() {
           </div>
         )}
 
-        <SearchInput value={search} onChange={setSearch} placeholder="Buscar atração" />
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: spacing.gapMd, marginBottom: 14 }}>
+          <SearchInput value={search} onChange={setSearch} placeholder="Buscar atração" style={{ flex: 1, marginBottom: 0 }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing.gapMd, marginBottom: 14 }}>
           <div
             onClick={() => setOnlyInItinerary((v) => !v)}
-            style={{ display: 'flex', alignItems: 'center', gap: spacing.gapMd, cursor: 'pointer', userSelect: 'none' }}
+            title="Atrações que estão no roteiro"
+            style={{
+              flex: 'none',
+              width: 38,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: radius.input,
+              border: `1px solid ${onlyInItinerary ? color.dark : color.border}`,
+              background: onlyInItinerary ? color.dark : color.bg,
+              cursor: 'pointer',
+            }}
           >
-            <Toggle checked={onlyInItinerary} onChange={setOnlyInItinerary} />
-            <span style={{ color: onlyInItinerary ? color.dark : color.muted, fontSize: 12.5, fontWeight: 600 }}>
-              Atrações que estão no roteiro
-            </span>
+            <CheckCircleIcon size={17} color={onlyInItinerary ? '#fff' : color.faintIcon} />
           </div>
         </div>
 

@@ -15,6 +15,7 @@ export default function Select({
   buttonStyle,
   align = 'right', // 'right' ancora pela borda direita do botão, 'left' pela esquerda
   fullWidth = false, // botão ocupa 100% do container pai (uso em formulários)
+  icon: Icon, // gatilho vira um botão quadrado só com ícone+seta, sem o texto do valor — usado quando o espaço ao lado é apertado (ex: mesma linha da busca)
 }) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
@@ -40,9 +41,9 @@ export default function Select({
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 8,
-          padding: '9px 14px',
+          justifyContent: Icon ? 'center' : 'space-between',
+          gap: Icon ? 2 : 8,
+          padding: Icon ? '9px 10px' : '9px 14px',
           borderRadius: radius.input,
           border: `1px solid ${color.border}`,
           background: color.bg,
@@ -55,9 +56,13 @@ export default function Select({
           ...buttonStyle,
         }}
       >
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {selected ? selected.label : placeholder}
-        </span>
+        {Icon ? (
+          <Icon size={16} color={value ? color.dark : color.faintIcon} style={{ flex: 'none' }} />
+        ) : (
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {selected ? selected.label : placeholder}
+          </span>
+        )}
         <AltArrowDownIcon size={14} color={color.faintIcon} style={{ flex: 'none' }} />
       </div>
 

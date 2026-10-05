@@ -161,8 +161,9 @@ export default function ParkMap({ parks, selectedPark, onSelectPark, onClose, ge
       .tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 })
       .addTo(map);
 
+    // Bounds considera só os pinos das atrações, não a localização do
+    // usuário — ver mesmo comentário em DayMap.jsx.
     const bounds = leaflet.latLngBounds(pins.map((p) => [p.coords.lat, p.coords.lng]));
-    if (myLocation) bounds.extend([myLocation.lat, myLocation.lng]);
     map.fitBounds(bounds, { paddingTopLeft: [32, (headerHeight || 80) + 16], paddingBottomRight: [32, 260] });
 
     if (myLocation) {

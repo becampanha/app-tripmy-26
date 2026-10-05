@@ -226,8 +226,11 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
     mapRef.current = map;
     map.addListener('click', () => setSelected(null));
 
+    // Bounds considera só os pinos dos lugares, não a localização do usuário
+    // — incluí-la força um zoom-out maior que o necessário quando o usuário
+    // está longe dos pontos do dia. Pra ver onde está, o botão de GPS (ver
+    // abaixo) já centraliza nele sob demanda.
     const bounds = new googleMaps.LatLngBounds();
-    if (myLocation) bounds.extend(myLocation);
     for (const pin of pins) bounds.extend({ lat: pin.coords.lat, lng: pin.coords.lng });
     // Padding de cima considera a altura real da navbar (título + abas dos
     // dias, FixedHeader), senão pins perto do topo ficavam escondidos atrás

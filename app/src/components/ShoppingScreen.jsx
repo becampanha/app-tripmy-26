@@ -4,6 +4,7 @@ import { AddIcon } from '@solar-icons/react/linear/add';
 import { CartLargeMinimalisticIcon } from '@solar-icons/react/bold/cart-large-minimalistic';
 import { LinkMinimalisticIcon } from '@solar-icons/react/linear/link-minimalistic';
 import { CheckSquareIcon as CheckSquareBoldIcon } from '@solar-icons/react/bold/check-square';
+import { Chart2Icon } from '@solar-icons/react/bold/chart-2';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
@@ -12,8 +13,10 @@ import { getTravelerIdentity, setTravelerIdentity } from '../hooks/useTravelerId
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { fetchShoppingItems, createShoppingItem, updateShoppingItem, deleteShoppingItem, toggleShoppingItemPurchased, uploadPlacePhoto } from '../api/itineraryApi.js';
 import { TRAVELERS } from '../data/travelers.js';
-import { SHOPPING_CATEGORIES } from '../data/shoppingCategories.js';
+import { SHOPPING_CATEGORIES, SHOPPING_CATEGORY_ICON } from '../data/shoppingCategories.js';
 import { FixedHeader, FieldLabel, HScrollTabs, Select, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
+
+const SUMMARY_KEY = '__summary__';
 
 function travelerOption(t) {
   return { value: t.name, label: `${t.emoji} ${t.name}` };
@@ -171,6 +174,91 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
   );
 }
 
+// Linha de uma categoria no resumo: quantidade e valor, cadastrado vs
+// comprado — ver ShoppingSummary.
+function SummaryCategoryRow({ category, stats }) {
+  const Icon = SHOPPING_CATEGORY_ICON[category];
+  return (
+    <div style={{ padding: spacing.cardPadding, background: color.bg, border: `1px solid ${color.border}`, borderRadius: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <div style={{ flex: 'none', width: 32, height: 32, borderRadius: 10, background: color.surfaceMuted, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {Icon && <Icon size={16} color={color.dark} />}
+        </div>
+        <div style={{ color: color.dark, fontSize: 14.5, fontWeight: 800 }}>{category}</div>
+      </div>
+      <div style={{ display: 'flex', gap: spacing.gapMd }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: color.muted, fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Cadastrado</div>
+          <div style={{ color: color.dark, fontSize: 14, fontWeight: 800, marginTop: 2 }}>
+            {stats.totalCount} item(ns) · US$ {stats.totalValue.toFixed(2)}
+          </div>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: color.muted, fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Comprado</div>
+          <div style={{ color: color.success, fontSize: 14, fontWeight: 800, marginTop: 2 }}>
+            {stats.purchasedCount} item(ns) · US$ {stats.purchasedValue.toFixed(2)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Aba especial "Resumo" (ver tabItems/SUMMARY_KEY em ShoppingScreen) — uma
+// linha por categoria com item cadastrado, cada uma com a contagem e o
+// valor total: cadastrado vs já comprado (ver o check no card). No fim, o
+// total geral somando todas as categorias.
+function ShoppingSummary({ items }) {
+  const categories = SHOPPING_CATEGORIES.filter((c) => items.some((i) => i.category === c));
+
+  const statsByCategory = categories.map((c) => {
+    const inCategory = items.filter((i) => i.category === c);
+    const purchased = inCategory.filter((i) => i.purchased);
+    return {
+      category: c,
+      stats: {
+        totalCount: inCategory.length,
+        totalValue: inCategory.reduce((sum, i) => sum + (i.price || 0), 0),
+        purchasedCount: purchased.length,
+        purchasedValue: purchased.reduce((sum, i) => sum + (i.price || 0), 0),
+      },
+    };
+  });
+
+  const grandTotal = {
+    totalCount: items.length,
+    totalValue: items.reduce((sum, i) => sum + (i.price || 0), 0),
+    purchasedCount: items.filter((i) => i.purchased).length,
+    purchasedValue: items.filter((i) => i.purchased).reduce((sum, i) => sum + (i.price || 0), 0),
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {statsByCategory.map(({ category, stats }) => (
+        <SummaryCategoryRow key={category} category={category} stats={stats} />
+      ))}
+
+      <div style={{ padding: spacing.cardPadding, background: color.dark, borderRadius: 16, marginTop: 4 }}>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>Total geral</div>
+        <div style={{ display: 'flex', gap: spacing.gapMd }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Cadastrado</div>
+            <div style={{ color: '#fff', fontSize: 15, fontWeight: 800, marginTop: 2 }}>
+              {grandTotal.totalCount} item(ns) · US$ {grandTotal.totalValue.toFixed(2)}
+            </div>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Comprado</div>
+            <div style={{ color: color.success, fontSize: 15, fontWeight: 800, marginTop: 2 }}>
+              {grandTotal.purchasedCount} item(ns) · US$ {grandTotal.purchasedValue.toFixed(2)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ShoppingScreen() {
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
@@ -180,7 +268,7 @@ export default function ShoppingScreen() {
   // salva no aparelho: trocar aqui é só navegação temporária (ver conversa
   // de design da feature), não redefine quem o dropdown considera "você".
   const [viewingTraveler, setViewingTraveler] = useState(identity);
-  const [category, setCategory] = useState(SHOPPING_CATEGORIES[0]);
+  const [category, setCategory] = useState(SUMMARY_KEY);
   const [items, setItems] = useState(null);
   const [editingItem, setEditingItem] = useState(null); // item sendo editado, ou 'new' pra criar
   const [saving, setSaving] = useState(false);
@@ -191,15 +279,10 @@ export default function ShoppingScreen() {
     fetchShoppingItems(viewingTraveler)
       .then((data) => {
         setItems(data);
-        // A aba selecionada pode não existir mais pra essa lista (ex: trocou
-        // de viajante, ou a categoria atual ficou sem nenhum item) — como só
-        // mostramos abas com pelo menos 1 item, cai pra primeira categoria
-        // que de fato tiver algo, senão a tela ficaria presa numa aba que
-        // nem aparece mais.
-        setCategory((current) => {
-          const withItems = SHOPPING_CATEGORIES.filter((c) => data.some((i) => i.category === c));
-          return withItems.includes(current) ? current : withItems[0] || SHOPPING_CATEGORIES[0];
-        });
+        // Troca de lista (viajante diferente) sempre abre no Resumo, se
+        // houver qualquer item — mais simples do que tentar preservar a
+        // aba selecionada entre listas que não têm as mesmas categorias.
+        setCategory(fallbackCategory(data));
       })
       .catch((err) => showErrorToast(err, 'Não foi possível carregar a lista.'));
   }, [viewingTraveler]);
@@ -210,9 +293,10 @@ export default function ShoppingScreen() {
     setViewingTraveler(name);
   };
 
+  const isSummary = category === SUMMARY_KEY;
   const itemsInCategory = useMemo(
-    () => (items || []).filter((i) => i.category === category),
-    [items, category]
+    () => (isSummary ? [] : (items || []).filter((i) => i.category === category)),
+    [items, category, isSummary]
   );
   const totalInCategory = useMemo(
     () => itemsInCategory.reduce((sum, i) => sum + (i.price || 0), 0),
@@ -221,15 +305,31 @@ export default function ShoppingScreen() {
 
   // Só mostra como aba a categoria que tiver pelo menos 1 item — nada de
   // listar as 7 categorias fixas sempre, a maioria vazia pra maioria das
-  // listas (cada viajante só usa algumas).
+  // listas (cada viajante só usa algumas). "Resumo" é uma aba especial,
+  // sempre em primeiro lugar e só com ícone (sem label/contador) — existe
+  // assim que há pelo menos 1 item cadastrado, de qualquer categoria.
   const categoriesWithItems = SHOPPING_CATEGORIES.filter(
     (c) => (items || []).some((i) => i.category === c)
   );
-  const tabItems = categoriesWithItems.map((c) => ({
-    key: c,
-    label: c,
-    count: (items || []).filter((i) => i.category === c).length || undefined,
-  }));
+  const hasAnyItem = (items || []).length > 0;
+  const tabItems = [
+    ...(hasAnyItem ? [{ key: SUMMARY_KEY, label: '', icon: Chart2Icon }] : []),
+    ...categoriesWithItems.map((c) => ({
+      key: c,
+      label: c,
+      icon: SHOPPING_CATEGORY_ICON[c],
+      count: (items || []).filter((i) => i.category === c).length || undefined,
+    })),
+  ];
+
+  // Primeira categoria "de verdade" com item — usada como fallback sempre
+  // que a aba atual deixa de existir (ver os 3 pontos que chamam isso:
+  // fetch inicial, salvar e remover item). Prioriza Resumo quando há
+  // qualquer item, senão cai pra primeira categoria com conteúdo.
+  function fallbackCategory(itemsList) {
+    if (itemsList.length > 0) return SUMMARY_KEY;
+    return SHOPPING_CATEGORIES[0];
+  }
 
   const handleSaveItem = async (fields) => {
     setSaving(true);
@@ -347,7 +447,9 @@ export default function ShoppingScreen() {
             </div>
           )}
 
-          {items !== null && itemsInCategory.length > 0 && (
+          {items !== null && isSummary && <ShoppingSummary items={items} />}
+
+          {items !== null && !isSummary && itemsInCategory.length > 0 && (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.controlGap }}>
                 <div style={{ color: color.muted, fontSize: 12.5, fontWeight: 700 }}>{itemsInCategory.length} item(ns)</div>
@@ -366,7 +468,7 @@ export default function ShoppingScreen() {
             </>
           )}
 
-          {items !== null && itemsInCategory.length === 0 && (
+          {items !== null && !isSummary && itemsInCategory.length === 0 && (
             <div style={{ padding: '40px 0', textAlign: 'center' }}>
               <div style={{ color: color.faint, fontSize: 13.5, fontWeight: 600, marginBottom: spacing.gapMd }}>Nenhum item na sua lista ainda.</div>
               <div

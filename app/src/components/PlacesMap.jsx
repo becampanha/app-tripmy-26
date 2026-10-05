@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
+import useEmblaCarousel from 'embla-carousel-react';
 import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { GpsIcon } from '@solar-icons/react/bold/gps';
 import { GlobeIcon } from '@solar-icons/react/bold/globe';
@@ -64,11 +65,10 @@ function pinElement({ label, isSelected }) {
 
 // Mapa fullscreen de Lugares — mesmo padrão técnico/visual do DayMap.jsx
 // (Google Maps JS API real, pino balão, fit bounds automático, GPS,
-// satélite, card da seleção fixo no rodapé), adaptado para a tela de
-// Lugares: as abas no header filtram por categoria (igual PlacesScreen,
-// mas independentes dela — não herdam subcategoria/busca/toggle "no
-// roteiro" da lista), um pino por lugar da categoria ativa, sem
-// carrossel nem traçar rota (não fazem sentido sem um roteiro de dia).
+// satélite, carrossel de cards sincronizado com o pino selecionado),
+// adaptado para a tela de Lugares: as abas no header filtram por categoria
+// (igual PlacesScreen, mas independentes dela — não herdam subcategoria/
+// busca/toggle "no roteiro" da lista), um pino por lugar da categoria ativa.
 export default function PlacesMap({ places, onClose }) {
   useHidesTabBar(true);
   const navigate = useNavigate();
@@ -82,6 +82,11 @@ export default function PlacesMap({ places, onClose }) {
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [selected, setSelected] = useState(null);
   const [satellite, setSatellite] = useState(false);
+  // Troca de slide pelo carrossel (arrastar) e troca por clique no pino do
+  // mapa disparam o mesmo setSelected — esse ref distingue as duas origens
+  // pra não ficar um "empurrando" o outro num loop (mesmo padrão do DayMap).
+  const selectingFromMapRef = useRef(false);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: 'center', containScroll: 'trimSnaps' });
 
   const placesInCategory = places.filter((p) => p.category === category);
   const uniqueAddresses = [...new Set(placesInCategory.filter((p) => p.address).map((p) => p.address))];
@@ -103,12 +108,46 @@ export default function PlacesMap({ places, onClose }) {
     count: countByCategory[cat],
   }));
 
-  // Clicar um pino no mapa seleciona o lugar correspondente, mostrando seu
-  // card no rodapé.
-  const selectPinRef = useRef(null);
+  // Arrastar o carrossel troca o pin selecionado (preto no mapa) e centraliza
+  // suavemente nele — só quando a mudança veio do próprio arrasto, não de um
+  // scrollTo disparado por clique no pino (ver selectingFromMapRef acima).
   useEffect(() => {
-    selectPinRef.current = (pin) => setSelected(pin);
-  }, []);
+    if (!emblaApi) return;
+    const onSelect = () => {
+      if (selectingFromMapRef.current) {
+        selectingFromMapRef.current = false;
+        return;
+      }
+      const pin = pins[emblaApi.selectedScrollSnap()];
+      if (!pin) return;
+      setSelected(pin);
+      mapRef.current?.panTo({ lat: pin.coords.lat, lng: pin.coords.lng });
+    };
+    emblaApi.on('select', onSelect);
+    return () => emblaApi.off('select', onSelect);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emblaApi, pins.length]);
+
+  // Clicar um pino no mapa faz o carrossel pular pro card correspondente,
+  // sem animação de arrasto (jump: true) — já que o usuário não arrastou.
+  const selectPin = useCallback(
+    (pin) => {
+      setSelected(pin);
+      const index = pins.findIndex((p) => p.place.id === pin.place.id);
+      if (index >= 0 && emblaApi) {
+        selectingFromMapRef.current = true;
+        emblaApi.scrollTo(index, true);
+      }
+    },
+    [pins, emblaApi]
+  );
+  // Markers são criados dentro de um useEffect que não depende de selectPin
+  // (recriar o mapa inteiro a cada render seria caro) — a ref garante que o
+  // listener de clique sempre chama a versão mais recente da função.
+  const selectPinRef = useRef(selectPin);
+  useEffect(() => {
+    selectPinRef.current = selectPin;
+  }, [selectPin]);
 
   useEffect(() => {
     if (!googleMaps || !containerRef.current || pins.length === 0) return;
@@ -203,11 +242,15 @@ export default function PlacesMap({ places, onClose }) {
     }
   }, [selected]);
 
-  // Trocar de categoria limpa a seleção — o pino selecionado pertence à
-  // categoria anterior.
+  // Abrir o mapa (ou trocar de categoria pelas abas) sempre seleciona o
+  // primeiro lugar automaticamente — o card inferior nunca deve aparecer
+  // vazio/sem nada selecionado. reInit porque trocar de categoria troca a
+  // quantidade de slides do carrossel (embla não percebe isso sozinho).
   useEffect(() => {
-    setSelected(null);
-  }, [category]);
+    setSelected(pins[0] || null);
+    emblaApi?.reInit();
+    emblaApi?.scrollTo(0, true);
+  }, [category, pins.length, emblaApi]);
 
   return (
     <div
@@ -373,67 +416,90 @@ export default function PlacesMap({ places, onClose }) {
               right: 0,
               bottom: 14,
               zIndex: 10,
-              padding: `0 ${spacing.screenGutter}px`,
-              boxSizing: 'border-box',
             }}
           >
-            {/* Mesmo padrão do ParkMap/AttractionCard: botões dentro do
-                próprio card de foto (via bottomContent), fundo translúcido
-                sobre a imagem — não dois blocos separados abaixo. */}
-            <PlaceCard
-              place={selected.place}
-              onAction={() => navigate(`/lugares/${selected.place.id}`)}
-              inItinerary={placesInItinerary ? placesInItinerary.has(selected.place.id) : false}
-              style={{ height: 220, marginBottom: 0 }}
-              bottomContent={
-                <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.gapMd, pointerEvents: 'auto' }}>
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!mapRef.current) return;
-                      mapRef.current.panTo({ lat: selected.coords.lat, lng: selected.coords.lng });
-                      mapRef.current.setZoom(17);
-                    }}
-                    style={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      padding: 12,
-                      borderRadius: 16,
-                      background: 'rgba(255,255,255,0.12)',
-                      border: '1px solid rgba(255,255,255,0.3)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <MagnifierZoomInIcon size={15} color="#fff" />
-                    <span style={{ color: '#fff', ...type.button }}>Centralizar</span>
-                  </div>
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/lugares/${selected.place.id}`);
-                    }}
-                    style={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      padding: 12,
-                      borderRadius: 16,
-                      background: 'rgba(255,255,255,0.12)',
-                      border: '1px solid rgba(255,255,255,0.3)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <AltArrowRightIcon size={15} color="#fff" />
-                    <span style={{ color: '#fff', ...type.button }}>Detalhes</span>
-                  </div>
-                </div>
-              }
-            />
+            {/* Carrossel horizontal: arrastar troca de card/pin (ver efeito
+                onSelect do embla acima), igual ao mapa do Roteiro — mesma lib
+                (embla-carousel-react). Slide com 88% da largura (em vez de
+                100%) só quando há mais de um lugar, deixando a "pontinha" do
+                próximo card visível na borda. */}
+            <div ref={emblaRef} style={{ overflow: 'hidden' }}>
+              <div style={{ display: 'flex' }}>
+                {pins.map((pin) => {
+                  const isActive = pin.place.id === selected.place.id;
+                  return (
+                    <div
+                      key={pin.place.id}
+                      style={{
+                        flex: pins.length > 1 ? '0 0 88%' : '0 0 100%',
+                        minWidth: 0,
+                        padding: `0 ${spacing.screenGutter}px`,
+                        boxSizing: 'border-box',
+                        display: 'flex',
+                      }}
+                    >
+                      {/* Mesmo padrão do ParkMap/AttractionCard: botões dentro
+                          do próprio card de foto (via bottomContent), fundo
+                          translúcido sobre a imagem. */}
+                      <PlaceCard
+                        place={pin.place}
+                        onAction={() => navigate(`/lugares/${pin.place.id}`)}
+                        inItinerary={placesInItinerary ? placesInItinerary.has(pin.place.id) : false}
+                        style={{ flex: 1, height: 220, marginBottom: 0 }}
+                        bottomContent={
+                          <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.gapMd, pointerEvents: 'auto' }}>
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!mapRef.current) return;
+                                mapRef.current.panTo({ lat: pin.coords.lat, lng: pin.coords.lng });
+                                mapRef.current.setZoom(17);
+                              }}
+                              style={{
+                                flex: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 6,
+                                padding: 12,
+                                borderRadius: 16,
+                                background: 'rgba(255,255,255,0.12)',
+                                border: '1px solid rgba(255,255,255,0.3)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <MagnifierZoomInIcon size={15} color="#fff" />
+                              <span style={{ color: '#fff', ...type.button }}>Centralizar</span>
+                            </div>
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/lugares/${pin.place.id}`);
+                              }}
+                              style={{
+                                flex: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 6,
+                                padding: 12,
+                                borderRadius: 16,
+                                background: 'rgba(255,255,255,0.12)',
+                                border: '1px solid rgba(255,255,255,0.3)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <AltArrowRightIcon size={15} color="#fff" />
+                              <span style={{ color: '#fff', ...type.button }}>Detalhes</span>
+                            </div>
+                          </div>
+                        }
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
       </motion.div>

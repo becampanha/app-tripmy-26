@@ -5,7 +5,7 @@ import { PlayCircleIcon } from '@solar-icons/react/bold/play-circle';
 import { BellIcon } from '@solar-icons/react/bold/bell';
 import { UsersGroupRoundedIcon } from '@solar-icons/react/bold/users-group-rounded';
 import { InfoCircleIcon } from '@solar-icons/react/bold/info-circle';
-import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
+import { CloseIcon } from '@solar-icons/react/linear/close';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
@@ -90,7 +90,7 @@ export default function MoreScreen() {
             onClick={() => navigate(-1)}
             style={{ width: 38, height: 38, borderRadius: 13, background: color.surfaceMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           >
-            <AltArrowLeftIcon size={20} color={color.dark} />
+            <CloseIcon size={20} color={color.dark} />
           </div>
         }
       />

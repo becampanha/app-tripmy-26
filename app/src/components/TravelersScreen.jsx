@@ -2,22 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
+import { TRAVELERS } from '../data/travelers.js';
 import { FixedHeader, color, spacing } from '../design-system/index.js';
-
-// Lista fixa dos participantes da viagem — sem dado vindo de API, só
-// identificação visual de quem é quem no app.
-const TRAVELERS = [
-  { emoji: '👩🏼‍🦳', name: 'Luciane' },
-  { emoji: '👴🏼', name: 'Marcos' },
-  { emoji: '👩🏻', name: 'Giulia' },
-  { emoji: '👱🏼‍♂️', name: 'Bruno' },
-  { emoji: '👧🏼', name: 'Maria Luiza' },
-  { emoji: '👶🏼', name: 'Anna' },
-  { emoji: '👦🏼', name: 'Nicolas' },
-  { emoji: '👦🏼', name: 'Pedro' },
-  { emoji: '👱🏼‍♀️', name: 'Isabela' },
-  { emoji: '🧔🏻‍♂️', name: 'Marco' },
-];
 
 export default function TravelersScreen() {
   const navigate = useNavigate();

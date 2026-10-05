@@ -93,6 +93,28 @@ CREATE TABLE IF NOT EXISTS park_strategies (
 
 CREATE INDEX IF NOT EXISTS idx_place_recommendations_place_id ON place_recommendations(place_id);
 
+-- Lista de compras de cada viajante (ver TRAVELERS em TravelersScreen.jsx —
+-- não é uma tabela própria, a lista de nomes é fixa no front). `traveler` é
+-- o nome do viajante dono do item (texto livre, mas sempre um dos nomes
+-- fixos na prática) — não existe conceito de "dono" com permissão: qualquer
+-- pessoa pode navegar e editar a lista de qualquer viajante (ver conversa
+-- de design da feature). `category` é uma das categorias fixas (Vestuário,
+-- Eletrônicos, Brinquedos, Beleza, Casa, Outros).
+CREATE TABLE IF NOT EXISTS shopping_items (
+  id SERIAL PRIMARY KEY,
+  traveler TEXT NOT NULL,
+  category TEXT NOT NULL,
+  name TEXT NOT NULL,
+  brand TEXT,
+  link TEXT,
+  price REAL,
+  notes TEXT,
+  photo TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_shopping_items_traveler ON shopping_items(traveler);
+
 -- Inscrições de Web Push (uma por navegador/dispositivo instalado como PWA).
 -- `endpoint` já é o identificador único de cada inscrição (gerado pelo
 -- push service do navegador) — chave primária natural, sem precisar de id

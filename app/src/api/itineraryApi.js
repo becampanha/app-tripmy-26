@@ -53,7 +53,7 @@ export function moveActivityToDay(id, dayId) {
 }
 
 export function reorderActivities(items) {
-  return request('/api/activities/reorder', {
+  return request('/api/activities?action=reorder', {
     method: 'POST',
     body: JSON.stringify({ items }),
   });
@@ -176,4 +176,26 @@ export function updateParkStrategy(parkId, fields) {
     method: 'PUT',
     body: JSON.stringify(fields),
   });
+}
+
+export function fetchShoppingItems(traveler) {
+  return request(`/api/shopping?traveler=${encodeURIComponent(traveler)}`);
+}
+
+export function createShoppingItem(fields) {
+  return request('/api/shopping', {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  });
+}
+
+export function updateShoppingItem(id, fields) {
+  return request(`/api/shopping?id=${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(fields),
+  });
+}
+
+export function deleteShoppingItem(id) {
+  return request(`/api/shopping?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

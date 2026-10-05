@@ -174,32 +174,35 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
   );
 }
 
-// Linha de uma categoria no resumo: quantidade e valor, cadastrado vs
-// comprado — ver ShoppingSummary.
+// Uma linha label (esquerda) + valor (direita) dentro do card de resumo —
+// mesmo padrão nas duas linhas (cadastrado/comprado), só muda a cor do
+// valor. Ver SummaryCategoryRow e o total geral em ShoppingSummary.
+function SummaryStatRow({ label, count, value, valueColor }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
+      <div style={{ color: color.muted, fontSize: 12.5, fontWeight: 700 }}>{label}</div>
+      <div style={{ color: valueColor, fontSize: 13.5, fontWeight: 800 }}>
+        {count} item(ns) · US$ {value.toFixed(2)}
+      </div>
+    </div>
+  );
+}
+
+// Card de uma categoria no resumo: título com ícone, depois duas linhas
+// (cadastrado / comprado) separadas por uma divisória — ver ShoppingSummary.
 function SummaryCategoryRow({ category, stats }) {
   const Icon = SHOPPING_CATEGORY_ICON[category];
   return (
     <div style={{ padding: spacing.cardPadding, background: color.bg, border: `1px solid ${color.border}`, borderRadius: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <div style={{ flex: 'none', width: 32, height: 32, borderRadius: 10, background: color.surfaceMuted, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {Icon && <Icon size={16} color={color.dark} />}
         </div>
         <div style={{ color: color.dark, fontSize: 14.5, fontWeight: 800 }}>{category}</div>
       </div>
-      <div style={{ display: 'flex', gap: spacing.gapMd }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ color: color.muted, fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Cadastrado</div>
-          <div style={{ color: color.dark, fontSize: 14, fontWeight: 800, marginTop: 2 }}>
-            {stats.totalCount} item(ns) · US$ {stats.totalValue.toFixed(2)}
-          </div>
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ color: color.muted, fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Comprado</div>
-          <div style={{ color: color.success, fontSize: 14, fontWeight: 800, marginTop: 2 }}>
-            {stats.purchasedCount} item(ns) · US$ {stats.purchasedValue.toFixed(2)}
-          </div>
-        </div>
-      </div>
+      <SummaryStatRow label="Cadastrado" count={stats.totalCount} value={stats.totalValue} valueColor={color.dark} />
+      <div style={{ height: 1, background: color.border }} />
+      <SummaryStatRow label="Comprado" count={stats.purchasedCount} value={stats.purchasedValue} valueColor={color.success} />
     </div>
   );
 }
@@ -238,20 +241,21 @@ function ShoppingSummary({ items }) {
         <SummaryCategoryRow key={category} category={category} stats={stats} />
       ))}
 
-      <div style={{ padding: spacing.cardPadding, background: color.dark, borderRadius: 16, marginTop: 4 }}>
-        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>Total geral</div>
-        <div style={{ display: 'flex', gap: spacing.gapMd }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Cadastrado</div>
-            <div style={{ color: '#fff', fontSize: 15, fontWeight: 800, marginTop: 2 }}>
-              {grandTotal.totalCount} item(ns) · US$ {grandTotal.totalValue.toFixed(2)}
-            </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+        <div style={{ flex: 1, padding: spacing.cardPadding, background: color.dark, borderRadius: 16 }}>
+          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 700 }}>
+            Cadastrado ({grandTotal.totalCount})
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>Comprado</div>
-            <div style={{ color: color.success, fontSize: 15, fontWeight: 800, marginTop: 2 }}>
-              {grandTotal.purchasedCount} item(ns) · US$ {grandTotal.purchasedValue.toFixed(2)}
-            </div>
+          <div style={{ color: '#fff', fontSize: 19, fontWeight: 800, marginTop: 6 }}>
+            US$ {grandTotal.totalValue.toFixed(2)}
+          </div>
+        </div>
+        <div style={{ flex: 1, padding: spacing.cardPadding, background: color.success, borderRadius: 16 }}>
+          <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: 700 }}>
+            Comprado ({grandTotal.purchasedCount})
+          </div>
+          <div style={{ color: '#fff', fontSize: 19, fontWeight: 800, marginTop: 6 }}>
+            US$ {grandTotal.purchasedValue.toFixed(2)}
           </div>
         </div>
       </div>

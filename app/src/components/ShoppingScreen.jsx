@@ -3,13 +3,14 @@ import { AnimatePresence } from 'motion/react';
 import { AddIcon } from '@solar-icons/react/linear/add';
 import { CartLargeMinimalisticIcon } from '@solar-icons/react/bold/cart-large-minimalistic';
 import { LinkMinimalisticIcon } from '@solar-icons/react/linear/link-minimalistic';
+import { CheckSquareIcon as CheckSquareBoldIcon } from '@solar-icons/react/bold/check-square';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import ShoppingItemModal from './ShoppingItemModal.jsx';
 import { getTravelerIdentity, setTravelerIdentity } from '../hooks/useTravelerIdentity.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
-import { fetchShoppingItems, createShoppingItem, updateShoppingItem, deleteShoppingItem, uploadPlacePhoto } from '../api/itineraryApi.js';
+import { fetchShoppingItems, createShoppingItem, updateShoppingItem, deleteShoppingItem, toggleShoppingItemPurchased, uploadPlacePhoto } from '../api/itineraryApi.js';
 import { TRAVELERS } from '../data/travelers.js';
 import { SHOPPING_CATEGORIES } from '../data/shoppingCategories.js';
 import { FixedHeader, FieldLabel, HScrollTabs, Select, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
@@ -91,7 +92,12 @@ function WhoAreYouContent({ onConfirm }) {
   );
 }
 
-function ShoppingItemCard({ item, onClick }) {
+function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
+  // Foto enviada manualmente sempre tem prioridade sobre a imagem extraída
+  // do link — e a do link só entra em jogo se o toggle "usar imagem do
+  // link" estiver ligado (ver ShoppingItemModal.jsx).
+  const displayPhoto = item.photo || (item.useLinkImage && item.linkImage) || null;
+
   return (
     <div
       onClick={onClick}
@@ -104,6 +110,7 @@ function ShoppingItemCard({ item, onClick }) {
         border: `1px solid ${color.border}`,
         borderRadius: 16,
         cursor: 'pointer',
+        opacity: item.purchased ? 0.6 : 1,
       }}
     >
       <div
@@ -116,11 +123,11 @@ function ShoppingItemCard({ item, onClick }) {
           background: color.imagePlaceholder,
         }}
       >
-        {item.photo && <img src={item.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+        {displayPhoto && <img src={displayPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ color: color.dark, fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ color: color.dark, fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: item.purchased ? 'line-through' : 'none' }}>
           {item.name}
         </div>
         {item.brand && (
@@ -140,11 +147,26 @@ function ShoppingItemCard({ item, onClick }) {
         )}
       </div>
 
-      {item.price != null && (
-        <div style={{ flex: 'none', color: color.dark, fontSize: 14, fontWeight: 800 }}>
-          US$ {item.price}
+      <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
+        {item.price != null && (
+          <div style={{ color: color.dark, fontSize: 14, fontWeight: 800 }}>
+            US$ {item.price}
+          </div>
+        )}
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onTogglePurchased();
+          }}
+          style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+        >
+          {item.purchased ? (
+            <CheckSquareBoldIcon size={22} color={color.success} />
+          ) : (
+            <div style={{ width: 22, height: 22, borderRadius: 7, border: `1.5px solid ${color.border}`, boxSizing: 'border-box' }} />
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -268,6 +290,20 @@ export default function ShoppingScreen() {
     }
   };
 
+  // Atualização otimista — risca/desmarca na hora, sem esperar a resposta
+  // do servidor; reverte sozinho se a chamada falhar. É um toggle rápido
+  // (ver o check no card), não justifica o delay de esperar a rede.
+  const handleTogglePurchased = async (item) => {
+    const nextPurchased = !item.purchased;
+    setItems((current) => current.map((i) => (i.id === item.id ? { ...i, purchased: nextPurchased } : i)));
+    try {
+      await toggleShoppingItemPurchased(item.id, nextPurchased);
+    } catch (err) {
+      setItems((current) => current.map((i) => (i.id === item.id ? { ...i, purchased: item.purchased } : i)));
+      showErrorToast(err, 'Não foi possível atualizar o item.');
+    }
+  };
+
   return (
     <div ref={anchorRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: color.bg, boxSizing: 'border-box' }}>
       <FixedHeader
@@ -319,7 +355,12 @@ export default function ShoppingScreen() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {itemsInCategory.map((item) => (
-                  <ShoppingItemCard key={item.id} item={item} onClick={() => setEditingItem(item)} />
+                  <ShoppingItemCard
+                    key={item.id}
+                    item={item}
+                    onClick={() => setEditingItem(item)}
+                    onTogglePurchased={() => handleTogglePurchased(item)}
+                  />
                 ))}
               </div>
             </>

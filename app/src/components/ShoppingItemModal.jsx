@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimalistic';
 import { useHidesTabBar } from '../hooks/useEditingState.js';
+import { fetchLinkImage } from '../api/itineraryApi.js';
 import { SHOPPING_CATEGORIES } from '../data/shoppingCategories.js';
-import { FieldLabel, Select, color, inputStyle, radius } from '../design-system/index.js';
+import { FieldLabel, Select, Toggle, color, inputStyle, radius } from '../design-system/index.js';
+
+const LINK_DEBOUNCE_MS = 700;
 
 // Bottom sheet de criar/editar um item da lista de compras — mesmo padrão
 // visual de RecommendationModal.jsx. `initialValues` presente = modo edição
@@ -21,7 +24,47 @@ export default function ShoppingItemModal({ initialValues, initialCategory, onSu
   const [photoPreview, setPhotoPreview] = useState(initialValues?.photo || null);
   const [saving, setSaving] = useState(false);
 
+  // Imagem extraída da og:image do link (ver fetchLinkImage) — só é
+  // relevante quando não existe foto manual (ela sempre vence, ver
+  // ShoppingScreen.jsx). useLinkImage é o toggle "mostrar imagem do link":
+  // começa ligado automaticamente assim que uma imagem é encontrada (se o
+  // item já tinha isso salvo, respeita a escolha anterior).
+  const [linkImage, setLinkImage] = useState(initialValues?.linkImage || null);
+  const [useLinkImage, setUseLinkImage] = useState(initialValues?.useLinkImage ?? false);
+  const [loadingLinkImage, setLoadingLinkImage] = useState(false);
+  const debounceRef = useRef(null);
+  const lastFetchedLinkRef = useRef(initialValues?.link || null);
+
   useHidesTabBar(true);
+
+  // Busca a imagem do link automaticamente, com debounce — dispara de novo
+  // só quando o link muda de verdade (não a cada re-render), e nunca refaz
+  // a busca pro mesmo link que já tinha sido buscado antes (ex: reabrir o
+  // modal em modo edição sem mexer no campo).
+  useEffect(() => {
+    const trimmed = link.trim();
+    if (!trimmed || trimmed === lastFetchedLinkRef.current) return;
+
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      lastFetchedLinkRef.current = trimmed;
+      setLoadingLinkImage(true);
+      try {
+        const result = await fetchLinkImage(trimmed);
+        setLinkImage(result.image);
+        // Liga o toggle sozinho só se achou uma imagem nova e o usuário
+        // ainda não tinha uma foto manual — não sobrescreve uma decisão
+        // anterior (ex: ele já tinha desligado de propósito antes).
+        if (result.image) setUseLinkImage(true);
+      } catch {
+        setLinkImage(null);
+      } finally {
+        setLoadingLinkImage(false);
+      }
+    }, LINK_DEBOUNCE_MS);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [link]);
 
   const handlePickPhoto = (file) => {
     if (!file) return;
@@ -43,11 +86,17 @@ export default function ShoppingItemModal({ initialValues, initialCategory, onSu
         price: price === '' ? null : Number(price),
         notes: notes.trim() || null,
         photoFile,
+        linkImage,
+        useLinkImage,
       });
     } finally {
       setSaving(false);
     }
   };
+
+  // A imagem do link só é relevante de mostrar/escolher se não houver foto
+  // manual — ela sempre tem prioridade (ver ShoppingScreen.jsx).
+  const hasManualPhoto = Boolean(photoFile || photoPreview);
 
   return (
     <div
@@ -162,6 +211,51 @@ export default function ShoppingItemModal({ initialValues, initialCategory, onSu
           </div>
         </div>
 
+        {!hasManualPhoto && (loadingLinkImage || linkImage) && (
+          <div
+            style={{
+              marginTop: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: 10,
+              borderRadius: 14,
+              background: '#f9f7f2',
+            }}
+          >
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 10,
+                flex: 'none',
+                overflow: 'hidden',
+                background: '#eee9df',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {loadingLinkImage ? (
+                <div style={{ width: 16, height: 16, borderRadius: 8, border: '2px solid #d8d2c4', borderTopColor: '#1c1a17', animation: 'spin 0.7s linear infinite' }} />
+              ) : (
+                <img src={linkImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: '#1c1a17', fontSize: 13, fontWeight: 700 }}>
+                {loadingLinkImage ? 'Buscando imagem do link...' : 'Imagem encontrada no link'}
+              </div>
+              {!loadingLinkImage && (
+                <div style={{ color: '#9a9186', fontSize: 11.5, fontWeight: 600, marginTop: 1 }}>
+                  Usar como foto do produto
+                </div>
+              )}
+            </div>
+            {!loadingLinkImage && <Toggle checked={useLinkImage} onChange={setUseLinkImage} />}
+          </div>
+        )}
+
         <div style={{ marginTop: 14 }}>
           <FieldLabel>Observação (opcional)</FieldLabel>
           <textarea
@@ -216,6 +310,11 @@ export default function ShoppingItemModal({ initialValues, initialCategory, onSu
               style={{ display: 'none' }}
             />
           </label>
+          {hasManualPhoto && linkImage && (
+            <div style={{ color: '#9a9186', fontSize: 11.5, fontWeight: 600, marginTop: 6 }}>
+              A foto enviada aqui tem prioridade sobre a imagem do link.
+            </div>
+          )}
         </div>
 
         <div

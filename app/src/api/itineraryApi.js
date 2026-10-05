@@ -182,6 +182,10 @@ export function fetchShoppingItems(traveler) {
   return request(`/api/shopping?traveler=${encodeURIComponent(traveler)}`);
 }
 
+export function fetchLinkImage(url) {
+  return request(`/api/shopping?action=fetchLinkImage&url=${encodeURIComponent(url)}`);
+}
+
 export function createShoppingItem(fields) {
   return request('/api/shopping', {
     method: 'POST',
@@ -198,4 +202,11 @@ export function updateShoppingItem(id, fields) {
 
 export function deleteShoppingItem(id) {
   return request(`/api/shopping?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export function toggleShoppingItemPurchased(id, purchased) {
+  return request(`/api/shopping?id=${encodeURIComponent(id)}&action=togglePurchased`, {
+    method: 'PUT',
+    body: JSON.stringify({ purchased }),
+  });
 }

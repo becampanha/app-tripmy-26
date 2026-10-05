@@ -100,6 +100,10 @@ CREATE INDEX IF NOT EXISTS idx_place_recommendations_place_id ON place_recommend
 -- pessoa pode navegar e editar a lista de qualquer viajante (ver conversa
 -- de design da feature). `category` é uma das categorias fixas (Vestuário,
 -- Eletrônicos, Brinquedos, Beleza, Casa, Outros).
+-- link_image: URL da og:image extraída da página do link (ver action
+-- fetchLinkImage em api/shopping.js) — só usada como foto do card quando
+-- `photo` (upload manual) está vazio E use_link_image é true. Foto manual
+-- sempre tem prioridade sobre a imagem do link.
 CREATE TABLE IF NOT EXISTS shopping_items (
   id SERIAL PRIMARY KEY,
   traveler TEXT NOT NULL,
@@ -110,6 +114,9 @@ CREATE TABLE IF NOT EXISTS shopping_items (
   price REAL,
   notes TEXT,
   photo TEXT,
+  link_image TEXT,
+  use_link_image BOOLEAN NOT NULL DEFAULT false,
+  purchased BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

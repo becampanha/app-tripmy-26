@@ -11,6 +11,7 @@ import { AddCircleIcon } from '@solar-icons/react/linear/add-circle';
 import { AddCircleIcon as AddCircleBoldIcon } from '@solar-icons/react/bold/add-circle';
 import { MagnifierIcon } from '@solar-icons/react/linear/magnifier';
 import { PointOnMapIcon } from '@solar-icons/react/bold/point-on-map';
+import { MapPointIcon } from '@solar-icons/react/bold/map-point';
 import { DocumentTextIcon } from '@solar-icons/react/bold/document-text';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
 import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
@@ -23,6 +24,7 @@ import {
   deleteRecommendation,
 } from '../api/itineraryApi.js';
 import RecommendationModal from './RecommendationModal.jsx';
+import SinglePlaceMap from './SinglePlaceMap.jsx';
 import RecommendationEditModal from './RecommendationEditModal.jsx';
 import EditActionBar from './EditActionBar.jsx';
 import { useGeocode } from '../hooks/useGeocode.js';
@@ -280,97 +282,6 @@ function PhotoCarousel({ photos, photoIndex, onIndexChange, onOpenLightbox }) {
           {photoIndex + 1}/{photos.length}
         </div>
       )}
-    </div>
-  );
-}
-
-// Mapa em tela cheia, aberto ao tocar no mapa estático da tela de detalhe.
-// Iframe interativo real (arrastar, zoom) via proxy do Maps Embed (api ação
-// "embed" — a chave do Google nunca chega ao client). Footer flutuante fixo
-// com miniatura do lugar, ocupando toda a largura, imitando o "cartão de
-// destino" que apps de mapa mostram embaixo ao focar um local.
-function MapFullscreen({ coords, name, address, photo, onClose }) {
-  return (
-    <div
-      className="allow-native-touch"
-      style={{
-        position: 'fixed',
-        top: 0,
-        bottom: 0,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '100%',
-        maxWidth: 480,
-        zIndex: 50,
-        overflow: 'hidden',
-      }}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.98 }}
-        transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
-        style={{ position: 'absolute', inset: 0, background: '#eee9df' }}
-      >
-      <iframe
-        title="Mapa"
-        src={`https://www.google.com/maps/embed/v1/view?key=${import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY}&center=${coords.lat},${coords.lng}&zoom=16`}
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
-        loading="lazy"
-      />
-
-      <div
-        onClick={onClose}
-        style={{
-          position: 'absolute',
-          top: 18,
-          left: 18,
-          width: 38,
-          height: 38,
-          borderRadius: 13,
-          background: 'rgba(255,255,255,0.85)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(28,26,23,0.18)',
-        }}
-      >
-        <AltArrowLeftIcon size={20} color="#1c1a17" />
-      </div>
-
-      <div
-        style={{
-          position: 'absolute',
-          left: 14,
-          right: 14,
-          bottom: 20,
-          display: 'flex',
-          alignItems: 'center',
-          gap: spacing.gapLg,
-          padding: 10,
-          borderRadius: 18,
-          background: 'rgba(255,255,255,0.9)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          boxShadow: '0 8px 24px rgba(28,26,23,0.22)',
-        }}
-      >
-        <div style={{ width: 46, height: 46, borderRadius: 12, flex: 'none', overflow: 'hidden', background: '#eee9df' }}>
-          {photo && <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: '#1c1a17', fontSize: 14, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {name}
-          </div>
-          <div style={{ color: '#9a9186', fontSize: 12, fontWeight: 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {address}
-          </div>
-        </div>
-      </div>
-      </motion.div>
     </div>
   );
 }
@@ -1305,17 +1216,13 @@ export default function PlaceDetailScreen() {
                     left: '50%',
                     top: '50%',
                     transform: 'translate(-50%, -50%)',
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    background: '#1c1a17',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 4px 12px rgba(28,26,23,0.35)',
+                    filter: 'drop-shadow(0 4px 8px rgba(28,26,23,0.35))',
                   }}
                 >
-                  <PointOnMapIcon size={19} color="#fff" />
+                  <MapPointIcon size={36} color="#1c1a17" />
                 </div>
               </div>
             )}
@@ -1339,7 +1246,7 @@ export default function PlaceDetailScreen() {
 
       <AnimatePresence>
         {mapFullscreen && coords && (
-          <MapFullscreen
+          <SinglePlaceMap
             key="map-fullscreen"
             coords={coords}
             name={place?.name || draft?.name}

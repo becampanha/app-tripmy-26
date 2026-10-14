@@ -155,11 +155,18 @@ Este arquivo é lido automaticamente pelo Claude Code sempre que uma conversa co
 - **Busca + filtros de Lugares/Atrações**: o toggle "está no roteiro" e o dropdown de área (só em Lugares) viraram botões compactos (tamanho de ícone) na mesma linha do campo de busca, em vez de ocuparem uma linha inteira abaixo dela. Toggle: quadrado com ícone de check, fundo preto quando ativo (mesmo padrão de chip ativo/inativo do projeto). Dropdown: botão ícone+seta, mantendo o mesmo `Select`/popover de sempre por trás (`Select.jsx` ganhou a prop opcional `icon` pra esse modo compacto). Ícone de fechar (X) do campo de busca trocado pra variante bold/preenchida; lupa continua linear.
 - **Navbars**: botões "Adicionar" (Lugares, Dicas) e "Editar" (Roteiro) viraram só ícone, sem label de texto — os demais botões das mesmas navbars (Mapa, Carrossel, Roteiro) mantiveram o texto.
 
+## 22. Auditoria de cache offline + taxa/conversão no resumo de Compras
+
+- **Auditoria de cache**: revisadas todas as telas principais e de detalhe quanto a funcionar offline (stale-while-revalidate). Confirmado que Roteiro, Lugares, Atrações, Dicas e os dados "ao vivo" (clima, geocodificação, distância, fila, posições no mapa) já seguiam o padrão corretamente. Encontrados 2 problemas reais: **Compras** não tinha cache nenhum (lista sumia ao reabrir offline), e **detalhe de lugar** só "pegava carona" no cache da lista inteira (`find()` por ID), falhando em deep links quando a tela de Lugares nunca tinha sido visitada na sessão.
+- **Corrigido**: novo `useShoppingScreenState.js` (cache por viajante, chave `shopping:${identity}`) integrado em `ShoppingScreen.jsx` — abre instantâneo offline e um `useEffect` mantém o cache em sincronia com qualquer mutação local (criar/editar/remover/marcar comprado), sem precisar tocar em cada handler individualmente. `usePlacesScreenState.js` ganhou `getCachedPlace`/`setCachedPlace` (chave `place:${id}`) como fallback quando a lista inteira não tem o lugar. Atrações já estava correto (`useAttractionsData` cacheia a lista de módulo, independente de qualquer tela ter montado antes) — nenhuma mudança necessária ali.
+- **Resumo de Compras — taxa e conversão em real**: nos dois cards finais (Para comprar / Comprado), adicionada uma linha "Taxa: US$ X,XX (6.5%)" (imposto de vendas da Flórida — 6% estadual + 0.5% do condado de Orange/Orlando; Miami-Dade usa 7%, mas não se aplica aqui) e, numa linha abaixo, maior, o total já com taxa convertido em real (🇧🇷 R$ ...). Cotação USD→BRL buscada em tempo real via AwesomeAPI (gratuita, sem chave), consolidada em `/api/weather.js?action=exchangeRate` (projeto já estava no limite de 12 Serverless Functions do Hobby, por isso virou uma action a mais em vez de arquivo novo) — novo hook `useExchangeRate.js` com cache de 1h e fallback pra última cotação conhecida offline. Valor em dólar com bandeira 🇺🇸 à esquerda (texto da taxa fica sem bandeira, só os dois valores principais têm).
+- **Ícones nos cards finais**: "Para comprar" ganhou `ClipboardListIcon` (listinha), "Comprado" ganhou `BillCheckIcon` (cheque) — ambos de `@solar-icons/react/bold/*` (existem só no diretório `dist/icons/bold`, não aparecem num `find` direto na pasta `bold/` do pacote por causa do wildcard de exports).
+
 ---
 
 ## Estado atual
 
-Tudo commitado e publicado em produção até o commit `71dd25e` ("Navbars: botões de Adicionar/Editar viram só ícone, sem label de texto").
+Tudo commitado e publicado em produção até o commit `766cb65` ("Cache offline em Compras e detalhe de lugar; taxa/conversão e ícones no resumo de Compras").
 
 ## Combinados de processo (importante lembrar)
 

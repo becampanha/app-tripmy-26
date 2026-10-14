@@ -144,10 +144,24 @@ function RecommendationPhotoContent({ rec }) {
   );
 }
 
+// Largura (em % do card) da faixa central reservada pro botão de play,
+// quando o slide tem vídeo — só ali o toque abre o vídeo; o resto da
+// largura (fora dessa faixa) continua navegando, mesma lógica das bordas.
+const VIDEO_TAP_ZONE_PCT = 0.3;
+
 // Um slide do carrossel — componente próprio (não inline no .map) porque
 // precisa chamar useResolvedYoutubeThumbnail, e hooks não podem ser
 // chamados condicionalmente/dentro de .map direto.
-function RecommendationSlide({ rec, cardHeight, onPlayVideo }) {
+//
+// Navegação por toque tipo Instagram/Stories: tocar na metade direita da
+// imagem avança um slide, na metade esquerda volta um — calculado a partir
+// da posição X do clique dentro do card (currentTarget), não um ouvinte
+// global. `onClick` nativo (não onTap do motion) nunca dispara depois de um
+// arrasto de verdade (comportamento padrão do navegador), então não conflita
+// com o drag do track. Quando o slide tem vídeo, uma faixa central ainda
+// abre o vídeo — só não é a imagem inteira, pra não perder as duas metades
+// de navegação.
+function RecommendationSlide({ rec, cardHeight, onPlayVideo, onNavigate }) {
   const resolvedVideoThumb = useResolvedYoutubeThumbnail(rec.youtubeVideoId);
   // Foto manual sempre tem prioridade; sem foto própria, a thumbnail do
   // YouTube vira o background do card em tela cheia (mesma regra do
@@ -155,16 +169,32 @@ function RecommendationSlide({ rec, cardHeight, onPlayVideo }) {
   // ainda está sendo resolvida, pra não piscar a versão com barras.
   const displayPhoto = rec.photo || (rec.youtubeVideoId ? resolvedVideoThumb : null);
 
+  const handleClick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const relativeX = (e.clientX - rect.left) / rect.width;
+
+    if (rec.youtubeVideoId) {
+      const videoZoneStart = (1 - VIDEO_TAP_ZONE_PCT) / 2;
+      const videoZoneEnd = videoZoneStart + VIDEO_TAP_ZONE_PCT;
+      if (relativeX >= videoZoneStart && relativeX <= videoZoneEnd) {
+        onPlayVideo();
+        return;
+      }
+    }
+
+    onNavigate(relativeX < 0.5 ? 'prev' : 'next');
+  };
+
   return (
     <PhotoCard
       photo={displayPhoto}
       height={cardHeight}
-      onClick={rec.youtubeVideoId ? onPlayVideo : undefined}
+      onClick={handleClick}
       style={{ marginBottom: 0 }}
       contentStyle={{ padding: 18, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
     >
       {rec.youtubeVideoId && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
           <YoutubePlayButton />
         </div>
       )}
@@ -403,7 +433,12 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
             key={`${rec.id}-${i}`}
             style={{ flex: `0 0 ${containerWidth}px`, width: containerWidth, boxSizing: 'border-box', padding: `0 ${spacing.screenGutter}px` }}
           >
-            <RecommendationSlide rec={rec} cardHeight={cardHeight} onPlayVideo={() => setVideoModalRec(rec)} />
+            <RecommendationSlide
+              rec={rec}
+              cardHeight={cardHeight}
+              onPlayVideo={() => setVideoModalRec(rec)}
+              onNavigate={(dir) => goToIndex(index + (dir === 'next' ? 1 : -1))}
+            />
           </div>
         ))}
       </motion.div>

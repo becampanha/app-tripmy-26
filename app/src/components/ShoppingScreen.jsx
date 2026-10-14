@@ -36,6 +36,12 @@ function travelerOption(t) {
 // (título + hambúrguer + scroll) das demais telas raiz.
 function WhoAreYouContent({ onConfirm }) {
   const [selected, setSelected] = useState('');
+  const [attemptedConfirm, setAttemptedConfirm] = useState(false);
+
+  const handleClick = () => {
+    if (selected) onConfirm(selected);
+    else setAttemptedConfirm(true);
+  };
 
   return (
     <div
@@ -69,7 +75,7 @@ function WhoAreYouContent({ onConfirm }) {
       </div>
 
       <div style={{ marginTop: spacing.gapMd, width: '100%', maxWidth: 260, textAlign: 'left' }}>
-        <FieldLabel>Quem é você?</FieldLabel>
+        <FieldLabel error={attemptedConfirm && !selected}>Quem é você?</FieldLabel>
         <div style={{ marginTop: 5 }}>
           <Select
             value={selected}
@@ -82,7 +88,7 @@ function WhoAreYouContent({ onConfirm }) {
       </div>
 
       <div
-        onClick={() => selected && onConfirm(selected)}
+        onClick={handleClick}
         style={{
           marginTop: spacing.gapMd,
           padding: '12px 28px',

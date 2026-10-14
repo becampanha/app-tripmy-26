@@ -20,3 +20,5 @@ export { default as PhotoLightbox } from './PhotoLightbox.jsx';
 export { default as FixedHeader } from './FixedHeader.jsx';
 export { default as ParkStrategyCard } from './ParkStrategyCard.jsx';
 export { default as ParkMap } from './ParkMap.jsx';
+export { default as YoutubePlayButton } from './YoutubePlayButton.jsx';
+export { default as YoutubeVideoModal } from './YoutubeVideoModal.jsx';

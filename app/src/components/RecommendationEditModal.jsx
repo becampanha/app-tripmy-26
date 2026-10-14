@@ -6,8 +6,11 @@ import { TrashBinTrashIcon } from '@solar-icons/react/linear/trash-bin-trash';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import PlaceSelectorModal from './PlaceSelectorModal.jsx';
 import { TRAVELERS } from '../data/travelers.js';
+import { TIP_CATEGORIES } from '../data/tipCategories.js';
+import { extractYoutubeId } from '../data/youtube.js';
 import { FieldLabel, Select, color, inputStyle, radius } from '../design-system/index.js';
 import { useHidesTabBar } from '../hooks/useEditingState.js';
+import { showToast } from '../hooks/useToast.js';
 
 function travelerOption(t) {
   return { value: t.name, label: `${t.emoji} ${t.name}` };
@@ -22,6 +25,8 @@ export default function RecommendationEditModal({ recommendation, onSave, onDele
   const [title, setTitle] = useState(recommendation.title || '');
   const [author, setAuthor] = useState(recommendation.author || '');
   const [description, setDescription] = useState(recommendation.description || '');
+  const [category, setCategory] = useState(recommendation.category || TIP_CATEGORIES[TIP_CATEGORIES.length - 1]);
+  const [videoDraft, setVideoDraft] = useState(recommendation.youtubeVideoId ? `https://youtu.be/${recommendation.youtubeVideoId}` : '');
   const [photo, setPhoto] = useState(recommendation.photo || null);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -45,16 +50,32 @@ export default function RecommendationEditModal({ recommendation, onSave, onDele
   };
 
   const busy = saving || deleting;
-  const canSave = description.trim().length > 0 && !busy;
+  const [attemptedSave, setAttemptedSave] = useState(false);
+  // Mesma regra do modal de criar (RecommendationModal.jsx): pelo menos um
+  // dos três campos preenchido, não só a descrição sozinha.
+  const hasAnyTextField = title.trim().length > 0 || author.trim().length > 0 || description.trim().length > 0;
+  const canSave = hasAnyTextField && !busy;
 
   const handleSave = async () => {
-    if (!canSave) return;
+    if (!canSave) {
+      setAttemptedSave(true);
+      return;
+    }
+
+    const youtubeVideoId = extractYoutubeId(videoDraft);
+    if (videoDraft.trim() && !youtubeVideoId) {
+      showToast('Link do YouTube inválido — cole a URL completa do vídeo.', 'error');
+      return;
+    }
+
     setSaving(true);
     try {
       await onSave({
         title: title.trim() || null,
         author: author.trim() || null,
-        description: description.trim(),
+        description: description.trim() || null,
+        category,
+        youtubeVideoId,
         photo,
         photoFile,
         placeId: place?.id || null,
@@ -133,6 +154,18 @@ export default function RecommendationEditModal({ recommendation, onSave, onDele
         </div>
 
         <div style={{ marginTop: 18 }}>
+          <FieldLabel>Categoria</FieldLabel>
+          <div style={{ marginTop: 5 }}>
+            <Select
+              value={category}
+              onChange={setCategory}
+              options={TIP_CATEGORIES}
+              fullWidth
+            />
+          </div>
+        </div>
+
+        <div style={{ marginTop: 14 }}>
           <FieldLabel>Lugar (opcional)</FieldLabel>
           <div
             onClick={() => setSelectorOpen(true)}
@@ -186,7 +219,7 @@ export default function RecommendationEditModal({ recommendation, onSave, onDele
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <FieldLabel>Título</FieldLabel>
+          <FieldLabel error={attemptedSave && !hasAnyTextField && 'preencha ao menos um destes três campos'}>Título</FieldLabel>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -196,7 +229,7 @@ export default function RecommendationEditModal({ recommendation, onSave, onDele
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <FieldLabel>Descrição</FieldLabel>
+          <FieldLabel error={attemptedSave && !hasAnyTextField && 'preencha ao menos um destes três campos'}>Descrição</FieldLabel>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -207,7 +240,7 @@ export default function RecommendationEditModal({ recommendation, onSave, onDele
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <FieldLabel>Quem está sugerindo</FieldLabel>
+          <FieldLabel error={attemptedSave && !hasAnyTextField && 'preencha ao menos um destes três campos'}>Quem está sugerindo</FieldLabel>
           <div style={{ marginTop: 5 }}>
             <Select
               value={author}
@@ -217,6 +250,16 @@ export default function RecommendationEditModal({ recommendation, onSave, onDele
               fullWidth
             />
           </div>
+        </div>
+
+        <div style={{ marginTop: 14 }}>
+          <FieldLabel>Vídeo do YouTube (opcional)</FieldLabel>
+          <input
+            value={videoDraft}
+            onChange={(e) => setVideoDraft(e.target.value)}
+            placeholder="https://youtu.be/..."
+            style={{ ...inputStyle, marginTop: 5 }}
+          />
         </div>
 
         <div style={{ marginTop: 14 }}>

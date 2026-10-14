@@ -1,6 +1,8 @@
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { travelerLabel } from '../data/travelers.js';
+import { youtubeThumbnailProps } from '../data/youtube.js';
+import YoutubePlayButton from './YoutubePlayButton.jsx';
 import { color, radius, space } from './tokens.js';
 
 function formatRecommendationDate(iso) {
@@ -17,7 +19,18 @@ function formatRecommendationDate(iso) {
 // `onEdit` (opcional) mostra um botão de editar que abre o
 // RecommendationEditModal — mesmo card nas duas telas, por isso a prop é
 // opcional em vez de sempre presente.
-export default function RecommendationCard({ recommendation, place, onOpenPhoto, onClick, onEdit }) {
+export default function RecommendationCard({ recommendation, place, onOpenPhoto, onClick, onEdit, onPlayVideo }) {
+  // Foto manual sempre tem prioridade; sem foto própria, a thumbnail do
+  // YouTube vira a capa do card (mesma prioridade já usada em Compras pra
+  // foto vs. imagem de link). O botão de play aparece sempre que há vídeo,
+  // independente de qual das duas imagens está sendo mostrada.
+  const hasVideo = !!recommendation.youtubeVideoId;
+  const imgProps = recommendation.photo
+    ? { src: recommendation.photo }
+    : hasVideo
+      ? youtubeThumbnailProps(recommendation.youtubeVideoId)
+      : null;
+
   const meta = [
     recommendation.author ? `Recomendado por ${travelerLabel(recommendation.author)}` : null,
     formatRecommendationDate(recommendation.createdAt),
@@ -109,12 +122,13 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
         )}
       </div>
 
-      {recommendation.photo && (
+      {imgProps && (
         <div
           className="allow-native-touch"
           onClick={(e) => {
             e.stopPropagation();
-            if (onOpenPhoto) onOpenPhoto();
+            if (hasVideo && onPlayVideo) onPlayVideo();
+            else if (onOpenPhoto) onOpenPhoto();
             else if (onClick) onClick();
           }}
           style={{
@@ -130,11 +144,16 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
           }}
         >
           <img
-            src={recommendation.photo}
+            {...imgProps}
             alt=""
             loading="lazy"
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
           />
+          {hasVideo && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <YoutubePlayButton size={26} />
+            </div>
+          )}
         </div>
       )}
     </div>

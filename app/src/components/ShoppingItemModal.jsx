@@ -72,10 +72,15 @@ export default function ShoppingItemModal({ initialValues, initialCategory, onSu
     setPhotoPreview(URL.createObjectURL(file));
   };
 
-  const canSave = name.trim().length > 0 && !saving;
+  const [attemptedSave, setAttemptedSave] = useState(false);
+  const nameValid = name.trim().length > 0;
+  const canSave = nameValid && !saving;
 
   const handleSave = async () => {
-    if (!canSave) return;
+    if (!canSave) {
+      setAttemptedSave(true);
+      return;
+    }
     setSaving(true);
     try {
       await onSubmit({
@@ -170,7 +175,7 @@ export default function ShoppingItemModal({ initialValues, initialCategory, onSu
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <FieldLabel>Produto</FieldLabel>
+          <FieldLabel error={attemptedSave && !nameValid}>Produto</FieldLabel>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}

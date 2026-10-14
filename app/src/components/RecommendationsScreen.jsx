@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { AddIcon } from '@solar-icons/react/linear/add';
@@ -10,11 +10,12 @@ import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { createRecommendation, updateRecommendation, deleteRecommendation, uploadPlacePhoto } from '../api/itineraryApi.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
+import { TIP_CATEGORIES, TIP_CATEGORY_ICON } from '../data/tipCategories.js';
 import RecommendationModal from './RecommendationModal.jsx';
 import RecommendationEditModal from './RecommendationEditModal.jsx';
 import RecommendationCardStack from './RecommendationCardStack.jsx';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
-import { FixedHeader, RecommendationCard, SectionHeader, Skeleton, color, radius, spacing } from '../design-system/index.js';
+import { FixedHeader, HScrollTabs, RecommendationCard, YoutubeVideoModal, SectionHeader, Skeleton, color, radius, spacing } from '../design-system/index.js';
 
 const NO_AREA_LABEL = 'Outros lugares';
 const NO_PLACE_LABEL = 'Sem lugar';
@@ -148,6 +149,7 @@ export default function RecommendationsScreen() {
   const { ref: headerRef, height: headerHeight } = useElementHeight();
   const [editingRecommendation, setEditingRecommendation] = useState(null);
   const [creatingRecommendation, setCreatingRecommendation] = useState(false);
+  const [videoModalRec, setVideoModalRec] = useState(null);
   // Padrão 'cards', mas lembra a última escolha do usuário entre navegações
   // (ver useRecommendationsScreenState.js) — mesmo padrão de persistência já
   // usado em Lugares/Atrações.
@@ -156,20 +158,58 @@ export default function RecommendationsScreen() {
     setViewModeState(mode);
     saveRecommendationsScreenState({ viewMode: mode });
   };
+  const [category, setCategoryState] = useState(() => getRecommendationsScreenState().category || TIP_CATEGORIES[0]);
+  const setCategory = (cat) => {
+    setCategoryState(cat);
+    saveRecommendationsScreenState({ category: cat });
+  };
 
-  const sections = useMemo(
-    () => (recommendations ? groupByArea(recommendations) : null),
-    [recommendations]
+  const countByCategory = useMemo(() => {
+    const counts = {};
+    for (const rec of recommendations || []) counts[rec.category] = (counts[rec.category] || 0) + 1;
+    return counts;
+  }, [recommendations]);
+
+  const filteredRecommendations = useMemo(
+    () => (recommendations ? recommendations.filter((rec) => rec.category === category) : null),
+    [recommendations, category]
   );
 
-  const handlePublishRecommendation = async ({ title, author, description, photoFile, placeId, place }) => {
+  const sections = useMemo(
+    () => (filteredRecommendations ? groupByArea(filteredRecommendations) : null),
+    [filteredRecommendations]
+  );
+
+  // Só mostra como aba a categoria que tiver pelo menos 1 dica — nada de
+  // listar as 6 categorias fixas sempre, a maioria vazia pra maioria das
+  // viagens (mesmo critério já usado em Compras/ShoppingScreen.jsx).
+  const categoriesWithItems = TIP_CATEGORIES.filter((cat) => countByCategory[cat] > 0);
+  const tabItems = categoriesWithItems.map((cat) => ({
+    key: cat,
+    label: cat,
+    icon: TIP_CATEGORY_ICON[cat],
+    count: countByCategory[cat],
+  }));
+
+  // Se a categoria selecionada ficar sem nenhuma dica (ex: apagou a última
+  // dela, ou é a visita inicial e ela nunca teve dica), a aba correspondente
+  // some da lista — pula pra primeira categoria que ainda tem dica, pra
+  // nunca ficar "presa" numa aba invisível.
+  useEffect(() => {
+    if (recommendations === null) return;
+    if (categoriesWithItems.length > 0 && !categoriesWithItems.includes(category)) {
+      setCategory(categoriesWithItems[0]);
+    }
+  }, [recommendations, categoriesWithItems, category]);
+
+  const handlePublishRecommendation = async ({ title, author, description, category: recCategory, youtubeVideoId, photoFile, placeId, place }) => {
     try {
       let photo = null;
       if (photoFile) {
         const { url } = await uploadPlacePhoto(photoFile);
         photo = url;
       }
-      const created = await createRecommendation({ placeId, title, author, description, photo });
+      const created = await createRecommendation({ placeId, title, author, description, photo, category: recCategory, youtubeVideoId });
       // A API devolve só os campos da própria dica (sem o lugar aninhado) —
       // o objeto `place` completo já veio do PlaceSelectorModal dentro do
       // modal, então é só anexar aqui pra renderizar o card na hora, sem
@@ -183,14 +223,14 @@ export default function RecommendationsScreen() {
     }
   };
 
-  const handleSaveRecommendation = async ({ title, author, description, photo, photoFile, placeId, place }) => {
+  const handleSaveRecommendation = async ({ title, author, description, category: recCategory, youtubeVideoId, photo, photoFile, placeId, place }) => {
     try {
       let finalPhoto = photo;
       if (photoFile) {
         const { url } = await uploadPlacePhoto(photoFile);
         finalPhoto = url;
       }
-      const fields = { title, author, description, photo: finalPhoto, placeId };
+      const fields = { title, author, description, photo: finalPhoto, placeId, category: recCategory, youtubeVideoId };
       await updateRecommendation(editingRecommendation.id, fields);
       // A API de update não devolve o lugar aninhado — igual na criação
       // (handlePublishRecommendation), o objeto `place` completo já veio do
@@ -224,6 +264,14 @@ export default function RecommendationsScreen() {
         scrollY={scrollY}
         title="Dicas"
         left={<HamburgerMenuButton />}
+        tabs={
+          <HScrollTabs
+            items={tabItems}
+            activeKey={category}
+            onSelect={setCategory}
+            style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }}
+          />
+        }
         right={
           <>
             <ViewModeSegmentedToggle viewMode={viewMode} onChange={setViewMode} />
@@ -247,12 +295,17 @@ export default function RecommendationsScreen() {
       />
 
       {viewMode === 'list' ? (
-        <div style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
+        // marginTop sem + spacing.controlGap (diferente de Lugares/Atrações):
+        // esta tela não tem barra de busca entre o header e o primeiro
+        // SectionHeader, que já tem seu próprio respiro de sobra — com o
+        // controlGap extra, o espaço até "Disney" ficava maior que o das
+        // telas que têm busca ali no meio.
+        <div style={{ marginTop: headerHeight, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
           {recommendations === null && <RecommendationsSkeleton />}
 
-          {recommendations && recommendations.length === 0 && (
+          {filteredRecommendations && filteredRecommendations.length === 0 && (
             <div style={{ padding: '30px 0', textAlign: 'center', color: color.faint, fontSize: 13.5, fontWeight: 600 }}>
-              Nenhuma dica publicada ainda.
+              Nenhuma dica nesta categoria ainda.
             </div>
           )}
 
@@ -266,6 +319,7 @@ export default function RecommendationsScreen() {
                   place={rec.place}
                   onClick={rec.place ? () => navigate(`/lugares/${rec.place.id}`) : undefined}
                   onEdit={() => setEditingRecommendation(rec)}
+                  onPlayVideo={() => setVideoModalRec(rec)}
                 />
               ))}
             </div>
@@ -273,7 +327,7 @@ export default function RecommendationsScreen() {
         </div>
       ) : (
         <RecommendationCardStack
-          recommendations={recommendations}
+          recommendations={filteredRecommendations}
           headerHeight={headerHeight}
         />
       )}
@@ -297,6 +351,17 @@ export default function RecommendationsScreen() {
             showPlaceField
             onSubmit={handlePublishRecommendation}
             onClose={() => setCreatingRecommendation(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {videoModalRec && (
+          <YoutubeVideoModal
+            key="recommendation-video-modal"
+            videoId={videoModalRec.youtubeVideoId}
+            title={videoModalRec.title || 'Vídeo da dica'}
+            onClose={() => setVideoModalRec(null)}
           />
         )}
       </AnimatePresence>

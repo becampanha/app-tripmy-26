@@ -141,17 +141,17 @@ export function fetchAllRecommendations() {
   return request('/api/places/recommendations');
 }
 
-export function createRecommendation({ placeId, title, author, description, photo }) {
+export function createRecommendation({ placeId, title, author, description, photo, category, youtubeVideoId }) {
   return request('/api/places/recommendations', {
     method: 'POST',
-    body: JSON.stringify({ placeId, title, author, description, photo }),
+    body: JSON.stringify({ placeId, title, author, description, photo, category, youtubeVideoId }),
   });
 }
 
-export function updateRecommendation(id, { title, author, description, photo, placeId }) {
+export function updateRecommendation(id, { title, author, description, photo, placeId, category, youtubeVideoId }) {
   return request(`/api/places/recommendations?id=${encodeURIComponent(id)}`, {
     method: 'PUT',
-    body: JSON.stringify({ title, author, description, photo, placeId }),
+    body: JSON.stringify({ title, author, description, photo, placeId, category, youtubeVideoId }),
   });
 }
 

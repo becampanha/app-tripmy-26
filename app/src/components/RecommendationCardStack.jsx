@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, animate } from 'motion/react';
-import { PhotoCard, Skeleton, color, radius, spacing } from '../design-system/index.js';
+import { AnimatePresence, motion, useMotionValue, animate } from 'motion/react';
+import { PhotoCard, YoutubePlayButton, YoutubeVideoModal, Skeleton, color, radius, spacing } from '../design-system/index.js';
 import { travelerLabel } from '../data/travelers.js';
+import { resolveYoutubeThumbnail } from '../data/youtube.js';
 
 // Modo de visualização alternativo da tela de Dicas — carrossel em loop: os
 // cards ficam lado a lado num track horizontal, arrasta pra navegar, solta e
@@ -28,6 +29,24 @@ import { travelerLabel } from '../data/travelers.js';
 const BOTTOM_GAP = 100; // espaço reservado pra tab bar flutuante não cobrir o card
 const DRAG_DISTANCE_THRESHOLD = 50; // px
 const DRAG_VELOCITY_THRESHOLD = 500; // px/s
+
+// PhotoCard só aceita uma URL pronta (sem onLoad/onError próprios, ver
+// PhotoCard.jsx) — resolve a thumbnail 16:9 sem barras (ou cai pra hqdefault
+// se o vídeo não tiver essa resolução) antes de passar adiante. Começa
+// undefined (nenhuma foto, card em branco) até a checagem terminar, pra não
+// piscar a versão com barras por um instante antes de trocar.
+function useResolvedYoutubeThumbnail(videoId) {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    if (!videoId) { setUrl(null); return; }
+    let cancelled = false;
+    resolveYoutubeThumbnail(videoId, (resolved) => {
+      if (!cancelled) setUrl(resolved);
+    });
+    return () => { cancelled = true; };
+  }, [videoId]);
+  return url;
+}
 
 function RecommendationPhotoContent({ rec }) {
   return (
@@ -71,7 +90,37 @@ function RecommendationPhotoContent({ rec }) {
   );
 }
 
+// Um slide do carrossel — componente próprio (não inline no .map) porque
+// precisa chamar useResolvedYoutubeThumbnail, e hooks não podem ser
+// chamados condicionalmente/dentro de .map direto.
+function RecommendationSlide({ rec, cardHeight, onPlayVideo }) {
+  const resolvedVideoThumb = useResolvedYoutubeThumbnail(rec.youtubeVideoId);
+  // Foto manual sempre tem prioridade; sem foto própria, a thumbnail do
+  // YouTube vira o background do card em tela cheia (mesma regra do
+  // RecommendationCard em modo lista) — null enquanto a melhor resolução
+  // ainda está sendo resolvida, pra não piscar a versão com barras.
+  const displayPhoto = rec.photo || (rec.youtubeVideoId ? resolvedVideoThumb : null);
+
+  return (
+    <PhotoCard
+      photo={displayPhoto}
+      height={cardHeight}
+      onClick={rec.youtubeVideoId ? onPlayVideo : undefined}
+      style={{ marginBottom: 0 }}
+      contentStyle={{ padding: 18, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+    >
+      {rec.youtubeVideoId && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <YoutubePlayButton />
+        </div>
+      )}
+      <RecommendationPhotoContent rec={rec} />
+    </PhotoCard>
+  );
+}
+
 export default function RecommendationCardStack({ recommendations, headerHeight }) {
+  const [videoModalRec, setVideoModalRec] = useState(null);
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);
   // `index` aqui é a posição no TRACK (não no array de recommendations) —
@@ -235,6 +284,7 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
   const maxDragRight = 0;
 
   return (
+    <>
     <div
       ref={containerRef}
       style={{
@@ -262,17 +312,22 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
             key={`${rec.id}-${i}`}
             style={{ flex: `0 0 ${containerWidth}px`, width: containerWidth, boxSizing: 'border-box', padding: `0 ${spacing.screenGutter}px` }}
           >
-            <PhotoCard
-              photo={rec.photo}
-              height={cardHeight}
-              style={{ marginBottom: 0 }}
-              contentStyle={{ padding: 18, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
-            >
-              <RecommendationPhotoContent rec={rec} />
-            </PhotoCard>
+            <RecommendationSlide rec={rec} cardHeight={cardHeight} onPlayVideo={() => setVideoModalRec(rec)} />
           </div>
         ))}
       </motion.div>
     </div>
+
+    <AnimatePresence>
+      {videoModalRec && (
+        <YoutubeVideoModal
+          key="recommendation-video-modal"
+          videoId={videoModalRec.youtubeVideoId}
+          title={videoModalRec.title || 'Vídeo da dica'}
+          onClose={() => setVideoModalRec(null)}
+        />
+      )}
+    </AnimatePresence>
+    </>
   );
 }

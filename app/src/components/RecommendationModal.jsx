@@ -5,8 +5,12 @@ import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimal
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import PlaceSelectorModal from './PlaceSelectorModal.jsx';
 import { TRAVELERS } from '../data/travelers.js';
+import { TIP_CATEGORIES } from '../data/tipCategories.js';
+import { extractYoutubeId } from '../data/youtube.js';
 import { FieldLabel, Select, color, inputStyle, radius } from '../design-system/index.js';
 import { useHidesTabBar } from '../hooks/useEditingState.js';
+import { showToast } from '../hooks/useToast.js';
+import { getTravelerIdentity } from '../hooks/useTravelerIdentity.js';
 
 function travelerOption(t) {
   return { value: t.name, label: `${t.emoji} ${t.name}` };
@@ -14,6 +18,9 @@ function travelerOption(t) {
 
 // Bottom sheet para publicar uma recomendação: título, descrição, autor e
 // foto, todos opcionais — basta um dos três campos de texto preenchido.
+// Categoria é obrigatória (default "Outro", ver TIP_CATEGORIES) — toda dica
+// cai em alguma aba na tela de Dicas. Vídeo do YouTube é opcional; só o ID
+// de 11 caracteres é persistido (extraído do link colado, ver youtube.js).
 // Fica colado na parte de baixo da tela (diferente do PlaceSelectorModal,
 // que é fullscreen) — mais rápido de preencher e fechar.
 // `showPlaceField` liga o seletor de lugar opcional (tela de Dicas, onde o
@@ -21,8 +28,13 @@ function travelerOption(t) {
 // lugar (tela de detalhe do lugar), essa prop fica de fora e não aparece.
 export default function RecommendationModal({ onSubmit, onClose, showPlaceField }) {
   const [title, setTitle] = useState('');
-  const [author, setAuthor] = useState('');
+  // Pré-preenchido com a identidade ativa do aparelho — quem está criando a
+  // dica provavelmente é o autor dela também; ainda pode trocar se quiser
+  // sugerir em nome de outro viajante.
+  const [author, setAuthor] = useState(() => getTravelerIdentity() || '');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState(TIP_CATEGORIES[TIP_CATEGORIES.length - 1]);
+  const [videoDraft, setVideoDraft] = useState('');
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [publishing, setPublishing] = useState(false);
@@ -37,17 +49,30 @@ export default function RecommendationModal({ onSubmit, onClose, showPlaceField 
     setPhotoPreview(URL.createObjectURL(file));
   };
 
-  const canPublish =
-    (title.trim().length > 0 || author.trim().length > 0 || description.trim().length > 0) && !publishing;
+  const [attemptedPublish, setAttemptedPublish] = useState(false);
+  const hasAnyTextField = title.trim().length > 0 || author.trim().length > 0 || description.trim().length > 0;
+  const canPublish = hasAnyTextField && !publishing;
 
   const handlePublish = async () => {
-    if (!canPublish) return;
+    if (!canPublish) {
+      setAttemptedPublish(true);
+      return;
+    }
+
+    const youtubeVideoId = extractYoutubeId(videoDraft);
+    if (videoDraft.trim() && !youtubeVideoId) {
+      showToast('Link do YouTube inválido — cole a URL completa do vídeo.', 'error');
+      return;
+    }
+
     setPublishing(true);
     try {
       await onSubmit({
         title: title.trim() || null,
         author: author.trim() || null,
         description: description.trim() || null,
+        category,
+        youtubeVideoId,
         photoFile,
         placeId: place?.id || null,
         place,
@@ -114,8 +139,20 @@ export default function RecommendationModal({ onSubmit, onClose, showPlaceField 
           </div>
         </div>
 
+        <div style={{ marginTop: 18 }}>
+          <FieldLabel>Categoria</FieldLabel>
+          <div style={{ marginTop: 5 }}>
+            <Select
+              value={category}
+              onChange={setCategory}
+              options={TIP_CATEGORIES}
+              fullWidth
+            />
+          </div>
+        </div>
+
         {showPlaceField && (
-          <div style={{ marginTop: 18 }}>
+          <div style={{ marginTop: 14 }}>
             <FieldLabel>Lugar (opcional)</FieldLabel>
             <div
               onClick={() => setSelectorOpen(true)}
@@ -169,8 +206,8 @@ export default function RecommendationModal({ onSubmit, onClose, showPlaceField 
           </div>
         )}
 
-        <div style={{ marginTop: 18 }}>
-          <FieldLabel>Título</FieldLabel>
+        <div style={{ marginTop: 14 }}>
+          <FieldLabel error={attemptedPublish && !hasAnyTextField && 'preencha ao menos um destes três campos'}>Título</FieldLabel>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -180,7 +217,7 @@ export default function RecommendationModal({ onSubmit, onClose, showPlaceField 
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <FieldLabel>Descrição</FieldLabel>
+          <FieldLabel error={attemptedPublish && !hasAnyTextField && 'preencha ao menos um destes três campos'}>Descrição</FieldLabel>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -191,7 +228,7 @@ export default function RecommendationModal({ onSubmit, onClose, showPlaceField 
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <FieldLabel>Quem está sugerindo</FieldLabel>
+          <FieldLabel error={attemptedPublish && !hasAnyTextField && 'preencha ao menos um destes três campos'}>Quem está sugerindo</FieldLabel>
           <div style={{ marginTop: 5 }}>
             <Select
               value={author}
@@ -201,6 +238,16 @@ export default function RecommendationModal({ onSubmit, onClose, showPlaceField 
               fullWidth
             />
           </div>
+        </div>
+
+        <div style={{ marginTop: 14 }}>
+          <FieldLabel>Vídeo do YouTube (opcional)</FieldLabel>
+          <input
+            value={videoDraft}
+            onChange={(e) => setVideoDraft(e.target.value)}
+            placeholder="https://youtu.be/..."
+            style={{ ...inputStyle, marginTop: 5 }}
+          />
         </div>
 
         <div style={{ marginTop: 14 }}>

@@ -11,6 +11,12 @@ import { color, spacing, radius, type } from '../design-system/index.js';
 // padrão visual de card (emoji + nome) já usado em outros lugares do app.
 export default function WhoAreYouStep({ onConfirm }) {
   const [selected, setSelected] = useState('');
+  const [attemptedConfirm, setAttemptedConfirm] = useState(false);
+
+  const handleConfirmClick = () => {
+    if (selected) onConfirm(selected);
+    else setAttemptedConfirm(true);
+  };
 
   return (
     <div
@@ -34,6 +40,11 @@ export default function WhoAreYouStep({ onConfirm }) {
         <div style={{ color: color.muted, fontSize: 14.5, fontWeight: 500, marginTop: 8, lineHeight: 1.5 }}>
           Selecione seu nome pra gente saber quem está usando o app agora — isso também define sua lista pessoal em Compras.
         </div>
+        {attemptedConfirm && !selected && (
+          <div style={{ color: color.danger, fontSize: 13, fontWeight: 700, marginTop: 10 }}>
+            Selecione seu nome para continuar
+          </div>
+        )}
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: `0 ${spacing.screenGutter}px` }}>
@@ -100,7 +111,7 @@ export default function WhoAreYouStep({ onConfirm }) {
         }}
       >
         <div
-          onClick={() => selected && onConfirm(selected)}
+          onClick={handleConfirmClick}
           style={{
             padding: '14px 0',
             borderRadius: radius.button,

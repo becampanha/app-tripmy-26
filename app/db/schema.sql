@@ -70,6 +70,8 @@ CREATE TABLE IF NOT EXISTS place_recommendations (
   author TEXT,
   description TEXT,
   photo TEXT,
+  category TEXT NOT NULL DEFAULT 'Outro',  -- Comida | Compras | Passeios | Transporte | Hospedagem | Outro — vira aba de filtro em Dicas
+  youtube_video_id TEXT,              -- só o ID de 11 caracteres (não o link completo) — mesmo padrão de attractions.youtube_video_id
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

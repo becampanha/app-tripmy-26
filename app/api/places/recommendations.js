@@ -56,6 +56,8 @@ export default async function handler(req, res) {
         author: r.author,
         description: r.description,
         photo: r.photo,
+        category: r.category,
+        youtubeVideoId: r.youtube_video_id,
         createdAt: r.created_at,
         place: r.place_id ? {
           id: r.place_id,
@@ -85,6 +87,8 @@ export default async function handler(req, res) {
       author: r.author,
       description: r.description,
       photo: r.photo,
+      category: r.category,
+      youtubeVideoId: r.youtube_video_id,
       createdAt: r.created_at,
     }));
 
@@ -92,16 +96,16 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { placeId, title, author, description, photo } = req.body || {};
+    const { placeId, title, author, description, photo, category, youtubeVideoId } = req.body || {};
     if (!title && !author && !description) {
       return res.status(400).json({ error: 'Preencha ao menos título, descrição ou autor' });
     }
 
     const rows = await sql.query(
-      `INSERT INTO place_recommendations (place_id, title, author, description, photo)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO place_recommendations (place_id, title, author, description, photo, category, youtube_video_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [placeId || null, title || null, author || null, description || null, photo || null]
+      [placeId || null, title || null, author || null, description || null, photo || null, category || 'Outro', youtubeVideoId || null]
     );
 
     const r = rows[0];
@@ -122,6 +126,8 @@ export default async function handler(req, res) {
       author: r.author,
       description: r.description,
       photo: r.photo,
+      category: r.category,
+      youtubeVideoId: r.youtube_video_id,
       createdAt: r.created_at,
     });
   }
@@ -132,14 +138,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Parâmetro "id" é obrigatório' });
     }
 
-    const { title, author, description, photo, placeId } = req.body || {};
+    const { title, author, description, photo, placeId, category, youtubeVideoId } = req.body || {};
     if (!title && !author && !description) {
       return res.status(400).json({ error: 'Preencha ao menos título, descrição ou autor' });
     }
 
     await sql.query(
-      'UPDATE place_recommendations SET title = $1, author = $2, description = $3, photo = $4, place_id = $5 WHERE id = $6',
-      [title || null, author || null, description || null, photo || null, placeId || null, id]
+      'UPDATE place_recommendations SET title = $1, author = $2, description = $3, photo = $4, place_id = $5, category = $6, youtube_video_id = $7 WHERE id = $8',
+      [title || null, author || null, description || null, photo || null, placeId || null, category || 'Outro', youtubeVideoId || null, id]
     );
     return res.status(200).json({ ok: true });
   }

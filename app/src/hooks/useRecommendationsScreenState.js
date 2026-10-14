@@ -6,6 +6,7 @@
 // já usado em usePlacesScreenState.js/useAttractionsScreenState.js.
 const state = {
   viewMode: 'cards', // padrão: carrossel — só vira 'list' se o usuário trocar
+  category: null, // null = usa o valor padrão do componente na 1ª visita
 };
 
 export function getRecommendationsScreenState() {

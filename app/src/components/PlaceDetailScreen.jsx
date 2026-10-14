@@ -38,7 +38,7 @@ import { subcategoriesFor } from '../data/subcategories.js';
 import { tagOptionsFor } from '../data/placeTagOptions.js';
 import { getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
 import { DAY_KEYS, DAY_LABELS, emptySchedule, summarizeSchedule, allDaysList } from '../data/hoursSchedule.js';
-import { IconButton, NavBar, navControlStyle, navControlTextColor, FieldLabel, inputStyle, Select, Toggle, RecommendationCard, PhotoLightbox, color, space, spacing } from '../design-system/index.js';
+import { IconButton, NavBar, navControlStyle, navControlTextColor, FieldLabel, inputStyle, Select, Toggle, RecommendationCard, PhotoLightbox, YoutubeVideoModal, color, space, spacing } from '../design-system/index.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
@@ -317,6 +317,7 @@ export default function PlaceDetailScreen() {
   const [loading, setLoading] = useState(!isNew && cachedPlace === null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [attemptedSave, setAttemptedSave] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
   // Enquanto editing=true, os campos de texto/número só mexem neste estado
   // local — nada de PUT a cada tecla. Só ao clicar Salvar (handleSave) é que
@@ -334,6 +335,7 @@ export default function PlaceDetailScreen() {
   const [scrollY, setScrollY] = useState(0);
   const [recommendationModalOpen, setRecommendationModalOpen] = useState(false);
   const [openRecommendationPhoto, setOpenRecommendationPhoto] = useState(null);
+  const [videoModalRec, setVideoModalRec] = useState(null);
   // Recomendação sendo editada no momento (ou null) — abre o
   // RecommendationEditModal a partir do botão de editar do próprio
   // RecommendationCard. Edição já não depende mais do modo de edição do
@@ -358,14 +360,14 @@ export default function PlaceDetailScreen() {
 
   const { recommendations, addRecommendation, removeRecommendation, patchRecommendation } = usePlaceRecommendations(!isNew ? id : null);
 
-  const handlePublishRecommendation = async ({ title, author, description, photoFile }) => {
+  const handlePublishRecommendation = async ({ title, author, description, category, youtubeVideoId, photoFile }) => {
     try {
       let photo = null;
       if (photoFile) {
         const { url } = await uploadPlacePhoto(photoFile);
         photo = url;
       }
-      const created = await createRecommendation({ placeId: id, title, author, description, photo });
+      const created = await createRecommendation({ placeId: id, title, author, description, photo, category, youtubeVideoId });
       addRecommendation(created);
       setRecommendationModalOpen(false);
       showToast('Dica publicada com sucesso');
@@ -377,14 +379,14 @@ export default function PlaceDetailScreen() {
 
   // Editar e excluir agora são imediatos (mesmo espírito da criação) — não
   // dependem mais do modo de edição do lugar nem do botão Salvar geral.
-  const handleSaveRecommendation = async ({ title, author, description, photo, photoFile }) => {
+  const handleSaveRecommendation = async ({ title, author, description, category, youtubeVideoId, photo, photoFile }) => {
     try {
       let finalPhoto = photo;
       if (photoFile) {
         const { url } = await uploadPlacePhoto(photoFile);
         finalPhoto = url;
       }
-      const fields = { title, author, description, photo: finalPhoto };
+      const fields = { title, author, description, photo: finalPhoto, category, youtubeVideoId };
       await updateRecommendation(editingRecommendation.id, fields);
       patchRecommendation(editingRecommendation.id, fields);
       setEditingRecommendation(null);
@@ -537,6 +539,7 @@ export default function PlaceDetailScreen() {
   const handleSave = async () => {
     if (isNew) {
       if (!draft.name.trim() || !draft.category.trim()) {
+        setAttemptedSave(true);
         return;
       }
       setSaving(true);
@@ -792,13 +795,13 @@ export default function PlaceDetailScreen() {
         ) : editing && draft ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
-              <FieldLabel>Nome</FieldLabel>
+              <FieldLabel error={isNew && attemptedSave && !draft.name.trim()}>Nome</FieldLabel>
               <input value={draft.name || ''} onChange={(e) => setDraftField('name')(e.target.value)} style={{ ...inputStyle, marginTop: 3, fontSize: 16, fontWeight: 700 }} />
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
               <div style={{ flex: 1 }}>
-                <FieldLabel>Categoria</FieldLabel>
+                <FieldLabel error={isNew && attemptedSave && !draft.category.trim()}>Categoria</FieldLabel>
                 <div style={{ marginTop: 3 }}>
                   <Select
                     label="Categoria"
@@ -1132,6 +1135,7 @@ export default function PlaceDetailScreen() {
                           recommendation={rec}
                           onOpenPhoto={() => setOpenRecommendationPhoto(rec.photo)}
                           onEdit={() => setEditingRecommendation(rec)}
+                          onPlayVideo={() => setVideoModalRec(rec)}
                         />
                       ))}
                     </div>
@@ -1334,6 +1338,17 @@ export default function PlaceDetailScreen() {
             onSave={handleSaveRecommendation}
             onDelete={handleDeleteRecommendation}
             onClose={() => setEditingRecommendation(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {videoModalRec && (
+          <YoutubeVideoModal
+            key="recommendation-video-modal"
+            videoId={videoModalRec.youtubeVideoId}
+            title={videoModalRec.title || 'Vídeo da dica'}
+            onClose={() => setVideoModalRec(null)}
           />
         )}
       </AnimatePresence>

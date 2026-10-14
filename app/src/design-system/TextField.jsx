@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { color, type } from './tokens.js';
 
-export function FieldLabel({ children }) {
+// `error` (opcional): pinta o label de vermelho e acrescenta um aviso —
+// usado pra sinalizar um campo obrigatório vazio DEPOIS de uma tentativa de
+// salvar (nunca antes, pra não bombardear de vermelho um formulário recém-
+// aberto). `error={true}` mostra "— obrigatório"; passe uma string em vez de
+// `true` para um aviso customizado (ex: regra de "um dos vários campos" em
+// RecommendationModal.jsx). Ver também ShoppingItemModal.jsx/PlaceDetailScreen.jsx.
+export function FieldLabel({ children, error }) {
   return (
-    <div style={{ ...type.eyebrow, color: color.faintIcon }}>
+    <div style={{ ...type.eyebrow, color: error ? color.danger : color.faintIcon }}>
       {children}
+      {error === true ? ' — obrigatório' : error ? ` — ${error}` : null}
     </div>
   );
 }

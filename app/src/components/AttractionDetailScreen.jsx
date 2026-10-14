@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { PlayIcon } from '@solar-icons/react/bold/play';
-import { CloseIcon } from '@solar-icons/react/linear/close';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
@@ -19,24 +17,8 @@ import { useAttractionsData } from '../hooks/useAttractionsData.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
 import { ATTRACTION_STATUS_LABEL } from '../data/attractionStatus.js';
 import EditActionBar from './EditActionBar.jsx';
-import { NavBar, Toggle, navControlStyle, navControlTextColor, Skeleton, FieldLabel, inputStyle, color as tokenColor, radius, spacing } from '../design-system/index.js';
-import { shellMaxWidth } from '../design-system/tokens.js';
-
-// Aceita qualquer formato comum de link do YouTube (watch?v=, youtu.be/,
-// shorts/, embed/, ou já um ID puro de 11 caracteres) e devolve só o ID do
-// vídeo, que é o que o player embutido (iframe .../embed/<id>) precisa.
-function extractYoutubeId(input) {
-  if (!input) return null;
-  const trimmed = input.trim();
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtube\.com\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-  ];
-  for (const re of patterns) {
-    const match = trimmed.match(re);
-    if (match) return match[1];
-  }
-  return /^[a-zA-Z0-9_-]{11}$/.test(trimmed) ? trimmed : null;
-}
+import { NavBar, Toggle, navControlStyle, navControlTextColor, Skeleton, FieldLabel, inputStyle, YoutubePlayButton, YoutubeVideoModal, color as tokenColor, radius, spacing } from '../design-system/index.js';
+import { extractYoutubeId } from '../data/youtube.js';
 
 const INTENSITY_LABEL = {
   Alta: 'Muito radical',
@@ -66,80 +48,6 @@ function findAttraction(parks, id) {
   return null;
 }
 
-// Ícone de play puro, branco, sem nenhum fundo/círculo — usado tanto sobre
-// a foto do header quanto na thumbnail do card de vídeo.
-function PlayButton({ size = 56 }) {
-  return (
-    <PlayIcon
-      size={size}
-      color="#fff"
-      style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.45))' }}
-    />
-  );
-}
-
-// Vídeo em tela cheia, aberto a partir do botão de play sobre a foto do
-// header — mostra direto o iframe com autoplay=1, então a capa nativa do
-// YouTube (título/canal/"Watch on YouTube"/compartilhar) nunca chega a
-// aparecer, já que ela só existe no estado parado do player.
-function VideoModal({ videoId, onClose }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.18 }}
-      style={{
-        position: 'fixed',
-        top: 0,
-        bottom: 0,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '100%',
-        maxWidth: shellMaxWidth,
-        zIndex: 50,
-        background: '#000',
-        display: 'flex',
-        alignItems: 'center',
-      }}
-    >
-      <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
-        <iframe
-          // modestbranding: tira o logo do YouTube do canto. rel=0: ao
-          // acabar, só sugere vídeos do MESMO canal. iv_load_policy=3: sem
-          // anotações/cards clicáveis por cima do vídeo. autoplay=1: já
-          // entra tocando, direto em tela cheia.
-          src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&iv_load_policy=3&autoplay=1`}
-          title="Vídeo da atração"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-
-      <div
-        onClick={onClose}
-        style={{
-          position: 'absolute',
-          top: 18,
-          right: 18,
-          width: 38,
-          height: 38,
-          borderRadius: 19,
-          background: 'rgba(255,255,255,0.22)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-        }}
-      >
-        <CloseIcon size={18} color="#fff" />
-      </div>
-    </motion.div>
-  );
-}
 
 // Grid de 2 colunas — todos os cards do mesmo tamanho (sem flex/scroll
 // horizontal como antes), ícone sempre como componente Solar Icons (nunca
@@ -359,7 +267,7 @@ export default function AttractionDetailScreen() {
               cursor: 'pointer',
             }}
           >
-            <PlayButton />
+            <YoutubePlayButton />
           </div>
         )}
       </div>
@@ -554,7 +462,7 @@ export default function AttractionDetailScreen() {
 
       <AnimatePresence>
         {videoModalOpen && attraction?.youtubeVideoId && (
-          <VideoModal videoId={attraction.youtubeVideoId} onClose={() => setVideoModalOpen(false)} />
+          <YoutubeVideoModal videoId={attraction.youtubeVideoId} title="Vídeo da atração" onClose={() => setVideoModalOpen(false)} />
         )}
       </AnimatePresence>
     </div>

@@ -36,7 +36,7 @@ import { usePlaceRecommendations } from '../hooks/usePlaceRecommendations.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { subcategoriesFor } from '../data/subcategories.js';
 import { tagOptionsFor } from '../data/placeTagOptions.js';
-import { getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
+import { getCachedPlaces, setCachedPlaces, getCachedPlace, setCachedPlace } from '../hooks/usePlacesScreenState.js';
 import { DAY_KEYS, DAY_LABELS, emptySchedule, summarizeSchedule, allDaysList } from '../data/hoursSchedule.js';
 import { IconButton, NavBar, navControlStyle, navControlTextColor, FieldLabel, inputStyle, Select, Toggle, RecommendationCard, PhotoLightbox, YoutubeVideoModal, color, space, spacing } from '../design-system/index.js';
 
@@ -311,7 +311,10 @@ export default function PlaceDetailScreen() {
   const cachedPlace = useMemo(() => {
     if (isNew) return null;
     const cached = getCachedPlaces();
-    return cached ? cached.find((p) => p.id === id) || null : null;
+    const fromList = cached ? cached.find((p) => p.id === id) || null : null;
+    // Deep link direto (tela de Lugares nunca visitada nesta sessão): cai
+    // pra uma chave própria por lugar, em vez de depender da lista inteira.
+    return fromList || getCachedPlace(id);
   }, [id, isNew]);
   const [place, setPlace] = useState(cachedPlace);
   const [loading, setLoading] = useState(!isNew && cachedPlace === null);
@@ -414,7 +417,9 @@ export default function PlaceDetailScreen() {
     return fetchPlaces()
       .then((places) => {
         setCachedPlaces(places);
-        setPlace(places.find((p) => p.id === id) || null);
+        const found = places.find((p) => p.id === id) || null;
+        setPlace(found);
+        if (found) setCachedPlace(id, found);
       })
       .finally(() => setLoading(false));
   };

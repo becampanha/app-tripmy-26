@@ -5,12 +5,16 @@ import { CartLargeMinimalisticIcon } from '@solar-icons/react/bold/cart-large-mi
 import { LinkMinimalisticIcon } from '@solar-icons/react/linear/link-minimalistic';
 import { CheckSquareIcon as CheckSquareBoldIcon } from '@solar-icons/react/bold/check-square';
 import { Chart2Icon } from '@solar-icons/react/bold/chart-2';
+import { BillCheckIcon } from '@solar-icons/react/bold/bill-check';
+import { ClipboardListIcon } from '@solar-icons/react/bold/clipboard-list';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
+import { useExchangeRate } from '../hooks/useExchangeRate.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import ShoppingItemModal from './ShoppingItemModal.jsx';
 import ShoppingItemViewModal from './ShoppingItemViewModal.jsx';
 import { getTravelerIdentity, setTravelerIdentity } from '../hooks/useTravelerIdentity.js';
+import { getCachedShoppingItems, setCachedShoppingItems } from '../hooks/useShoppingScreenState.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { fetchShoppingItems, createShoppingItem, updateShoppingItem, deleteShoppingItem, toggleShoppingItemPurchased, uploadPlacePhoto } from '../api/itineraryApi.js';
 import { TRAVELERS } from '../data/travelers.js';
@@ -19,8 +23,17 @@ import { FixedHeader, FieldLabel, HScrollTabs, Select, Skeleton, color, radius, 
 
 const SUMMARY_KEY = '__summary__';
 
+// Imposto sobre vendas da Flórida pago no checkout: 6% estadual + 0.5% do
+// condado de Orange (onde fica Orlando, destino da viagem) — Miami-Dade usa
+// uma alíquota diferente (7%), mas não se aplica aqui.
+const FLORIDA_SALES_TAX_RATE = 0.065;
+
 function formatUSD(value) {
   return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatBRL(value) {
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function travelerOption(t) {
@@ -235,6 +248,7 @@ function SummaryCategoryRow({ category, stats, onClick }) {
 // valor total: cadastrado vs já comprado (ver o check no card). No fim, o
 // total geral somando todas as categorias.
 function ShoppingSummary({ items, onSelectCategory }) {
+  const exchangeRate = useExchangeRate();
   const categories = SHOPPING_CATEGORIES.filter((c) => items.some((i) => i.category === c));
 
   const statsByCategory = categories.map((c) => {
@@ -265,23 +279,55 @@ function ShoppingSummary({ items, onSelectCategory }) {
       ))}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-        <div style={{ flex: 1, padding: spacing.cardPadding, background: color.surfaceMuted, borderRadius: 16 }}>
-          <div style={{ color: color.muted, fontSize: 12, fontWeight: 700 }}>
-            Para comprar ({grandTotal.totalCount})
-          </div>
-          <div style={{ color: color.dark, fontSize: 19, fontWeight: 800, marginTop: 6 }}>
-            US$ {formatUSD(grandTotal.totalValue)}
-          </div>
-        </div>
-        <div style={{ flex: 1, padding: spacing.cardPadding, background: color.success, borderRadius: 16 }}>
-          <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: 700 }}>
-            Comprado ({grandTotal.purchasedCount})
-          </div>
-          <div style={{ color: '#fff', fontSize: 19, fontWeight: 800, marginTop: 6 }}>
-            US$ {formatUSD(grandTotal.purchasedValue)}
-          </div>
-        </div>
+        <GrandTotalCard
+          icon={ClipboardListIcon}
+          label={`Para comprar (${grandTotal.totalCount})`}
+          value={grandTotal.totalValue}
+          exchangeRate={exchangeRate}
+          background={color.surfaceMuted}
+          labelColor={color.muted}
+          valueColor={color.dark}
+          mutedColor={color.muted}
+        />
+        <GrandTotalCard
+          icon={BillCheckIcon}
+          label={`Comprado (${grandTotal.purchasedCount})`}
+          value={grandTotal.purchasedValue}
+          exchangeRate={exchangeRate}
+          background={color.success}
+          labelColor="rgba(255,255,255,0.8)"
+          valueColor="#fff"
+          mutedColor="rgba(255,255,255,0.75)"
+        />
       </div>
+    </div>
+  );
+}
+
+// Um dos dois cards finais do Resumo (Para comprar / Comprado): ícone,
+// label com contagem, valor em USD e, em letra menor, a taxa da Flórida
+// (imposto embutido no checkout) e a conversão em real — pra dar a noção do
+// valor total que de fato sai do bolso, não só o preço anunciado do produto.
+function GrandTotalCard({ icon: Icon, label, value, exchangeRate, background, labelColor, valueColor, mutedColor }) {
+  const tax = value * FLORIDA_SALES_TAX_RATE;
+  const totalWithTax = value + tax;
+  return (
+    <div style={{ flex: 1, padding: spacing.cardPadding, background, borderRadius: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+        <Icon size={14} color={labelColor} />
+        <div style={{ color: labelColor, fontSize: 12, fontWeight: 700 }}>{label}</div>
+      </div>
+      <div style={{ color: valueColor, fontSize: 19, fontWeight: 800 }}>
+        🇺🇸 US$ {formatUSD(value)}
+      </div>
+      <div style={{ color: mutedColor, fontSize: 10.5, fontWeight: 600, marginTop: 4 }}>
+        Taxa: US$ {formatUSD(tax)} ({(FLORIDA_SALES_TAX_RATE * 100).toFixed(1)}%)
+      </div>
+      {exchangeRate != null && (
+        <div style={{ color: valueColor, fontSize: 15, fontWeight: 800, marginTop: 4 }}>
+          🇧🇷 R$ {formatBRL(totalWithTax * exchangeRate)}
+        </div>
+      )}
     </div>
   );
 }
@@ -298,17 +344,23 @@ export default function ShoppingScreen() {
   // aparece em Mais, e vice-versa.
   const [identity, setIdentity] = useState(() => getTravelerIdentity());
   const [category, setCategory] = useState(SUMMARY_KEY);
-  const [items, setItems] = useState(null);
+  // Mostra a última lista conhecida (localStorage) instantaneamente, mesmo
+  // sem internet, enquanto o fetch atualiza em segundo plano — mesmo padrão
+  // de Lugares/Atrações/Roteiro (ver useShoppingScreenState.js).
+  const [items, setItems] = useState(() => getCachedShoppingItems(getTravelerIdentity()));
   const [editingItem, setEditingItem] = useState(null); // item sendo editado, ou 'new' pra criar
   const [viewingItem, setViewingItem] = useState(null); // item aberto em modo visualização (antes de editar, ver ShoppingItemViewModal)
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!identity) return;
-    setItems(null);
+    const cached = getCachedShoppingItems(identity);
+    setItems(cached);
+    if (cached) setCategory(fallbackCategory(cached));
     fetchShoppingItems(identity)
       .then((data) => {
         setItems(data);
+        setCachedShoppingItems(identity, data);
         // Troca de lista (viajante diferente) sempre abre no Resumo, se
         // houver qualquer item — mais simples do que tentar preservar a
         // aba selecionada entre listas que não têm as mesmas categorias.
@@ -316,6 +368,13 @@ export default function ShoppingScreen() {
       })
       .catch((err) => showErrorToast(err, 'Não foi possível carregar a lista.'));
   }, [identity]);
+
+  // Mantém o cache em sincronia com qualquer mutação local (criar, editar,
+  // remover, marcar como comprado), não só o fetch inicial — assim a lista
+  // reaberta offline já reflete a última alteração feita.
+  useEffect(() => {
+    if (identity && items) setCachedShoppingItems(identity, items);
+  }, [identity, items]);
 
   const handleChangeIdentity = (name) => {
     setTravelerIdentity(name);

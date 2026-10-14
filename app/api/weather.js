@@ -56,10 +56,30 @@ function mostCommonCode(codes) {
   return Number(Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]);
 }
 
+// Cotação USD->BRL (tela de Compras, resumo) — AwesomeAPI, gratuita e sem
+// chave. Mantida como ?action neste mesmo arquivo pra não passar do limite
+// de 12 Serverless Functions do plano Hobby (ver outras rotas com ?action).
+async function fetchExchangeRate(res) {
+  try {
+    const apiRes = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL');
+    if (!apiRes.ok) throw new Error(`AwesomeAPI respondeu ${apiRes.status}`);
+    const data = await apiRes.json();
+    const rate = Number(data?.USDBRL?.bid);
+    if (!rate) throw new Error('Resposta sem cotação válida');
+    return res.status(200).json({ rate });
+  } catch (err) {
+    return res.status(502).json({ error: 'Não foi possível obter a cotação', details: err.message });
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (req.query.action === 'exchangeRate') {
+    return fetchExchangeRate(res);
   }
 
   const { date, lat, lng } = req.query;

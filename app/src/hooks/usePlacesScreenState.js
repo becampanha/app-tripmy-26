@@ -36,3 +36,21 @@ export function setCachedPlaces(places) {
   cachedPlaces = places;
   writeCache('places', places);
 }
+
+// Cache por lugar individual (chave própria, não depende de a lista inteira
+// já ter sido carregada) — necessário para a tela de detalhes abrir
+// instantânea mesmo em deep link direto (ex: link de favorito/compartilhado),
+// quando a tela de Lugares nunca foi visitada nesta sessão/aparelho.
+const cachedPlaceById = new Map();
+
+export function getCachedPlace(id) {
+  if (cachedPlaceById.has(id)) return cachedPlaceById.get(id);
+  const fromDisk = readCache(`place:${id}`);
+  cachedPlaceById.set(id, fromDisk);
+  return fromDisk;
+}
+
+export function setCachedPlace(id, place) {
+  cachedPlaceById.set(id, place);
+  writeCache(`place:${id}`, place);
+}

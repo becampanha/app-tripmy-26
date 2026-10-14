@@ -9,6 +9,7 @@ import DayTabs from './DayTabs.jsx';
 import ActivityItem from './ActivityItem.jsx';
 import DistanceBetween from './DistanceBetween.jsx';
 import PlaceSelectorModal from './PlaceSelectorModal.jsx';
+import AttractionSelectorModal from './AttractionSelectorModal.jsx';
 import MoveToDayModal from './MoveToDayModal.jsx';
 import DayMap from './DayMap.jsx';
 import EditActionBar from './EditActionBar.jsx';
@@ -24,7 +25,7 @@ import { createActivity, updateActivity, deleteActivity, reorderActivities, upda
 import { weatherEmoji } from '../data/weatherCodes.js';
 import { FixedHeader, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
 
-const EDITABLE_FIELDS = ['time', 'title', 'subtitle', 'placeId'];
+const EDITABLE_FIELDS = ['time', 'title', 'subtitle', 'placeId', 'attractionId'];
 
 function activityFields(act) {
   return {
@@ -33,6 +34,8 @@ function activityFields(act) {
     subtitle: act.subtitle || '',
     placeId: act.place ? act.place.id : null,
     place: act.place || null,
+    attractionId: act.attraction ? act.attraction.id : null,
+    attraction: act.attraction || null,
   };
 }
 
@@ -97,7 +100,8 @@ export default function ScheduleScreen() {
   );
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [selectorFor, setSelectorFor] = useState(null); // activity id (ou id negativo temporário de item recém-criado)
+  const [selectorFor, setSelectorFor] = useState(null); // activity id (ou id negativo temporário de item recém-criado) pedindo um lugar
+  const [attractionSelectorFor, setAttractionSelectorFor] = useState(null); // mesmo esquema, para o seletor de atração
   const [movingActivity, setMovingActivity] = useState(null); // activity sendo movida de dia (abre o MoveToDayModal)
   const [moving, setMoving] = useState(false);
   const { days, loading, reload } = useItinerary();
@@ -206,6 +210,10 @@ export default function ScheduleScreen() {
     patchDraftActivity(id, { placeId: null, place: null });
   };
 
+  const handleUnlinkAttraction = (id) => {
+    patchDraftActivity(id, { attractionId: null, attraction: null });
+  };
+
   const handleReorder = (activities) => {
     setDraft((d) => ({ ...d, activities }));
   };
@@ -243,7 +251,7 @@ export default function ScheduleScreen() {
 
   const handleAddActivity = (atIndex) => {
     const id = nextDraftId--;
-    const newActivity = { id, time: '', title: '', subtitle: '', placeId: null, place: null };
+    const newActivity = { id, time: '', title: '', subtitle: '', placeId: null, place: null, attractionId: null, attraction: null };
     setDraft((d) => {
       const activities = d.activities.slice();
       const insertAt = atIndex === undefined ? activities.length : atIndex;
@@ -253,8 +261,13 @@ export default function ScheduleScreen() {
   };
 
   const handleSelectPlace = (place) => {
-    patchDraftActivity(selectorFor, { placeId: place.id, place });
+    patchDraftActivity(selectorFor, { placeId: place.id, place, attractionId: null, attraction: null });
     setSelectorFor(null);
+  };
+
+  const handleSelectAttraction = (attraction) => {
+    patchDraftActivity(attractionSelectorFor, { attractionId: attraction.id, attraction, placeId: null, place: null });
+    setAttractionSelectorFor(null);
   };
 
   const handleCancel = () => {
@@ -292,6 +305,7 @@ export default function ScheduleScreen() {
             title: act.title,
             subtitle: act.subtitle,
             placeId: act.placeId,
+            attractionId: act.attractionId,
           });
         }
       }
@@ -306,6 +320,7 @@ export default function ScheduleScreen() {
             title: act.title,
             subtitle: act.subtitle,
             placeId: act.placeId,
+            attractionId: act.attractionId,
           });
           idMap[act.id] = created.id;
         }
@@ -503,6 +518,8 @@ export default function ScheduleScreen() {
                   onEditSubtitle={(subtitle) => patchDraftActivity(act.id, { subtitle })}
                   onSelectPlace={() => setSelectorFor(act.id)}
                   onUnlinkPlace={() => handleUnlinkPlace(act.id)}
+                  onSelectAttraction={() => setAttractionSelectorFor(act.id)}
+                  onUnlinkAttraction={() => handleUnlinkAttraction(act.id)}
                   onDelete={() => handleDelete(act.id)}
                   onMoveUp={() => handleMove(i, -1)}
                   onMoveDown={() => handleMove(i, 1)}
@@ -536,6 +553,16 @@ export default function ScheduleScreen() {
             key="place-selector"
             onSelect={handleSelectPlace}
             onClose={() => setSelectorFor(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {attractionSelectorFor && (
+          <AttractionSelectorModal
+            key="attraction-selector"
+            onSelect={handleSelectAttraction}
+            onClose={() => setAttractionSelectorFor(null)}
           />
         )}
       </AnimatePresence>

@@ -20,6 +20,25 @@ function mapPlace(row) {
   };
 }
 
+function mapAttraction(row) {
+  if (!row.attraction_id) return null;
+  return {
+    id: row.attraction_id,
+    name: row.attraction_name,
+    parkName: row.attraction_park_name,
+    parkEmoji: row.attraction_park_emoji,
+    area: row.attraction_area,
+    type: row.attraction_type,
+    duration: row.attraction_duration,
+    queue: row.attraction_queue_time,
+    bestTime: row.attraction_best_time,
+    restrictions: row.attraction_restrictions,
+    parentSwap: row.attraction_parent_swap,
+    intensity: row.attraction_intensity,
+    photo: row.attraction_photo,
+  };
+}
+
 export default async function handler(req, res) {
   const sql = getSql();
 
@@ -33,10 +52,17 @@ export default async function handler(req, res) {
         p.photo AS place_photo, p.dish_photos AS place_dish_photos, p.cost AS place_cost,
         p.hours AS place_hours,
         p.menu_label AS place_menu_label, p.review_label AS place_review_label,
-        p.recommendation AS place_recommendation
+        p.recommendation AS place_recommendation,
+        att.id AS attraction_id, att.name AS attraction_name, att.park_name AS attraction_park_name,
+        att.park_emoji AS attraction_park_emoji, att.area AS attraction_area, att.type AS attraction_type,
+        att.duration AS attraction_duration, att.queue_time AS attraction_queue_time,
+        att.best_time AS attraction_best_time, att.restrictions AS attraction_restrictions,
+        att.parent_swap AS attraction_parent_swap, att.intensity AS attraction_intensity,
+        att.photo AS attraction_photo
       FROM days d
       LEFT JOIN activities a ON a.day_id = d.id
       LEFT JOIN places p ON p.id = a.place_id
+      LEFT JOIN attractions att ON att.id = a.attraction_id
       ORDER BY d.sort_order, a.sort_order
     `);
 
@@ -59,6 +85,7 @@ export default async function handler(req, res) {
           subtitle: row.subtitle,
           address: row.address,
           place: mapPlace(row),
+          attraction: mapAttraction(row),
         });
       }
     }

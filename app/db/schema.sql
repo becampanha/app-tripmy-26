@@ -47,11 +47,13 @@ CREATE TABLE IF NOT EXISTS activities (
   subtitle TEXT DEFAULT '',
   address TEXT,                      -- endereço verificado, texto livre (legado)
   place_id TEXT REFERENCES places(id) ON DELETE SET NULL,  -- vínculo opcional a um lugar do catálogo
+  attraction_id INTEGER REFERENCES attractions(id) ON DELETE SET NULL,  -- vínculo opcional a uma atração (mutuamente exclusivo com place_id — nunca os dois ao mesmo tempo, aplicado pela API)
   sort_order INTEGER NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_activities_day_id ON activities(day_id);
 CREATE INDEX IF NOT EXISTS idx_activities_place_id ON activities(place_id);
+CREATE INDEX IF NOT EXISTS idx_activities_attraction_id ON activities(attraction_id);
 CREATE INDEX IF NOT EXISTS idx_places_category ON places(category);
 
 -- Recomendações publicadas por usuários, opcionalmente vinculadas a um lugar

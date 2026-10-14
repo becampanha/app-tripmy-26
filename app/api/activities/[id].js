@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   const { id } = req.query;
 
   if (req.method === 'PUT') {
-    const { time, title, subtitle, address, placeId, dayId, sortOrder } = req.body || {};
+    const { time, title, subtitle, address, placeId, attractionId, dayId, sortOrder } = req.body || {};
 
     const fields = [];
     const values = [];
@@ -17,7 +17,18 @@ export default async function handler(req, res) {
     if (title !== undefined) { fields.push(`title = $${i++}`); values.push(title); }
     if (subtitle !== undefined) { fields.push(`subtitle = $${i++}`); values.push(subtitle); }
     if (address !== undefined) { fields.push(`address = $${i++}`); values.push(address); }
-    if (placeId !== undefined) { fields.push(`place_id = $${i++}`); values.push(placeId); }
+    // Lugar e atração são mutuamente exclusivos — vincular um zera o outro
+    // (ver ActivityItem.jsx/ScheduleScreen.jsx, que já enviam os dois campos
+    // juntos sempre que um dos dois muda, então basta respeitar o valor
+    // recebido sem lógica extra aqui).
+    if (placeId !== undefined) {
+      fields.push(`place_id = $${i++}`); values.push(placeId);
+      if (placeId) { fields.push(`attraction_id = $${i++}`); values.push(null); }
+    }
+    if (attractionId !== undefined) {
+      fields.push(`attraction_id = $${i++}`); values.push(attractionId);
+      if (attractionId) { fields.push(`place_id = $${i++}`); values.push(null); }
+    }
     // dayId: usado ao mover uma atividade de um dia pra outro (ver
     // ScheduleScreen.jsx, handleMoveToDay) — sortOrder junto pra já cair no
     // fim da lista do dia de destino, sem precisar de um reorder separado.

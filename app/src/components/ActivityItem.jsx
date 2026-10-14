@@ -6,6 +6,7 @@ import { AltArrowUpIcon } from '@solar-icons/react/linear/alt-arrow-up';
 import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
 import { CalendarAddIcon } from '@solar-icons/react/linear/calendar-add';
 import { PointOnMapIcon } from '@solar-icons/react/linear/point-on-map';
+import { FerrisWheelIcon } from '@solar-icons/react/bold/ferris-wheel';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import { ClockCircleIcon } from '@solar-icons/react/bold/clock-circle';
@@ -19,6 +20,8 @@ export default function ActivityItem({
   onEditSubtitle,
   onSelectPlace,
   onUnlinkPlace,
+  onSelectAttraction,
+  onUnlinkAttraction,
   onDelete,
   onMoveUp,
   onMoveDown,
@@ -30,9 +33,9 @@ export default function ActivityItem({
   bottomContent,
   style,
 }) {
-  const { place } = activity;
+  const { place, attraction } = activity;
   const navigate = useNavigate();
-  const clickable = !editing && !!place && !disableNavigate;
+  const clickable = !editing && (!!place || !!attraction) && !disableNavigate;
   const dragControls = useDragControls();
 
   const cardStyle = {
@@ -64,7 +67,7 @@ export default function ActivityItem({
     <>
     <Container
       {...containerProps}
-      onClick={clickable ? () => navigate(`/lugares/${place.id}`) : undefined}
+      onClick={clickable ? () => navigate(place ? `/lugares/${place.id}` : `/atracoes/${attraction.id}`) : undefined}
       style={cardStyle}
     >
       {editing && (
@@ -103,8 +106,8 @@ export default function ActivityItem({
             </div>
 
             <div>
-              <FieldLabel>Lugar</FieldLabel>
-              {place ? (
+              <FieldLabel>Lugar ou atração</FieldLabel>
+              {place || attraction ? (
               <div
                 style={{
                   display: 'flex',
@@ -117,26 +120,26 @@ export default function ActivityItem({
                 }}
               >
                 <div
-                  onClick={onSelectPlace}
+                  onClick={place ? onSelectPlace : onSelectAttraction}
                   style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, cursor: 'pointer' }}
                 >
                   <div style={{ width: 40, height: 40, borderRadius: 10, flex: 'none', overflow: 'hidden', background: color.imagePlaceholder }}>
-                    {place.photo && (
-                      <img src={place.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    {(place || attraction).photo && (
+                      <img src={(place || attraction).photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ color: color.dark, fontSize: 13, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {place.name}
+                      {(place || attraction).name}
                     </div>
                     <div style={{ color: color.muted, fontSize: 11, fontWeight: 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {place.address ? place.address.split(',')[0].trim() : ''}
+                      {place ? (place.address ? place.address.split(',')[0].trim() : '') : `${attraction.parkName} · ${attraction.area}`}
                     </div>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={onUnlinkPlace}
+                  onClick={place ? onUnlinkPlace : onUnlinkAttraction}
                   style={{
                     flex: 'none',
                     width: 22,
@@ -154,25 +157,43 @@ export default function ActivityItem({
                 </button>
               </div>
               ) : (
-                <div
-                  onClick={onSelectPlace}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    marginTop: 5,
-                    padding: '6px 10px',
-                    borderRadius: radius.badge,
-                    background: color.surfaceMuted,
-                    color: color.dark,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    alignSelf: 'flex-start',
-                  }}
-                >
-                  <PointOnMapIcon size={14} color={color.dark} />
-                  Selecionar lugar
+                <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
+                  <div
+                    onClick={onSelectPlace}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 10px',
+                      borderRadius: radius.badge,
+                      background: color.surfaceMuted,
+                      color: color.dark,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <PointOnMapIcon size={14} color={color.dark} />
+                    Selecionar lugar
+                  </div>
+                  <div
+                    onClick={onSelectAttraction}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 10px',
+                      borderRadius: radius.badge,
+                      background: color.surfaceMuted,
+                      color: color.dark,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <FerrisWheelIcon size={14} color={color.dark} />
+                    Selecionar atração
+                  </div>
                 </div>
               )}
             </div>
@@ -192,7 +213,7 @@ export default function ActivityItem({
                   {activity.subtitle}
                 </div>
               )}
-              {place && (
+              {(place || attraction) && (
                 <div
                   style={{
                     display: 'inline-flex',
@@ -208,16 +229,18 @@ export default function ActivityItem({
                     maxWidth: '100%',
                   }}
                 >
-                  {place.tag && <span style={{ flex: 'none' }}>{place.tag.split(' ')[0]}</span>}
-                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{place.name}</span>
+                  {place
+                    ? place.tag && <span style={{ flex: 'none' }}>{place.tag.split(' ')[0]}</span>
+                    : attraction.parkEmoji && <span style={{ flex: 'none' }}>{attraction.parkEmoji}</span>}
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{(place || attraction).name}</span>
                   <AltArrowRightIcon size={13} color={color.dark} style={{ flex: 'none' }} />
                 </div>
               )}
             </div>
 
-            {place && (
+            {(place || attraction) && (
               <div
-                className={place.photo ? 'allow-native-touch' : undefined}
+                className={(place || attraction).photo ? 'allow-native-touch' : undefined}
                 style={{
                   position: 'relative',
                   flex: 'none',
@@ -229,9 +252,9 @@ export default function ActivityItem({
                   background: color.imagePlaceholder,
                 }}
               >
-                {place.photo && (
+                {(place || attraction).photo && (
                   <img
-                    src={place.photo}
+                    src={(place || attraction).photo}
                     alt=""
                     style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                   />

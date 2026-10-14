@@ -52,6 +52,23 @@ export default async function handler(req, res) {
     favoritesByPlace.get(f.place_id).push(f.traveler);
   }
 
+  // Fotos de dica (place_recommendations.photo) substituem as fotos de
+  // prato/produto (dish_photos) no card da lista de Lugares — mesmo padrão
+  // de busca em lote do favoritesByPlace acima. Só as dicas que têm foto
+  // (uma dica pode ser só texto) e que estão vinculadas a um lugar entram
+  // aqui; mais recentes primeiro, igual à ordenação já usada em
+  // /api/places/recommendations.
+  const recommendationPhotoRows = await sql.query(
+    `SELECT place_id, photo FROM place_recommendations
+     WHERE place_id IS NOT NULL AND photo IS NOT NULL
+     ORDER BY created_at DESC`
+  );
+  const recommendationPhotosByPlace = new Map();
+  for (const r of recommendationPhotoRows) {
+    if (!recommendationPhotosByPlace.has(r.place_id)) recommendationPhotosByPlace.set(r.place_id, []);
+    recommendationPhotosByPlace.get(r.place_id).push(r.photo);
+  }
+
   const places = rows.map((r) => ({
     id: r.id,
     name: r.name,
@@ -63,6 +80,7 @@ export default async function handler(req, res) {
     googleMapsUri: r.google_maps_uri,
     photo: r.photo,
     dishPhotos: r.dish_photos || [],
+    recommendationPhotos: recommendationPhotosByPlace.get(r.id) || [],
     cost: r.cost,
     hours: r.hours,
     hoursSchedule: r.hours_schedule,

@@ -326,7 +326,15 @@ export default function RecommendationsScreen() {
           ))}
         </div>
       ) : (
+        // key={category}: força remontar o carrossel ao trocar de aba — o
+        // slide inicial sorteado (ver hasPickedStartRef em
+        // RecommendationCardStack.jsx) e a posição do track ficam presos na
+        // categoria anterior sem isso, e se a nova categoria tiver menos
+        // itens, o índice sorteado antes fica fora do range (carrossel em
+        // branco, nenhum erro — o item simplesmente não existe naquela
+        // posição do array).
         <RecommendationCardStack
+          key={category}
           recommendations={filteredRecommendations}
           headerHeight={headerHeight}
         />

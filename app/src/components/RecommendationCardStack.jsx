@@ -29,6 +29,60 @@ import { resolveYoutubeThumbnail } from '../data/youtube.js';
 const BOTTOM_GAP = 100; // espaço reservado pra tab bar flutuante não cobrir o card
 const DRAG_DISTANCE_THRESHOLD = 50; // px
 const DRAG_VELOCITY_THRESHOLD = 500; // px/s
+const AUTOPLAY_DURATION_MS = 5000; // mesmo tempo por slide dos Stories do Instagram
+
+// Barras de progresso tipo Stories, coladas no topo do card — uma por dica
+// real (não por item do track, que inclui os 2 clones do loop). A barra do
+// slide ATUAL some e reaparece com uma animação CSS de largura 0% → 100%
+// (reiniciada via key, ver abaixo) sempre que o index muda ou o autoplay é
+// pausado/retomado; as barras de slides já vistos ficam cheias, as futuras
+// vazias — mesma leitura visual de "quantos faltam" do Instagram/WhatsApp.
+function StoryProgressBars({ total, activeRealIndex, paused, durationMs, gutter }) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 16,
+        left: gutter + 16,
+        right: gutter + 16,
+        zIndex: 2,
+        display: 'flex',
+        gap: 4,
+        pointerEvents: 'none',
+      }}
+    >
+      {Array.from({ length: total }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            flex: 1,
+            height: 4,
+            borderRadius: 2,
+            background: 'rgba(255,255,255,0.35)',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            // key muda a cada novo ciclo de preenchimento deste segmento —
+            // força o navegador a reiniciar a animação CSS do zero em vez de
+            // só reaproveitar o elemento (que travaria em 100% ao voltar
+            // pro mesmo índice num loop, já que a largura-alvo não mudou).
+            key={i === activeRealIndex ? `active-${paused}` : i < activeRealIndex ? 'done' : 'pending'}
+            style={{
+              height: '100%',
+              borderRadius: 2,
+              background: '#fff',
+              width: i < activeRealIndex ? '100%' : i > activeRealIndex ? '0%' : undefined,
+              animation: i === activeRealIndex && !paused
+                ? `story-progress ${durationMs}ms linear forwards`
+                : undefined,
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // PhotoCard só aceita uma URL pronta (sem onLoad/onError próprios, ver
 // PhotoCard.jsx) — resolve a thumbnail 16:9 sem barras (ou cai pra hqdefault
@@ -138,6 +192,13 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
   // garante que isso roda só 1x por montagem (quando os dados chegam),
   // nunca de novo a cada re-render.
   const hasPickedStartRef = useRef(false);
+  // Autoplay tipo Stories: avança sozinho a cada AUTOPLAY_DURATION_MS,
+  // pausado enquanto o dedo/mouse estiver pressionado no card ou o modal de
+  // vídeo estiver aberto. Sem `paused` separado de "o usuário está
+  // arrastando" — o próprio onPointerDown/Up do motion.div cobre os dois
+  // casos (segurar parado e arrastar são o mesmo gesto do ponto de vista
+  // de "pausar", só o resultado final no onDragEnd/click é que diverge).
+  const [paused, setPaused] = useState(false);
 
   // Mede a largura real do container (não window.innerWidth) — o carrossel
   // vive dentro de um container com max-width:480px centralizado (ver
@@ -218,6 +279,7 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
   };
 
   const handleDragEnd = (_, info) => {
+    setPaused(false);
     const passedDistance = Math.abs(info.offset.x) > DRAG_DISTANCE_THRESHOLD;
     const passedVelocity = Math.abs(info.velocity.x) > DRAG_VELOCITY_THRESHOLD;
     if (!passedDistance && !passedVelocity) {
@@ -227,6 +289,27 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
     const wentLeft = info.offset.x < 0 || info.velocity.x < 0;
     goToIndex(wentLeft ? index + 1 : index - 1);
   };
+
+  // Índice REAL (0-based, no espaço de `recommendations`) do slide atual —
+  // diferente de `index`, que é a posição no track (com +1 de deslocamento
+  // por causa do clone, ver indexOffset acima). Usado só pra desenhar as
+  // barras de progresso, que são uma por dica real, não uma por item do
+  // track (que incluiria as 2 barras fantasma dos clones nas pontas).
+  const activeRealIndex = hasLoop
+    ? (index - indexOffset + total) % total
+    : Math.max(0, Math.min(index, total - 1));
+
+  // Autoplay: a cada AUTOPLAY_DURATION_MS avança um slide sozinho, como nos
+  // Stories. Pausado (paused=true) enquanto o usuário segura o card ou o
+  // modal de vídeo está aberto. O efeito reinicia a contagem do zero sempre
+  // que index/paused mudam — tanto um avanço automático quanto uma
+  // navegação manual (drag) resetam o relógio pro slide novo.
+  useEffect(() => {
+    if (paused || total <= 1 || videoModalRec) return;
+    const timer = setTimeout(() => goToIndex(index + 1), AUTOPLAY_DURATION_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, paused, total, videoModalRec]);
 
   if (!recommendations) {
     return (
@@ -303,7 +386,15 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
         dragConstraints={{ left: maxDragLeft, right: maxDragRight }}
         dragElastic={0.1}
         dragMomentum={false}
+        onDragStart={() => setPaused(true)}
         onDragEnd={handleDragEnd}
+        // Pausa também ao só segurar parado (sem chegar a arrastar) — down
+        // sem um drag correspondente nunca dispara onDragStart/End, então
+        // sem isso o dedo parado no card não pausava nada. onPointerUp cobre
+        // tanto "soltou sem arrastar" (onDragEnd nunca disparou) quanto o
+        // caso raro de o ponteiro sair da área sem um pointerup nítido.
+        onPointerDown={() => setPaused(true)}
+        onPointerUp={() => setPaused(false)}
         style={{ x, display: 'flex', width: trackWidth, cursor: total > 1 ? 'grab' : 'default', touchAction: 'pan-y' }}
         whileDrag={{ cursor: 'grabbing' }}
       >
@@ -316,6 +407,16 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
           </div>
         ))}
       </motion.div>
+
+      {total > 1 && (
+        <StoryProgressBars
+          total={total}
+          activeRealIndex={activeRealIndex}
+          paused={paused || !!videoModalRec}
+          durationMs={AUTOPLAY_DURATION_MS}
+          gutter={spacing.screenGutter}
+        />
+      )}
     </div>
 
     <AnimatePresence>

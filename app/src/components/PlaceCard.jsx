@@ -17,7 +17,11 @@ function travelerEmoji(name) {
 // de nomes de quem marcou este lugar como favorito, não um boolean único.
 export default function PlaceCard({ place, onAction, onToggleFavorite, isFavorite, inItinerary, bottomContent, style }) {
   const facadePhoto = place.photo;
-  const dishPhotos = place.dishPhotos || [];
+  // Fotos de dicas vinculadas a este lugar (ver place_recommendations) —
+  // substituem as fotos de prato/produto cadastradas no lugar em si
+  // (dishPhotos); só aparece esse canto do card se houver pelo menos uma
+  // dica com foto, nunca como fallback pra dishPhotos.
+  const recommendationPhotos = place.recommendationPhotos || [];
   const favoritedBy = place.favoritedBy || [];
 
   return (
@@ -125,9 +129,9 @@ export default function PlaceCard({ place, onAction, onToggleFavorite, isFavorit
           </div>
         </div>
 
-        {dishPhotos.length > 0 && (
+        {recommendationPhotos.length > 0 && (
           <div style={{ display: 'flex', flex: 'none' }}>
-            {dishPhotos.map((src, i) => (
+            {recommendationPhotos.map((src, i) => (
               <div
                 key={i}
                 style={{
@@ -139,7 +143,7 @@ export default function PlaceCard({ place, onAction, onToggleFavorite, isFavorit
                   border: '3.5px solid rgba(255,255,255,0.92)',
                   boxShadow: '5px 0 10px rgba(0,0,0,0.28)',
                   marginLeft: i === 0 ? 0 : -12,
-                  zIndex: dishPhotos.length - i,
+                  zIndex: recommendationPhotos.length - i,
                 }}
               >
                 <img

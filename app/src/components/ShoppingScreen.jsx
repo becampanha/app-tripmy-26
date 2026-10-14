@@ -9,6 +9,7 @@ import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import ShoppingItemModal from './ShoppingItemModal.jsx';
+import ShoppingItemViewModal from './ShoppingItemViewModal.jsx';
 import { getTravelerIdentity, setTravelerIdentity } from '../hooks/useTravelerIdentity.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { fetchShoppingItems, createShoppingItem, updateShoppingItem, deleteShoppingItem, toggleShoppingItemPurchased, uploadPlacePhoto } from '../api/itineraryApi.js';
@@ -104,6 +105,7 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
   // do link — e a do link só entra em jogo se o toggle "usar imagem do
   // link" estiver ligado (ver ShoppingItemModal.jsx).
   const displayPhoto = item.photo || (item.useLinkImage && item.linkImage) || null;
+  const CategoryIcon = SHOPPING_CATEGORY_ICON[item.category];
 
   return (
     <div
@@ -128,9 +130,16 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
           borderRadius: 12,
           overflow: 'hidden',
           background: color.imagePlaceholder,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        {displayPhoto && <img src={displayPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+        {displayPhoto ? (
+          <img src={displayPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          CategoryIcon && <CategoryIcon size={20} color={color.faintIcon} />
+        )}
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -194,10 +203,14 @@ function SummaryStatRow({ label, count, value, valueColor }) {
 
 // Card de uma categoria no resumo: título com ícone, depois duas linhas
 // (cadastrado / comprado) separadas por uma divisória — ver ShoppingSummary.
-function SummaryCategoryRow({ category, stats }) {
+// Clicável: leva direto pra aba daquela categoria (ver onSelectCategory).
+function SummaryCategoryRow({ category, stats, onClick }) {
   const Icon = SHOPPING_CATEGORY_ICON[category];
   return (
-    <div style={{ padding: spacing.cardPadding, background: color.bg, border: `1px solid ${color.border}`, borderRadius: 16 }}>
+    <div
+      onClick={onClick}
+      style={{ padding: spacing.cardPadding, background: color.bg, border: `1px solid ${color.border}`, borderRadius: 16, cursor: 'pointer' }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <div style={{ flex: 'none', width: 32, height: 32, borderRadius: 10, background: color.surfaceMuted, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {Icon && <Icon size={16} color={color.dark} />}
@@ -215,7 +228,7 @@ function SummaryCategoryRow({ category, stats }) {
 // linha por categoria com item cadastrado, cada uma com a contagem e o
 // valor total: cadastrado vs já comprado (ver o check no card). No fim, o
 // total geral somando todas as categorias.
-function ShoppingSummary({ items }) {
+function ShoppingSummary({ items, onSelectCategory }) {
   const categories = SHOPPING_CATEGORIES.filter((c) => items.some((i) => i.category === c));
 
   const statsByCategory = categories.map((c) => {
@@ -242,7 +255,7 @@ function ShoppingSummary({ items }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {statsByCategory.map(({ category, stats }) => (
-        <SummaryCategoryRow key={category} category={category} stats={stats} />
+        <SummaryCategoryRow key={category} category={category} stats={stats} onClick={() => onSelectCategory(category)} />
       ))}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
@@ -271,20 +284,23 @@ export default function ShoppingScreen() {
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
 
+  // Select do header troca a identidade de verdade (quem você é neste
+  // aparelho) — mesmo mecanismo usado no select da tela Mais (ver
+  // MoreScreen.jsx) e no onboarding (WhoAreYouStep.jsx): não é uma
+  // visualização temporária separada, é a mesma fonte de verdade em
+  // localStorage (useTravelerIdentity.js). Trocar aqui também muda o que
+  // aparece em Mais, e vice-versa.
   const [identity, setIdentity] = useState(() => getTravelerIdentity());
-  // Viajante cuja lista está sendo VISTA agora — separado da identidade
-  // salva no aparelho: trocar aqui é só navegação temporária (ver conversa
-  // de design da feature), não redefine quem o dropdown considera "você".
-  const [viewingTraveler, setViewingTraveler] = useState(identity);
   const [category, setCategory] = useState(SUMMARY_KEY);
   const [items, setItems] = useState(null);
   const [editingItem, setEditingItem] = useState(null); // item sendo editado, ou 'new' pra criar
+  const [viewingItem, setViewingItem] = useState(null); // item aberto em modo visualização (antes de editar, ver ShoppingItemViewModal)
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!viewingTraveler) return;
+    if (!identity) return;
     setItems(null);
-    fetchShoppingItems(viewingTraveler)
+    fetchShoppingItems(identity)
       .then((data) => {
         setItems(data);
         // Troca de lista (viajante diferente) sempre abre no Resumo, se
@@ -293,12 +309,11 @@ export default function ShoppingScreen() {
         setCategory(fallbackCategory(data));
       })
       .catch((err) => showErrorToast(err, 'Não foi possível carregar a lista.'));
-  }, [viewingTraveler]);
+  }, [identity]);
 
-  const handleConfirmIdentity = (name) => {
+  const handleChangeIdentity = (name) => {
     setTravelerIdentity(name);
     setIdentity(name);
-    setViewingTraveler(name);
   };
 
   const isSummary = category === SUMMARY_KEY;
@@ -363,7 +378,7 @@ export default function ShoppingScreen() {
         });
         showToast('Item atualizado');
       } else {
-        const created = await createShoppingItem({ ...fields, photo, photoFile: undefined, traveler: viewingTraveler });
+        const created = await createShoppingItem({ ...fields, photo, photoFile: undefined, traveler: identity });
         setItems((current) => [created, ...(current || [])]);
         showToast('Item adicionado');
       }
@@ -404,10 +419,12 @@ export default function ShoppingScreen() {
   const handleTogglePurchased = async (item) => {
     const nextPurchased = !item.purchased;
     setItems((current) => current.map((i) => (i.id === item.id ? { ...i, purchased: nextPurchased } : i)));
+    setViewingItem((current) => (current && current.id === item.id ? { ...current, purchased: nextPurchased } : current));
     try {
       await toggleShoppingItemPurchased(item.id, nextPurchased);
     } catch (err) {
       setItems((current) => current.map((i) => (i.id === item.id ? { ...i, purchased: item.purchased } : i)));
+      setViewingItem((current) => (current && current.id === item.id ? { ...current, purchased: item.purchased } : current));
       showErrorToast(err, 'Não foi possível atualizar o item.');
     }
   };
@@ -423,8 +440,8 @@ export default function ShoppingScreen() {
           identity && (
             <>
               <Select
-                value={viewingTraveler}
-                onChange={setViewingTraveler}
+                value={identity}
+                onChange={handleChangeIdentity}
                 options={TRAVELERS.map(travelerOption)}
                 align="right"
                 buttonStyle={{ padding: '7px 10px', fontSize: 12.5 }}
@@ -443,7 +460,7 @@ export default function ShoppingScreen() {
 
       {!identity ? (
         <div style={{ marginTop: headerHeight }}>
-          <WhoAreYouContent onConfirm={handleConfirmIdentity} />
+          <WhoAreYouContent onConfirm={handleChangeIdentity} />
         </div>
       ) : (
         <div style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
@@ -455,7 +472,7 @@ export default function ShoppingScreen() {
             </div>
           )}
 
-          {items !== null && isSummary && <ShoppingSummary items={items} />}
+          {items !== null && isSummary && <ShoppingSummary items={items} onSelectCategory={setCategory} />}
 
           {items !== null && !isSummary && itemsInCategory.length > 0 && (
             <>
@@ -468,7 +485,7 @@ export default function ShoppingScreen() {
                   <ShoppingItemCard
                     key={item.id}
                     item={item}
-                    onClick={() => setEditingItem(item)}
+                    onClick={() => setViewingItem(item)}
                     onTogglePurchased={() => handleTogglePurchased(item)}
                   />
                 ))}
@@ -503,11 +520,26 @@ export default function ShoppingScreen() {
       )}
 
       <AnimatePresence>
+        {viewingItem && (
+          <ShoppingItemViewModal
+            key="shopping-item-view-modal"
+            item={viewingItem}
+            onEdit={() => {
+              setEditingItem(viewingItem);
+              setViewingItem(null);
+            }}
+            onClose={() => setViewingItem(null)}
+            onTogglePurchased={() => handleTogglePurchased(viewingItem)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {editingItem && (
           <ShoppingItemModal
             key="shopping-item-modal"
             initialValues={editingItem !== 'new' ? editingItem : null}
-            initialCategory={category}
+            initialCategory={isSummary ? SHOPPING_CATEGORIES[0] : category}
             onSubmit={handleSaveItem}
             onDelete={editingItem !== 'new' ? handleDeleteItem : undefined}
             onClose={() => !saving && setEditingItem(null)}

@@ -16,13 +16,16 @@ import { DocumentTextIcon } from '@solar-icons/react/bold/document-text';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
 import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
 import { AltArrowUpIcon } from '@solar-icons/react/linear/alt-arrow-up';
+import { StarIcon } from '@solar-icons/react/bold/star';
 import {
   fetchPlaces, createPlace, updatePlace, deletePlace, uploadPlacePhoto,
   searchGooglePlaces, importGooglePlacePhotos,
   createRecommendation,
   updateRecommendation,
   deleteRecommendation,
+  toggleFavoritePlace,
 } from '../api/itineraryApi.js';
+import { getTravelerIdentity } from '../hooks/useTravelerIdentity.js';
 import RecommendationModal from './RecommendationModal.jsx';
 import SinglePlaceMap from './SinglePlaceMap.jsx';
 import RecommendationEditModal from './RecommendationEditModal.jsx';
@@ -444,6 +447,22 @@ export default function PlaceDetailScreen() {
     await reload(true);
   };
 
+  // Favoritos são por viajante (ver place_favorites/toggleFavoritePlace) —
+  // mexe só na identidade ATIVA deste aparelho, sem afetar o favorito de
+  // outros viajantes (ver o mesmo padrão em PlacesScreen.jsx).
+  const identity = getTravelerIdentity();
+  const isFavorite = identity ? (place?.favoritedBy || []).includes(identity) : false;
+
+  const handleToggleFavorite = async () => {
+    if (!identity) return;
+    try {
+      await toggleFavoritePlace(id, identity, !isFavorite);
+      await reload(true);
+    } catch (err) {
+      showErrorToast(err, 'Não foi possível atualizar o favorito.');
+    }
+  };
+
   const handleReplaceMainPhoto = async (file) => {
     if (!file) return;
     try {
@@ -703,21 +722,42 @@ export default function PlaceDetailScreen() {
           </div>
         }
         right={
-          (place || isNew) && !editing && (
-            <div
-              onClick={startEditing}
-              style={{
-                height: 38,
-                width: 38,
-                borderRadius: 13,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                ...navControlStyle(navBarVisible),
-              }}
-            >
-              <PenIcon size={17} color={navControlTextColor(navBarVisible)} />
+          (place || isNew) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {place && !isNew && (
+                <div
+                  onClick={handleToggleFavorite}
+                  style={{
+                    height: 38,
+                    width: 38,
+                    borderRadius: 13,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    ...navControlStyle(navBarVisible),
+                  }}
+                >
+                  <StarIcon size={17} color={isFavorite ? color.accent : navControlTextColor(navBarVisible)} />
+                </div>
+              )}
+              {!editing && (
+                <div
+                  onClick={startEditing}
+                  style={{
+                    height: 38,
+                    width: 38,
+                    borderRadius: 13,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    ...navControlStyle(navBarVisible),
+                  }}
+                >
+                  <PenIcon size={17} color={navControlTextColor(navBarVisible)} />
+                </div>
+              )}
             </div>
           )
         }

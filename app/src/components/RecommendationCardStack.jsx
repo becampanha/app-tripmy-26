@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, animate } from 'motion/react';
 import { PhotoCard, Skeleton, color, radius, spacing } from '../design-system/index.js';
+import { travelerLabel } from '../data/travelers.js';
 
 // Modo de visualização alternativo da tela de Dicas — carrossel em loop: os
 // cards ficam lado a lado num track horizontal, arrasta pra navegar, solta e
@@ -63,7 +64,7 @@ function RecommendationPhotoContent({ rec }) {
       )}
       {rec.author && (
         <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12.5, fontWeight: 600, marginTop: 10 }}>
-          Recomendado por {rec.author}
+          Recomendado por {travelerLabel(rec.author)}
         </div>
       )}
     </>

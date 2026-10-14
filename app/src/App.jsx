@@ -11,7 +11,6 @@ import AttractionsItineraryScreen from './components/AttractionsItineraryScreen.
 import RecommendationsScreen from './components/RecommendationsScreen.jsx';
 import ShoppingScreen from './components/ShoppingScreen.jsx';
 import MoreScreen from './components/MoreScreen.jsx';
-import TravelersScreen from './components/TravelersScreen.jsx';
 import DesignSystemScreen from './components/DesignSystemScreen.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import UpdateBanner from './components/UpdateBanner.jsx';
@@ -42,8 +41,7 @@ function depthOf(pathname) {
   return (
     pathname.startsWith('/lugares/') ||
     pathname.startsWith('/atracoes/') ||
-    pathname === '/roteiro/dias' ||
-    pathname === '/viajantes'
+    pathname === '/roteiro/dias'
   ) ? 1 : 0;
 }
 
@@ -155,7 +153,6 @@ function Shell() {
             <Route path="/atracoes/:id" element={<AttractionDetailScreen />} />
             <Route path="/compras" element={<ShoppingScreen />} />
             <Route path="/mais" element={<MoreScreen />} />
-            <Route path="/viajantes" element={<TravelersScreen />} />
             {/* Rota oculta de referência interna — não aparece na tab bar,
                 só acessível digitando /design-system na URL. */}
             <Route path="/design-system" element={<DesignSystemScreen />} />

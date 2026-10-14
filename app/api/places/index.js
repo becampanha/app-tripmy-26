@@ -41,6 +41,17 @@ export default async function handler(req, res) {
   const sql = getSql();
   const rows = await sql.query('SELECT * FROM places ORDER BY name');
 
+  // Favoritos são por viajante (ver place_favorites) — um lugar pode ter
+  // vários favoritos (um de cada pessoa que marcou). Buscado à parte, em
+  // lote, em vez de JOIN na query principal (evitaria duplicar linha de
+  // lugar por favorito); agrupado aqui em memória por place_id.
+  const favoriteRows = await sql.query('SELECT place_id, traveler FROM place_favorites');
+  const favoritesByPlace = new Map();
+  for (const f of favoriteRows) {
+    if (!favoritesByPlace.has(f.place_id)) favoritesByPlace.set(f.place_id, []);
+    favoritesByPlace.get(f.place_id).push(f.traveler);
+  }
+
   const places = rows.map((r) => ({
     id: r.id,
     name: r.name,
@@ -59,6 +70,7 @@ export default async function handler(req, res) {
     reviewLabel: r.review_label,
     recommendation: r.recommendation,
     menuUri: r.menu_uri,
+    favoritedBy: favoritesByPlace.get(r.id) || [],
   }));
 
   return res.status(200).json(places);

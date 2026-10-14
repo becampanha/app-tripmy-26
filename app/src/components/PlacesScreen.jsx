@@ -6,8 +6,11 @@ import PlacesMap from './PlacesMap.jsx';
 import { AddIcon } from '@solar-icons/react/linear/add';
 import { MapIcon } from '@solar-icons/react/bold/map';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
+import { StarIcon } from '@solar-icons/react/bold/star';
 import { MapPointIcon } from '@solar-icons/react/bold/map-point';
-import { fetchPlaces } from '../api/itineraryApi.js';
+import { fetchPlaces, toggleFavoritePlace } from '../api/itineraryApi.js';
+import { showErrorToast } from '../hooks/useToast.js';
+import { getTravelerIdentity } from '../hooks/useTravelerIdentity.js';
 import { CATEGORY_ICON_MAP } from '../data/placeTags.js';
 import { subcategoriesFor } from '../data/subcategories.js';
 import { usePlacesInItinerary } from '../hooks/usePlacesInItinerary.js';
@@ -42,11 +45,13 @@ export default function PlacesScreen() {
   const [category, setCategory] = useState(savedState.category ?? CATEGORIES[0]);
   const [subcategory, setSubcategory] = useState(savedState.subcategory);
   const [onlyInItinerary, setOnlyInItinerary] = useState(savedState.onlyInItinerary);
+  const [onlyFavorite, setOnlyFavorite] = useState(savedState.onlyFavorite);
   const [search, setSearch] = useState(savedState.search);
   const [mapOpen, setMapOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const placesInItinerary = usePlacesInItinerary();
+  const identity = getTravelerIdentity();
   const rootRef = useRef(null);
   const { scrollY } = useScrollY(rootRef);
   const { ref: headerRef, height: headerHeight } = useElementHeight();
@@ -68,8 +73,8 @@ export default function PlacesScreen() {
   // Salva filtros a cada mudança, pra sobreviver à desmontagem ao navegar
   // para a tela de detalhes e voltar.
   useEffect(() => {
-    savePlacesScreenState({ category, subcategory, onlyInItinerary, search });
-  }, [category, subcategory, onlyInItinerary, search]);
+    savePlacesScreenState({ category, subcategory, onlyInItinerary, onlyFavorite, search });
+  }, [category, subcategory, onlyInItinerary, onlyFavorite, search]);
 
   // Restaura a posição de scroll salva assim que a lista carrega. O elemento
   // que rola de fato é o motion.div ancestral (overflowY: auto) definido em
@@ -119,9 +124,10 @@ export default function PlacesScreen() {
       p.category === category &&
       (!subcategory || p.subcategory === subcategory) &&
       (!onlyInItinerary || (placesInItinerary && placesInItinerary.has(p.id))) &&
+      (!onlyFavorite || (p.favoritedBy && p.favoritedBy.length > 0)) &&
       (!query || p.name.toLowerCase().includes(query))
     );
-  }, [places, category, subcategory, onlyInItinerary, placesInItinerary, search]);
+  }, [places, category, subcategory, onlyInItinerary, onlyFavorite, placesInItinerary, search]);
 
   // Sem área específica selecionada e a categoria tem subcategorias definidas:
   // agrupa a lista por área, com um mini-título fixo (sticky) por grupo, como
@@ -150,6 +156,37 @@ export default function PlacesScreen() {
 
     return sections;
   }, [filtered, subcategory, subcategoryOptions]);
+
+  // Favoritos são por viajante (ver place_favorites/toggleFavoritePlace) —
+  // o clique só adiciona/remove a identidade ATIVA deste aparelho da lista
+  // favoritedBy do lugar, sem mexer no favorito de ninguém mais.
+  // Atualização otimista, mesmo padrão de handleTogglePurchased em
+  // ShoppingScreen.jsx: aplica na hora, reverte sozinha se a chamada falhar.
+  const handleToggleFavorite = async (place) => {
+    const identity = getTravelerIdentity();
+    if (!identity) return;
+
+    const currentlyFavorited = (place.favoritedBy || []).includes(identity);
+    const nextFavoritedBy = currentlyFavorited
+      ? place.favoritedBy.filter((t) => t !== identity)
+      : [...(place.favoritedBy || []), identity];
+
+    setPlaces((current) => {
+      const next = current.map((p) => (p.id === place.id ? { ...p, favoritedBy: nextFavoritedBy } : p));
+      setCachedPlaces(next);
+      return next;
+    });
+    try {
+      await toggleFavoritePlace(place.id, identity, !currentlyFavorited);
+    } catch (err) {
+      setPlaces((current) => {
+        const next = current.map((p) => (p.id === place.id ? { ...p, favoritedBy: place.favoritedBy } : p));
+        setCachedPlaces(next);
+        return next;
+      });
+      showErrorToast(err, 'Não foi possível atualizar o favorito.');
+    }
+  };
 
   const tabItems = CATEGORIES.map((cat) => ({
     key: cat,
@@ -234,12 +271,30 @@ export default function PlacesScreen() {
               alignItems: 'center',
               justifyContent: 'center',
               borderRadius: radius.input,
-              border: `1px solid ${onlyInItinerary ? color.dark : color.border}`,
-              background: onlyInItinerary ? color.dark : color.bg,
+              border: `1px solid ${onlyInItinerary ? color.success : color.border}`,
+              background: onlyInItinerary ? color.success : color.bg,
               cursor: 'pointer',
             }}
           >
             <CheckCircleIcon size={17} color={onlyInItinerary ? '#fff' : color.faintIcon} />
+          </div>
+
+          <div
+            onClick={() => setOnlyFavorite((v) => !v)}
+            title="Lugares favoritos"
+            style={{
+              flex: 'none',
+              width: 38,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: radius.input,
+              border: `1px solid ${onlyFavorite ? color.accent : color.border}`,
+              background: onlyFavorite ? color.accent : color.bg,
+              cursor: 'pointer',
+            }}
+          >
+            <StarIcon size={17} color={onlyFavorite ? '#fff' : color.faintIcon} />
           </div>
 
           {subcategoryOptions.length > 0 && (
@@ -267,6 +322,8 @@ export default function PlacesScreen() {
                 key={place.id}
                 place={place}
                 onAction={() => goToPlace(place.id)}
+                onToggleFavorite={() => handleToggleFavorite(place)}
+                isFavorite={identity ? (place.favoritedBy || []).includes(identity) : false}
                 inItinerary={placesInItinerary ? placesInItinerary.has(place.id) : false}
               />
             ))}
@@ -278,6 +335,8 @@ export default function PlacesScreen() {
             key={place.id}
             place={place}
             onAction={() => goToPlace(place.id)}
+            onToggleFavorite={() => handleToggleFavorite(place)}
+            isFavorite={identity ? (place.favoritedBy || []).includes(identity) : false}
             inItinerary={placesInItinerary ? placesInItinerary.has(place.id) : false}
           />
         ))}

@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS places (
   review_label TEXT,
   recommendation TEXT,
   menu_uri TEXT,                     -- link do cardápio/site do restaurante (só exibido pra category='Restaurante')
+  favorite BOOLEAN NOT NULL DEFAULT false,  -- marcado como favorito pelo usuário (coraçãozinho no card/detalhe)
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

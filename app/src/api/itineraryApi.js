@@ -109,6 +109,13 @@ export function deletePlace(id) {
   return request(`/api/places/${id}`, { method: 'DELETE' });
 }
 
+export function toggleFavoritePlace(id, traveler, favorite) {
+  return request(`/api/places/${id}?action=toggleFavorite`, {
+    method: 'PUT',
+    body: JSON.stringify({ traveler, favorite }),
+  });
+}
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

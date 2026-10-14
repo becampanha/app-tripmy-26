@@ -4,8 +4,13 @@ import { CloseIcon } from '@solar-icons/react/linear/close';
 import { CameraMinimalisticIcon } from '@solar-icons/react/linear/camera-minimalistic';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import PlaceSelectorModal from './PlaceSelectorModal.jsx';
-import { FieldLabel, color, inputStyle, radius } from '../design-system/index.js';
+import { TRAVELERS } from '../data/travelers.js';
+import { FieldLabel, Select, color, inputStyle, radius } from '../design-system/index.js';
 import { useHidesTabBar } from '../hooks/useEditingState.js';
+
+function travelerOption(t) {
+  return { value: t.name, label: `${t.emoji} ${t.name}` };
+}
 
 // Bottom sheet para publicar uma recomendação: título, descrição, autor e
 // foto, todos opcionais — basta um dos três campos de texto preenchido.
@@ -187,12 +192,15 @@ export default function RecommendationModal({ onSubmit, onClose, showPlaceField 
 
         <div style={{ marginTop: 14 }}>
           <FieldLabel>Quem está sugerindo</FieldLabel>
-          <input
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            placeholder="Seu nome"
-            style={{ ...inputStyle, marginTop: 5 }}
-          />
+          <div style={{ marginTop: 5 }}>
+            <Select
+              value={author}
+              onChange={setAuthor}
+              options={TRAVELERS.map(travelerOption)}
+              placeholder="Selecione quem está sugerindo"
+              fullWidth
+            />
+          </div>
         </div>
 
         <div style={{ marginTop: 14 }}>

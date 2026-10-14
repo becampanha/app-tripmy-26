@@ -1,9 +1,11 @@
 import { CheckIcon } from '@solar-icons/react/bold/check';
+import { CloseIcon } from '@solar-icons/react/linear/close';
 import { FloatingBar, color, radius } from '../design-system/index.js';
 
 // Substitui a BottomTabBar enquanto uma tela está em modo de edição: mesmo
-// tamanho/posição fixa da tab bar, mas com Cancelar (estilo link) e Salvar
-// (botão verde com check) no lugar da navegação entre abas.
+// tamanho/posição fixa da tab bar, mas com Cancelar (botão branco com borda,
+// ícone + texto vermelhos) e Salvar (botão verde com check) no lugar da
+// navegação entre abas.
 export default function EditActionBar({ onCancel, onSave, saving }) {
   return (
     <FloatingBar
@@ -11,15 +13,29 @@ export default function EditActionBar({ onCancel, onSave, saving }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 12 }}
       transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
-      padding="8px 8px 8px 20px"
+      padding="8px"
       style={{ justifyContent: 'space-between' }}
     >
       <div
         onMouseDown={(e) => e.preventDefault()}
         onClick={onCancel}
-        style={{ color: color.muted, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          height: 46,
+          padding: '0 20px',
+          borderRadius: radius.pillBarButton,
+          background: color.white,
+          border: `1px solid ${color.border}`,
+          cursor: 'pointer',
+        }}
       >
-        Cancelar
+        <CloseIcon size={16} color={color.danger} />
+        <span style={{ color: color.danger, fontSize: 14, fontWeight: 700 }}>
+          Cancelar
+        </span>
       </div>
 
       <div

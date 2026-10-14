@@ -1,5 +1,12 @@
 import { getSql } from './_db.js';
 
+// Mesma lista de src/data/shoppingCategories.js (não importável aqui — API
+// roda fora do bundle do Vite) — barra na origem a categoria inválida que já
+// causou um bug real (item gravado com a chave interna "__summary__" da aba
+// Resumo em vez de uma categoria de produto, inflando o total geral sem
+// aparecer em nenhum card de categoria).
+const VALID_CATEGORIES = ['Vestuário', 'Calçados', 'Eletrônicos', 'Brinquedos', 'Beleza', 'Casa', 'Outros'];
+
 // GET    /api/shopping?traveler=... — lista os itens de um viajante
 // GET    /api/shopping?action=fetchLinkImage&url=... — extrai a og:image da
 //        página de um link, pra pré-visualizar no cadastro/edição de item
@@ -102,6 +109,9 @@ export default async function handler(req, res) {
     if (!traveler || !category || !name) {
       return res.status(400).json({ error: 'Campos "traveler", "category" e "name" são obrigatórios' });
     }
+    if (!VALID_CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: `"category" inválida: ${category}` });
+    }
 
     const rows = await sql.query(
       `INSERT INTO shopping_items (traveler, category, name, brand, link, price, notes, photo, link_image, use_link_image)
@@ -143,6 +153,9 @@ export default async function handler(req, res) {
     const { category, name, brand, link, price, notes, photo, linkImage, useLinkImage } = req.body || {};
     if (!category || !name) {
       return res.status(400).json({ error: 'Campos "category" e "name" são obrigatórios' });
+    }
+    if (!VALID_CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: `"category" inválida: ${category}` });
     }
 
     await sql.query(

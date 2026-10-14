@@ -9,6 +9,7 @@ const state = {
   category: null, // null = usa o valor padrão do componente na 1ª visita
   subcategory: '',
   onlyInItinerary: false,
+  onlyFavorite: false,
   search: '',
   scrollTop: 0,
 };

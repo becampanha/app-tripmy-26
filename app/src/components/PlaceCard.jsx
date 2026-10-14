@@ -1,25 +1,67 @@
 import { PointOnMapIcon } from '@solar-icons/react/linear/point-on-map';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
-import { PhotoCard, Badge, color } from '../design-system/index.js';
+import { StarIcon } from '@solar-icons/react/bold/star';
+import { PhotoCard, Badge, overlay, color } from '../design-system/index.js';
+import { TRAVELERS } from '../data/travelers.js';
 
 function shortAddress(address) {
   if (!address) return '';
   return address.split(',')[0].trim();
 }
 
-export default function PlaceCard({ place, onAction, inItinerary, bottomContent, style }) {
+function travelerEmoji(name) {
+  return TRAVELERS.find((t) => t.name === name)?.emoji || '';
+}
+
+// Favoritos são por viajante (ver place_favorites) — `favoritedBy` é a lista
+// de nomes de quem marcou este lugar como favorito, não um boolean único.
+export default function PlaceCard({ place, onAction, onToggleFavorite, isFavorite, inItinerary, bottomContent, style }) {
   const facadePhoto = place.photo;
   const dishPhotos = place.dishPhotos || [];
+  const favoritedBy = place.favoritedBy || [];
 
   return (
     <PhotoCard photo={facadePhoto} onClick={onAction} style={style}>
-      <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, pointerEvents: 'none' }}>
-        <Badge>{place.tag || place.category}</Badge>
-      </div>
+      {onToggleFavorite && (
+        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 3, display: 'flex', alignItems: 'center', gap: 6, pointerEvents: 'none' }}>
+          {favoritedBy.length > 0 && (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '4px 10px 4px 8px',
+                borderRadius: 7,
+                background: overlay.badgeOnPhoto,
+                minWidth: 0,
+              }}
+            >
+              <span style={{ color: '#fff', fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                Favoritado por {favoritedBy.map(travelerEmoji).join(' ')}
+              </span>
+            </div>
+          )}
 
-      {place.cost != null && (
-        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 2, pointerEvents: 'none' }}>
-          <Badge>💵 US$ {place.cost}</Badge>
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite();
+            }}
+            style={{
+              flex: 'none',
+              width: 30,
+              height: 30,
+              borderRadius: 11,
+              background: isFavorite ? color.accent : overlay.badgeOnPhoto,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              pointerEvents: 'auto',
+            }}
+          >
+            <StarIcon size={16} color="#fff" />
+          </div>
         </div>
       )}
 
@@ -76,6 +118,10 @@ export default function PlaceCard({ place, onAction, inItinerary, bottomContent,
             <div style={{ color: 'rgba(255,255,255,0.82)', fontSize: 11.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textShadow: '0 1px 4px rgba(0,0,0,0.35)' }}>
               {shortAddress(place.address)}
             </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+            <Badge>{place.tag || place.category}</Badge>
+            {place.cost != null && <Badge>💵 US$ {place.cost}</Badge>}
           </div>
         </div>
 

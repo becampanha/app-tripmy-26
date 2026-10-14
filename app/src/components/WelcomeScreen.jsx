@@ -3,6 +3,8 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { WELCOME_SLIDES } from '../data/welcomeSlides.js';
 import { useHidesTabBar } from '../hooks/useEditingState.js';
+import { getTravelerIdentity, setTravelerIdentity } from '../hooks/useTravelerIdentity.js';
+import WhoAreYouStep from './WhoAreYouStep.jsx';
 import { color, shellMaxWidth, spacing, type } from '../design-system/index.js';
 
 const DISMISSED_KEY = 'welcomeScreenSeen';
@@ -36,6 +38,12 @@ export default function WelcomeScreen({ onClose }) {
   useHidesTabBar(true);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
   const [index, setIndex] = useState(0);
+  // Etapa obrigatória "Quem é você?" depois do carrossel (não um slide dele
+  // — tela própria, sem Pular/Próximo), só exibida se este aparelho ainda
+  // não tem identidade salva (ver useTravelerIdentity.js); mesmo mecanismo
+  // já usado na tela de Compras, só que disparado aqui primeiro. Se já há
+  // identidade (hard refresh não aconteceu), pula direto pro app de novo.
+  const [step, setStep] = useState('carousel');
   const isLast = index === WELCOME_SLIDES.length - 1;
   const slide = WELCOME_SLIDES[index];
   const Icon = slide.icon;
@@ -47,19 +55,56 @@ export default function WelcomeScreen({ onClose }) {
     return () => emblaApi.off('select', onSelect);
   }, [emblaApi]);
 
+  const finishCarousel = () => {
+    markWelcomeScreenSeen();
+    if (getTravelerIdentity()) {
+      onClose();
+    } else {
+      setStep('whoAreYou');
+    }
+  };
+
   const goToNext = () => {
     if (isLast) {
-      markWelcomeScreenSeen();
-      onClose();
+      finishCarousel();
       return;
     }
     emblaApi?.scrollNext();
   };
 
-  const skip = () => {
-    markWelcomeScreenSeen();
+  const skip = () => finishCarousel();
+
+  const handleConfirmIdentity = (name) => {
+    setTravelerIdentity(name);
     onClose();
   };
+
+  if (step === 'whoAreYou') {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: shellMaxWidth,
+          zIndex: 70,
+          overflow: 'hidden',
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+          style={{ position: 'absolute', inset: 0 }}
+        >
+          <WhoAreYouStep onConfirm={handleConfirmIdentity} />
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -1,5 +1,6 @@
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import { PenIcon } from '@solar-icons/react/linear/pen';
+import { travelerLabel } from '../data/travelers.js';
 import { color, radius, space } from './tokens.js';
 
 function formatRecommendationDate(iso) {
@@ -18,7 +19,7 @@ function formatRecommendationDate(iso) {
 // opcional em vez de sempre presente.
 export default function RecommendationCard({ recommendation, place, onOpenPhoto, onClick, onEdit }) {
   const meta = [
-    recommendation.author ? `Recomendado por ${recommendation.author}` : null,
+    recommendation.author ? `Recomendado por ${travelerLabel(recommendation.author)}` : null,
     formatRecommendationDate(recommendation.createdAt),
   ].filter(Boolean).join(' · ');
   // Clique normal (em qualquer parte do card, inclusive a foto) navega para

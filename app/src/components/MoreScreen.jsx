@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { RefreshIcon } from '@solar-icons/react/bold/refresh';
 import { PlayCircleIcon } from '@solar-icons/react/bold/play-circle';
 import { BellIcon } from '@solar-icons/react/bold/bell';
-import { UsersGroupRoundedIcon } from '@solar-icons/react/bold/users-group-rounded';
 import { InfoCircleIcon } from '@solar-icons/react/bold/info-circle';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
@@ -11,13 +10,19 @@ import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import WelcomeScreen from './WelcomeScreen.jsx';
 import { isStandalone } from '../hooks/useIsStandalone.js';
+import { getTravelerIdentity, setTravelerIdentity } from '../hooks/useTravelerIdentity.js';
+import { TRAVELERS } from '../data/travelers.js';
 import {
   disablePushNotifications,
   getNotificationPermission,
   isPushSupported,
   requestPushPermission,
 } from '../hooks/usePushNotifications.js';
-import { FixedHeader, Toggle, color, spacing, type } from '../design-system/index.js';
+import { FixedHeader, Select, Toggle, color, spacing, type } from '../design-system/index.js';
+
+function travelerOption(t) {
+  return { value: t.name, label: `${t.emoji} ${t.name}` };
+}
 
 function formatBuildDate(iso) {
   if (!iso) return '';
@@ -48,8 +53,19 @@ export default function MoreScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(() => getNotificationPermission() === 'granted');
+  const [identity, setIdentity] = useState(() => getTravelerIdentity());
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
+
+  // Trocar aqui redefine quem é "você" neste aparelho de verdade (ao
+  // contrário do Select equivalente em ShoppingScreen, que só troca a
+  // visualização temporária de outra lista sem mexer na identidade) — mesmo
+  // mecanismo salvo em localStorage (useTravelerIdentity.js), então a tela
+  // de Compras já reflete a pessoa nova na próxima vez que for aberta.
+  const handleChangeIdentity = (name) => {
+    setTravelerIdentity(name);
+    setIdentity(name);
+  };
 
   // Sincroniza o toggle se a permissão for revogada por fora do app (ex:
   // configurações do sistema) entre uma visita e outra a esta tela.
@@ -93,43 +109,22 @@ export default function MoreScreen() {
             <CloseIcon size={20} color={color.dark} />
           </div>
         }
+        right={
+          identity && (
+            <Select
+              value={identity}
+              onChange={handleChangeIdentity}
+              options={TRAVELERS.map(travelerOption)}
+              align="right"
+              buttonStyle={{ padding: '7px 10px', fontSize: 12.5 }}
+            />
+          )
+        }
       />
 
       <div style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
         <div
-          onClick={() => navigate('/viajantes')}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            padding: spacing.cardPadding,
-            background: color.bg,
-            border: `1px solid ${color.border}`,
-            borderRadius: 18,
-            cursor: 'pointer',
-          }}
-        >
-          <div
-            style={{
-              flex: 'none',
-              width: 32,
-              height: 32,
-              borderRadius: 10,
-              background: color.surfaceMuted,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <UsersGroupRoundedIcon size={16} color={color.dark} />
-          </div>
-          <div style={{ flex: 1, color: color.dark, fontSize: 14.5, fontWeight: 700 }}>Viajantes</div>
-          <AltArrowRightIcon size={16} color={color.muted} />
-        </div>
-
-        <div
-          style={{
-            marginTop: spacing.gapLg,
             display: 'flex',
             alignItems: 'center',
             gap: 10,

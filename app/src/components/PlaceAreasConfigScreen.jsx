@@ -13,6 +13,7 @@ import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { FixedHeader, HScrollTabs, Skeleton, color, radius, spacing } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
+import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
 // Mesmas 10 categorias de PlacesScreen.jsx — cada uma tem sua própria lista
 // independente de áreas (ver place_areas no banco).
@@ -37,6 +38,7 @@ export default function PlaceAreasConfigScreen() {
   const [editingArea, setEditingArea] = useState(null); // null = fechado; 'new' = criando; objeto = editando
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
+  const staggerKey = useStaggerKey();
 
   const areas = areasByCategory[category] || [];
   const tabItems = CATEGORIES.map((cat) => ({ key: cat, label: CATEGORY_LABELS[cat] || cat }));
@@ -115,7 +117,7 @@ export default function PlaceAreasConfigScreen() {
         // key muda ao trocar de categoria (aba) ou ao sair do estado "sem
         // dado ainda" pela primeira vez — ver mesmo padrão em
         // ScheduleScreen.jsx.
-        key={loading && areas.length === 0 ? 'skeleton' : `category-${category}`}
+        key={`${staggerKey}-${loading && areas.length === 0 ? 'skeleton' : `category-${category}`}`}
         variants={STAGGER_CONTAINER}
         initial="hidden"
         animate="show"

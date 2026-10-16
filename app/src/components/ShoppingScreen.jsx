@@ -19,8 +19,9 @@ import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { fetchShoppingItems, createShoppingItem, updateShoppingItem, deleteShoppingItem, toggleShoppingItemPurchased, uploadPlacePhoto } from '../api/itineraryApi.js';
 import { TRAVELERS } from '../data/travelers.js';
 import { SHOPPING_CATEGORIES, SHOPPING_CATEGORY_ICON } from '../data/shoppingCategories.js';
-import { FixedHeader, FieldLabel, HScrollTabs, Select, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
+import { FixedHeader, FieldLabel, HScrollTabs, Select, Skeleton, Confetti, color, radius, spacing, type } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
+import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
 const SUMMARY_KEY = '__summary__';
 
@@ -126,6 +127,9 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
   // link" estiver ligado (ver ShoppingItemModal.jsx).
   const displayPhoto = item.photo || (item.useLinkImage && item.linkImage) || null;
   const CategoryIcon = SHOPPING_CATEGORY_ICON[item.category];
+  // Confete só ao MARCAR como comprado (não ao desmarcar) — nasce a partir
+  // do ponto exato do clique (coordenadas do evento), não da tela inteira.
+  const [confettiOrigin, setConfettiOrigin] = useState(null);
 
   return (
     <div
@@ -192,6 +196,10 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
         <div
           onClick={(e) => {
             e.stopPropagation();
+            if (!item.purchased) {
+              const r = e.currentTarget.getBoundingClientRect();
+              setConfettiOrigin({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+            }
             onTogglePurchased();
           }}
           style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
@@ -203,6 +211,14 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
           )}
         </div>
       </div>
+
+      {confettiOrigin && (
+        <Confetti
+          x={confettiOrigin.x}
+          y={confettiOrigin.y}
+          onComplete={() => setConfettiOrigin(null)}
+        />
+      )}
     </div>
   );
 }
@@ -336,6 +352,7 @@ function GrandTotalCard({ icon: Icon, label, value, exchangeRate, background, la
 export default function ShoppingScreen() {
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
+  const staggerKey = useStaggerKey();
 
   // Select do header troca a identidade de verdade (quem você é neste
   // aparelho) — mesmo mecanismo usado no select da tela Mais (ver
@@ -533,7 +550,7 @@ export default function ShoppingScreen() {
           // key muda ao trocar de categoria (aba) ou ao sair do estado "sem
           // dado ainda" pela primeira vez — ver mesmo padrão em
           // ScheduleScreen.jsx.
-          key={items === null ? 'skeleton' : `category-${category}`}
+          key={`${staggerKey}-${items === null ? 'skeleton' : `category-${category}`}`}
           variants={STAGGER_CONTAINER}
           initial="hidden"
           animate="show"

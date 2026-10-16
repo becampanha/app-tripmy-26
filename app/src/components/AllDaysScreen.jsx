@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
+import { CloseIcon } from '@solar-icons/react/linear/close';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { CheckIcon } from '@solar-icons/react/bold/check';
 import { useItinerary } from '../hooks/useItinerary.js';
@@ -13,6 +13,7 @@ import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { swapDays } from '../api/itineraryApi.js';
 import { weatherEmoji } from '../data/weatherCodes.js';
 import { FloatingBar, FixedHeader, Skeleton, color, radius, space, type } from '../design-system/index.js';
+import { STAGGER_ITEM, WIPE_STAGGER_CONTAINER } from '../design-system/motionPresets.js';
 
 function DayRowSkeleton() {
   return (
@@ -105,7 +106,7 @@ export default function AllDaysScreen() {
               cursor: 'pointer',
             }}
           >
-            <AltArrowLeftIcon size={19} color={color.dark} />
+            <CloseIcon size={20} color={color.dark} />
           </div>
         }
         right={
@@ -129,7 +130,13 @@ export default function AllDaysScreen() {
         }
       />
 
-      <div style={{ marginTop: headerHeight + 18, boxSizing: 'border-box', padding: `0 ${space.screenGutter}px ${editing ? 100 : 40}px` }}>
+      <motion.div
+        key={!days ? 'skeleton' : 'days'}
+        variants={WIPE_STAGGER_CONTAINER}
+        initial="hidden"
+        animate="show"
+        style={{ marginTop: headerHeight + 18, boxSizing: 'border-box', padding: `0 ${space.screenGutter}px ${editing ? 100 : 40}px` }}
+      >
         {!days && Array.from({ length: 6 }).map((_, i) => <DayRowSkeleton key={i} />)}
 
         {days && days.map((day, i) => {
@@ -138,8 +145,9 @@ export default function AllDaysScreen() {
           const pickedIndex = pickedIds.indexOf(day.id);
           const isPicked = pickedIndex !== -1;
           return (
-            <div
+            <motion.div
               key={day.id}
+              variants={STAGGER_ITEM}
               onClick={editing ? () => togglePick(day.id) : () => navigate('/', { state: { selectedDay: i } })}
               style={{
                 position: 'relative',
@@ -213,10 +221,10 @@ export default function AllDaysScreen() {
                   </span>
                 </div>
               )}
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {editing && (() => {
@@ -228,8 +236,30 @@ export default function AllDaysScreen() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 12 }}
               transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
-              style={{ justifyContent: 'center' }}
+              padding="8px"
+              style={{ justifyContent: 'space-between' }}
             >
+              <div
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={stopEditing}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  height: 46,
+                  padding: '0 20px',
+                  borderRadius: radius.pillBarButton,
+                  background: color.white,
+                  border: `1px solid ${color.border}`,
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{ color: color.danger, fontSize: 14, fontWeight: 700 }}>
+                  Cancelar
+                </span>
+              </div>
+
               <motion.div
                 onClick={() => {
                   if (ready && !saving) handleSwap();
@@ -239,7 +269,7 @@ export default function AllDaysScreen() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  width: '100%',
+                  flex: 1,
                   height: 46,
                   borderRadius: radius.pillBarButton,
                   background: ready ? color.success : color.surfaceMuted,
@@ -249,13 +279,7 @@ export default function AllDaysScreen() {
                 }}
               >
                 <span style={{ color: ready ? '#fff' : color.muted, fontSize: 14, fontWeight: 700 }}>
-                  {saving
-                    ? 'Trocando...'
-                    : ready
-                    ? `Trocar Dia ${pickedDays[0].date.split('/')[0]} ↔ Dia ${pickedDays[1].date.split('/')[0]}`
-                    : pickedDays.length === 1
-                    ? `Toque em mais um dia para trocar com o Dia ${pickedDays[0].date.split('/')[0]}`
-                    : 'Toque em dois dias para trocar'}
+                  {saving ? 'Trocando...' : 'Trocar'}
                 </span>
               </motion.div>
             </FloatingBar>

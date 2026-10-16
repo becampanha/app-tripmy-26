@@ -31,3 +31,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 );
+
+// Remove a barra de progresso de boot (ver index.html) assim que o app
+// montou de verdade — fade rápido em vez de sumir seco.
+const bootProgress = document.getElementById('boot-progress');
+if (bootProgress) {
+  requestAnimationFrame(() => {
+    bootProgress.style.transition = 'opacity 0.25s ease';
+    bootProgress.style.opacity = '0';
+    setTimeout(() => bootProgress.remove(), 250);
+  });
+}

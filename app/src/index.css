@@ -99,9 +99,11 @@ button {
   50% { opacity: 0.5; }
 }
 
-@keyframes image-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.15; }
+/* Mesma animação da barra de boot (ver index.html) — compartilhada aqui
+   pra também ser usada dentro do React (ex: PhotoCard). */
+@keyframes boot-progress-slide {
+  0% { left: -45%; }
+  100% { left: 100%; }
 }
 
 @keyframes story-progress {

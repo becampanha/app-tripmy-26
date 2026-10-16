@@ -26,6 +26,7 @@ import { createActivity, updateActivity, deleteActivity, reorderActivities, upda
 import { weatherEmoji } from '../data/weatherCodes.js';
 import { FixedHeader, PullToRefreshIndicator, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
+import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
 const EDITABLE_FIELDS = ['time', 'title', 'subtitle', 'placeId', 'attractionId'];
 
@@ -106,6 +107,7 @@ export default function ScheduleScreen() {
   const [attractionSelectorFor, setAttractionSelectorFor] = useState(null); // mesmo esquema, para o seletor de atração
   const [movingActivity, setMovingActivity] = useState(null); // activity sendo movida de dia (abre o MoveToDayModal)
   const [moving, setMoving] = useState(false);
+  const staggerKey = useStaggerKey();
   const { days, loading, reload } = useItinerary();
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
@@ -145,7 +147,6 @@ export default function ScheduleScreen() {
   // PUT + reload a cada campo editado que existia antes.
   const [draft, setDraft] = useState(null); // { dayId, theme, activities: [...] }
   const originalRef = useRef(null); // snapshot pré-edição, para diff no Salvar
-  const [mapOpen, setMapOpen] = useState(false);
 
   // Abrir o mapa empurra uma entrada real no histórico (mesmo pathname, só
   // muda o state) — sem isso, o mapa é só um overlay local, e ao clicar
@@ -154,19 +155,16 @@ export default function ScheduleScreen() {
   // nunca tinha existido como entrada de histórico. Com essa entrada, voltar
   // (seja pelo botão da tela de detalhes, seja pelo gesto/botão físico do
   // celular) resolve sozinho, sem lógica própria de "lembrar de onde vim".
-  const openMap = () => {
-    setMapOpen(true);
-    navigate(location.pathname, { state: { ...location.state, mapOpen: true } });
-  };
+  // `mapOpen` é derivado direto de location.state a cada render (não um
+  // useState espelhado via useEffect) — um useEffect com [location.state] ou
+  // [location.key] como dependência nunca disparava de novo ao voltar: o
+  // HashRouter reutiliza a mesma location.key ("default") e pode devolver a
+  // mesma referência de state entre navegações pro mesmo pathname, então o
+  // mapa abria normalmente mas "voltar" não fechava sozinho (só depois de um
+  // 2º clique/navegação forçar outro recálculo qualquer).
+  const mapOpen = !!location.state?.mapOpen;
+  const openMap = () => navigate(location.pathname, { state: { ...location.state, mapOpen: true } });
   const closeMap = () => navigate(-1);
-
-  // location.state é a fonte da verdade: cobre tanto fechar pelo botão
-  // dentro do DayMap quanto o usuário apertar voltar no navegador/celular
-  // (gesto ou botão físico), que o React Router já traduz num novo valor de
-  // location sem passar pelo onClose do componente.
-  useEffect(() => {
-    setMapOpen(!!location.state?.mapOpen);
-  }, [location.state]);
 
   // Avisa o Shell (App.jsx) pra esconder a BottomTabBar enquanto esta tela
   // está em edição — ela some pra dar lugar à EditActionBar (Cancelar/Salvar).
@@ -409,7 +407,7 @@ export default function ScheduleScreen() {
         // misturar skeleton no stagger fazia a troca skeleton→conteúdo real
         // (quando os dados chegam depois do primeiro render) não reanimar
         // direito, porque o container já tinha disparado "show" uma vez.
-        key={displayDay ? `day-${selectedDay}` : 'skeleton'}
+        key={`${staggerKey}-${displayDay ? `day-${selectedDay}` : 'skeleton'}`}
         variants={STAGGER_CONTAINER}
         initial="hidden"
         animate="show"

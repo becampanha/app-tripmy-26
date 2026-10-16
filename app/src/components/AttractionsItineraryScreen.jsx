@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, Reorder, motion, useDragControls } from 'motion/react';
-import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
+import { CloseIcon } from '@solar-icons/react/linear/close';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { HamburgerMenuIcon } from '@solar-icons/react/linear/hamburger-menu';
 import { ClockCircleIcon } from '@solar-icons/react/bold/clock-circle';
@@ -17,7 +17,7 @@ import { PARK_ICON_MAP } from '../data/parkIcons.js';
 import { ATTRACTION_STATUS_LABEL } from '../data/attractionStatus.js';
 import EditActionBar from './EditActionBar.jsx';
 import { FixedHeader, HScrollTabs, FieldLabel, inputStyle, ParkStrategyCard, Skeleton, color, radius, space, spacing, type } from '../design-system/index.js';
-import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
+import { STAGGER_ITEM, WIPE_STAGGER_CONTAINER } from '../design-system/motionPresets.js';
 
 // Mesmo badge já usado pro lugar vinculado a uma atividade do roteiro de
 // dias (ActivityItem.jsx) — padding/radius/background/fonte idênticos —, com
@@ -263,7 +263,7 @@ export default function AttractionsItineraryScreen() {
               cursor: 'pointer',
             }}
           >
-            <AltArrowLeftIcon size={19} color={color.dark} />
+            <CloseIcon size={20} color={color.dark} />
           </div>
         }
         right={
@@ -305,7 +305,7 @@ export default function AttractionsItineraryScreen() {
         // estranho, e o Reorder.Group já cuida da própria transição de
         // reordenar.
         key={editing ? 'editing' : loading ? 'skeleton' : `park-${selectedPark}`}
-        variants={STAGGER_CONTAINER}
+        variants={WIPE_STAGGER_CONTAINER}
         initial="hidden"
         animate="show"
         style={{ marginTop: headerHeight + 16, boxSizing: 'border-box', padding: `0 ${space.screenGutter}px ${editing ? 110 : 40}px` }}

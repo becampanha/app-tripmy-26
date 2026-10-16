@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { CloseIcon } from '@solar-icons/react/linear/close';
+import { ArrowLeftIcon } from '@solar-icons/react/linear/arrow-left';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import { MapPointIcon } from '@solar-icons/react/bold/map-point';
 import { useScrollY } from '../hooks/useScrollY.js';
@@ -35,7 +35,7 @@ export default function ConfigScreen() {
             onClick={() => navigate(-1)}
             style={{ width: 38, height: 38, borderRadius: 13, background: color.surfaceMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           >
-            <CloseIcon size={20} color={color.dark} />
+            <ArrowLeftIcon size={19} color={color.dark} />
           </div>
         }
       />

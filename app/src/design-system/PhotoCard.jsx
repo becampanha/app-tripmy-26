@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import ImageLoadingBar from './ImageLoadingBar.jsx';
+import { useImageProgress } from '../hooks/useImageProgress.js';
 import { color, cardPhotoGradient, cardPhotoGradientHeight, cardPhotoHeight, radius, spacing } from './tokens.js';
 
 // Card com foto de fundo + gradiente escuro na parte de baixo, para legibilidade
@@ -8,15 +9,11 @@ import { color, cardPhotoGradient, cardPhotoGradientHeight, cardPhotoHeight, rad
 // `height` tem default único (cardPhotoHeight) — todo card com foto do app é
 // do mesmo tamanho a menos que a tela tenha um motivo explícito pra variar.
 export default function PhotoCard({ photo, height = cardPhotoHeight, onClick, children, contentStyle, style }) {
-  const [loaded, setLoaded] = useState(false);
-
-  // Reseta o skeleton se a foto do card mudar (ex: card reciclado em lista virtualizada).
-  useEffect(() => {
-    setLoaded(false);
-  }, [photo]);
+  const { elementRef, progress, objectUrl, loaded } = useImageProgress(photo);
 
   return (
     <div
+      ref={elementRef}
       onClick={onClick}
       style={{
         position: 'relative',
@@ -35,21 +32,23 @@ export default function PhotoCard({ photo, height = cardPhotoHeight, onClick, ch
           style={{
             position: 'absolute',
             inset: 0,
-            background: color.surfaceMuted,
-            animation: 'image-pulse 1.4s ease-in-out infinite',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             opacity: loaded ? 0 : 1,
             transition: 'opacity 0.35s ease',
+            pointerEvents: 'none',
           }}
-        />
+        >
+          <ImageLoadingBar progress={progress} />
+        </div>
       )}
 
-      {photo && (
+      {objectUrl && (
         <img
-          src={photo}
+          src={objectUrl}
           alt=""
-          loading="lazy"
           decoding="async"
-          onLoad={() => setLoaded(true)}
           style={{
             position: 'absolute',
             inset: 0,

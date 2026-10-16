@@ -14,6 +14,7 @@ import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import { FixedHeader, HScrollTabs, ParkMap, SearchInput, SectionHeader, Skeleton, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
+import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
 // area vem em CAIXA ALTA da planilha original importada (ex: "ADVENTURELAND",
 // "DIAGON ALLEY") — aqui só pra exibição, sem mexer no dado em si (usado
@@ -43,7 +44,7 @@ export default function AttractionsScreen() {
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
   const { getLiveQueue, getLiveStatus } = useLiveQueueTimes();
-  const [mapOpen, setMapOpen] = useState(false);
+  const staggerKey = useStaggerKey();
 
   // Salva parque/filtros a cada mudança, pra sobreviver à desmontagem ao
   // navegar para outra tela e voltar (mesmo padrão de usePlacesScreenState).
@@ -79,15 +80,16 @@ export default function AttractionsScreen() {
   // Abrir o mapa empurra uma entrada real no histórico (mesmo padrão do
   // ScheduleScreen/DayMap) — sem isso, clicar "Detalhes" dentro do mapa e
   // depois "voltar" na tela de detalhe pulava o mapa direto pra lista.
-  const openMap = () => {
-    setMapOpen(true);
-    navigate(location.pathname, { state: { ...location.state, mapOpen: true } });
-  };
+  // `mapOpen` é derivado direto de location.state a cada render (não um
+  // useState espelhado via useEffect) — um useEffect com [location.state] ou
+  // [location.key] como dependência nunca disparava de novo ao voltar: o
+  // HashRouter reutiliza a mesma location.key ("default") e pode devolver a
+  // mesma referência de state entre navegações pro mesmo pathname, então o
+  // mapa abria normalmente mas "voltar" não fechava sozinho (só depois de um
+  // 2º clique/navegação forçar outro recálculo qualquer).
+  const mapOpen = !!location.state?.mapOpen;
+  const openMap = () => navigate(location.pathname, { state: { ...location.state, mapOpen: true } });
   const closeMap = () => navigate(-1);
-
-  useEffect(() => {
-    setMapOpen(!!location.state?.mapOpen);
-  }, [location.state]);
 
   const park = parks[parkIndex];
 
@@ -140,7 +142,7 @@ export default function AttractionsScreen() {
       <motion.div
         // key muda ao trocar de parque (aba) ou ao sair do estado "sem dado
         // ainda" pela primeira vez — ver mesmo padrão em ScheduleScreen.jsx.
-        key={loading && parks.length === 0 ? 'skeleton' : `park-${parkIndex}`}
+        key={`${staggerKey}-${loading && parks.length === 0 ? 'skeleton' : `park-${parkIndex}`}`}
         variants={STAGGER_CONTAINER}
         initial="hidden"
         animate="show"

@@ -17,6 +17,7 @@ import RecommendationCardStack from './RecommendationCardStack.jsx';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import { FixedHeader, HScrollTabs, RecommendationCard, YoutubeVideoModal, SectionHeader, Skeleton, color, radius, spacing } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
+import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
 const NO_AREA_LABEL = 'Outros lugares';
 const NO_PLACE_LABEL = 'Sem lugar';
@@ -148,6 +149,7 @@ export default function RecommendationsScreen() {
   const navigate = useNavigate();
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
+  const staggerKey = useStaggerKey();
   const [editingRecommendation, setEditingRecommendation] = useState(null);
   const [creatingRecommendation, setCreatingRecommendation] = useState(false);
   const [videoModalRec, setVideoModalRec] = useState(null);
@@ -306,7 +308,7 @@ export default function RecommendationsScreen() {
           // key muda ao trocar de categoria (aba) ou ao sair do estado "sem
           // dado ainda" pela primeira vez — ver mesmo padrão em
           // ScheduleScreen.jsx.
-          key={recommendations === null ? 'skeleton' : `category-${category}`}
+          key={`${staggerKey}-${recommendations === null ? 'skeleton' : `category-${category}`}`}
           variants={STAGGER_CONTAINER}
           initial="hidden"
           animate="show"

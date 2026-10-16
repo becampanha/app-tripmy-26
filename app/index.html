@@ -13,9 +13,60 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <title>Family Trip</title>
+<style>
+  /* Ícone do app + barra de progresso indeterminada, centralizados na tela,
+     mostrados enquanto o app ainda não montou (PWA abrindo a frio: tela
+     fica em branco por um tempo até o JS carregar e rodar). Puro CSS/HTML,
+     sem depender de nenhum bundle — precisa aparecer instantaneamente,
+     antes de qualquer JS rodar. Removido por main.jsx assim que o React
+     monta de verdade. */
+  #boot-progress {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    z-index: 9999;
+  }
+  #boot-progress img {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+  }
+  #boot-progress .bar {
+    position: relative;
+    width: 140px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(28, 26, 23, 0.1);
+    overflow: hidden;
+  }
+  #boot-progress .bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 45%;
+    background: #1c1a17;
+    border-radius: 2px;
+    animation: boot-progress-slide 1.1s ease-in-out infinite;
+  }
+  @keyframes boot-progress-slide {
+    0% { left: -45%; }
+    100% { left: 100%; }
+  }
+</style>
 </head>
 <body>
 <div id="root"></div>
+<div id="boot-progress">
+  <img src="/icons/icon-192.png" alt="" />
+  <div class="bar"></div>
+</div>
 <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

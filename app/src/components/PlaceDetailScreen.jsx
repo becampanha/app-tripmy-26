@@ -39,6 +39,8 @@ import { tagOptionsFor } from '../data/placeTagOptions.js';
 import { getCachedPlaces, setCachedPlaces, getCachedPlace, setCachedPlace } from '../hooks/usePlacesScreenState.js';
 import { DAY_KEYS, DAY_LABELS, emptySchedule, summarizeSchedule, allDaysList } from '../data/hoursSchedule.js';
 import { IconButton, NavBar, navControlStyle, navControlTextColor, FieldLabel, inputStyle, Select, Toggle, RecommendationCard, PhotoLightbox, YoutubeVideoModal, color, space, spacing } from '../design-system/index.js';
+import { LIST_DETAIL_STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
+import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
@@ -319,6 +321,7 @@ export default function PlaceDetailScreen() {
   const [place, setPlace] = useState(cachedPlace);
   const [loading, setLoading] = useState(!isNew && cachedPlace === null);
   const [editing, setEditing] = useState(false);
+  const staggerKey = useStaggerKey();
   const [saving, setSaving] = useState(false);
   const [attemptedSave, setAttemptedSave] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -643,8 +646,15 @@ export default function PlaceDetailScreen() {
     <div ref={rootRef} style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box', paddingBottom: 40 }}>
       {/* Foto fixa atrás do conteúdo (efeito parallax): não rola junto com a
           página — o card de informações desliza por cima dela conforme o
-          usuário arrasta a tela pra cima. */}
-      <div
+          usuário arrasta a tela pra cima. opacity animada por fora (Motion)
+          em paralelo ao transform de parallax controlado via CSS inline
+          (transition própria, inalterada) — a foto só aparece depois que o
+          slide de entrada da tela termina, junto com o resto do conteúdo em
+          stagger, em vez de já vir visível enquanto a tela ainda desliza. */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25, delay: 0.32 }}
         style={{
           position: 'fixed',
           top: 0,
@@ -708,7 +718,7 @@ export default function PlaceDetailScreen() {
             />
           </label>
         )}
-      </div>
+      </motion.div>
 
       <NavBar
         visible={navBarVisible}
@@ -785,7 +795,13 @@ export default function PlaceDetailScreen() {
           borderTopRightRadius: 24,
         }}
       >
-        <div style={{ padding: '10px 22px 20px' }}>
+        <motion.div
+          key={`${staggerKey}-${id ?? 'new'}`}
+          variants={LIST_DETAIL_STAGGER_CONTAINER}
+          initial="hidden"
+          animate="show"
+          style={{ padding: '10px 22px 20px' }}
+        >
 
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -962,7 +978,7 @@ export default function PlaceDetailScreen() {
           </div>
         ) : (
           <>
-            <div style={{ minWidth: 0 }}>
+            <motion.div variants={STAGGER_ITEM} style={{ minWidth: 0 }}>
               <div style={{ color: '#1c1a17', fontSize: 22, fontWeight: 800, lineHeight: 1.2, marginTop: 8 }}>
                 {place.name}
               </div>
@@ -971,10 +987,11 @@ export default function PlaceDetailScreen() {
                   {place.recommendation}
                 </div>
               )}
-            </div>
+            </motion.div>
 
             {(place.tag || place.cost != null || (place.hours && !place.hoursSchedule)) && (
-              <div
+              <motion.div
+                variants={STAGGER_ITEM}
                 style={{
                   display: 'flex',
                   gap: spacing.gapLg,
@@ -995,11 +1012,11 @@ export default function PlaceDetailScreen() {
                   if (place.hours && !place.hoursSchedule) cards.push({ key: 'hours', icon: '🕒', label: 'Horário', value: place.hours });
                   return cards.map(({ key, ...card }) => <InfoCard key={key} {...card} />);
                 })()}
-              </div>
+              </motion.div>
             )}
 
             {(place.googleMapsUri || place.category === 'Restaurante') && (
-              <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.controlGap }}>
+              <motion.div variants={STAGGER_ITEM} style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.controlGap }}>
                 {place.googleMapsUri && (
                   <a
                     href={place.googleMapsUri}
@@ -1079,20 +1096,20 @@ export default function PlaceDetailScreen() {
                     </div>
                   )
                 )}
-              </div>
+              </motion.div>
             )}
 
             {place.hoursSchedule && (
-              <div style={{ marginTop: 22 }}>
+              <motion.div variants={STAGGER_ITEM} style={{ marginTop: 22 }}>
                 <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1, marginBottom: spacing.controlGap }}>
                   Horário de funcionamento
                 </div>
                 <HoursScheduleSection schedule={place.hoursSchedule} />
-              </div>
+              </motion.div>
             )}
 
             {!isNew && (
-              <div style={{ marginTop: 22 }}>
+              <motion.div variants={STAGGER_ITEM} style={{ marginTop: 22 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1 }}>
                     Dicas
@@ -1146,10 +1163,10 @@ export default function PlaceDetailScreen() {
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             )}
 
-            <div style={{ marginTop: 22 }}>
+            <motion.div variants={STAGGER_ITEM} style={{ marginTop: 22 }}>
               <div>
                 <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1 }}>
                   No roteiro
@@ -1231,10 +1248,10 @@ export default function PlaceDetailScreen() {
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {place.address && (
-              <div style={{ marginTop: 22 }}>
+              <motion.div variants={STAGGER_ITEM} style={{ marginTop: 22 }}>
                 <div>
                   <div style={{ color: '#1c1a17', fontSize: 17, fontWeight: 800, letterSpacing: -0.1 }}>
                     Endereço do local
@@ -1243,11 +1260,12 @@ export default function PlaceDetailScreen() {
                     {place.address}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {coords && (
-              <div
+              <motion.div
+                variants={STAGGER_ITEM}
                 onClick={() => setMapFullscreen(true)}
                 style={{
                   display: 'block',
@@ -1280,12 +1298,12 @@ export default function PlaceDetailScreen() {
                 >
                   <MapPointIcon size={36} color="#1c1a17" />
                 </div>
-              </div>
+              </motion.div>
             )}
 
           </>
         )}
-        </div>
+        </motion.div>
       </div>
 
       <AnimatePresence>

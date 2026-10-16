@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { RefreshIcon } from '@solar-icons/react/bold/refresh';
 import { PlayCircleIcon } from '@solar-icons/react/bold/play-circle';
 import { BellIcon } from '@solar-icons/react/bold/bell';
@@ -20,6 +21,8 @@ import {
   requestPushPermission,
 } from '../hooks/usePushNotifications.js';
 import { FixedHeader, Select, Toggle, color, spacing, type } from '../design-system/index.js';
+import { STAGGER_ITEM, WIPE_STAGGER_CONTAINER } from '../design-system/motionPresets.js';
+import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
 function travelerOption(t) {
   return { value: t.name, label: `${t.emoji} ${t.name}` };
@@ -57,6 +60,7 @@ export default function MoreScreen() {
   const [identity, setIdentity] = useState(() => getTravelerIdentity());
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
+  const staggerKey = useStaggerKey();
 
   // Trocar aqui redefine quem é "você" neste aparelho de verdade (ao
   // contrário do Select equivalente em ShoppingScreen, que só troca a
@@ -123,8 +127,15 @@ export default function MoreScreen() {
         }
       />
 
-      <div style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
-        <div
+      <motion.div
+        key={staggerKey}
+        variants={WIPE_STAGGER_CONTAINER}
+        initial="hidden"
+        animate="show"
+        style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}
+      >
+        <motion.div
+          variants={STAGGER_ITEM}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -172,10 +183,11 @@ export default function MoreScreen() {
           >
             <RefreshIcon size={17} color={refreshing ? color.faint : color.dark} />
           </div>
-        </div>
+        </motion.div>
 
         {isStandalone() && isPushSupported() && (
-          <div
+          <motion.div
+            variants={STAGGER_ITEM}
             style={{
               marginTop: spacing.gapLg,
               display: 'flex',
@@ -211,10 +223,11 @@ export default function MoreScreen() {
               </div>
             </div>
             <Toggle checked={pushEnabled && !pushBlocked} onChange={handleTogglePush} />
-          </div>
+          </motion.div>
         )}
 
-        <div
+        <motion.div
+          variants={STAGGER_ITEM}
           onClick={() => navigate('/configuracoes')}
           style={{
             marginTop: spacing.gapLg,
@@ -244,9 +257,10 @@ export default function MoreScreen() {
           </div>
           <div style={{ flex: 1, color: color.dark, fontSize: 14.5, fontWeight: 700 }}>Configurações</div>
           <AltArrowRightIcon size={16} color={color.muted} />
-        </div>
+        </motion.div>
 
-        <div
+        <motion.div
+          variants={STAGGER_ITEM}
           onClick={() => setShowWelcome(true)}
           style={{
             marginTop: spacing.gapLg,
@@ -276,8 +290,8 @@ export default function MoreScreen() {
           </div>
           <div style={{ flex: 1, color: color.dark, fontSize: 14.5, fontWeight: 700 }}>Ver tela de boas-vindas</div>
           <AltArrowRightIcon size={16} color={color.muted} />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {showWelcome && <WelcomeScreen onClose={() => setShowWelcome(false)} />}
     </div>

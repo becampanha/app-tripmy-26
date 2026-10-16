@@ -19,6 +19,7 @@ import { useElementHeight } from '../hooks/useElementHeight.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import { FixedHeader, HScrollTabs, SearchInput, SectionHeader, Skeleton, FilterMenu, color, radius, space, spacing } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
+import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
@@ -47,7 +48,6 @@ export default function PlacesScreen() {
   const [onlyInItinerary, setOnlyInItinerary] = useState(savedState.onlyInItinerary);
   const [onlyFavorite, setOnlyFavorite] = useState(savedState.onlyFavorite);
   const [search, setSearch] = useState(savedState.search);
-  const [mapOpen, setMapOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const placesInItinerary = usePlacesInItinerary();
@@ -55,20 +55,23 @@ export default function PlacesScreen() {
   const rootRef = useRef(null);
   const { scrollY } = useScrollY(rootRef);
   const { ref: headerRef, height: headerHeight } = useElementHeight();
+  const staggerKey = useStaggerKey();
 
   // Mesmo padrão do mapa do Roteiro (ver ScheduleScreen.jsx): abrir o mapa
   // empurra uma entrada real no histórico, pra "voltar" (botão dentro do
   // mapa, gesto ou botão físico do celular) sempre funcionar sozinho, sem
-  // lógica própria de "lembrar de onde vim".
-  const openMap = () => {
-    setMapOpen(true);
-    navigate(location.pathname, { state: { ...location.state, mapOpen: true } });
-  };
+  // lógica própria de "lembrar de onde vim". `mapOpen` é derivado direto de
+  // location.state a cada render (não um useState espelhado via useEffect) —
+  // um useEffect com [location.state] ou [location.key] como dependência
+  // nunca disparava de novo ao voltar: o HashRouter reutiliza a mesma
+  // location.key ("default") e pode devolver a mesma referência de state
+  // entre navegações pro mesmo pathname, então o mapa abria normalmente mas
+  // "voltar" não fechava sozinho (só depois de um 2º clique/navegação forçar
+  // outro recálculo qualquer). Lendo direto do location atual a cada render
+  // não depende de nenhuma dessas identidades.
+  const mapOpen = !!location.state?.mapOpen;
+  const openMap = () => navigate(location.pathname, { state: { ...location.state, mapOpen: true } });
   const closeMap = () => navigate(-1);
-
-  useEffect(() => {
-    setMapOpen(!!location.state?.mapOpen);
-  }, [location.state]);
 
   // Salva filtros a cada mudança, pra sobreviver à desmontagem ao navegar
   // para a tela de detalhes e voltar.
@@ -258,7 +261,7 @@ export default function PlacesScreen() {
         // bloco desmonta/remonta e o stagger (initial="hidden" animate=
         // "show") dispara de novo, reanimando o conteúdo novo. Enquanto
         // `loading`, a key fica fixa: os skeletons não entram na coreografia.
-        key={loading ? 'skeleton' : `category-${category}-${subcategory || 'all'}`}
+        key={`${staggerKey}-${loading ? 'skeleton' : `category-${category}-${subcategory || 'all'}`}`}
         variants={STAGGER_CONTAINER}
         initial="hidden"
         animate="show"

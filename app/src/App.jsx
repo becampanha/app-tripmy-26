@@ -23,6 +23,7 @@ import { useIsEditingAnywhere, useIsFullscreenOverlayOpen } from './hooks/useEdi
 import { isIOS, isStandalone } from './hooks/useIsStandalone.js';
 import { getNotificationPermission, isPushSupported, requestPushPermission } from './hooks/usePushNotifications.js';
 import { useAreasData } from './hooks/useAreasData.js';
+import { ActiveScreenProvider } from './hooks/useActiveScreen.js';
 
 // Hierarquia simples de navegação: Roteiro, Dicas, Lugares, Atrações, Compras
 // e Mais são telas "raiz" (sem transição de push/pop entre si); a tela de
@@ -41,55 +42,57 @@ import { useAreasData } from './hooks/useAreasData.js';
 // global recalculado a cada render do Shell, que seria idêntico para as duas
 // instâncias simultâneas durante a transição.
 function depthOf(pathname) {
+  // Hierarquia real de navegação (push empilha, pop desempilha): raiz (0) →
+  // /mais (1) → /configuracoes (2) → /configuracoes/areas (3). Cada rota só
+  // precisa saber sua profundidade absoluta; push/pop e qual variante usar
+  // são derivados comparando profundidades entre navegações (ver Shell).
+  if (pathname === '/configuracoes/areas') return 3;
+  if (pathname === '/configuracoes') return 2;
   return (
     pathname.startsWith('/lugares/') ||
     pathname.startsWith('/atracoes/') ||
     pathname === '/roteiro/dias' ||
-    pathname === '/mais' ||
-    pathname === '/configuracoes' ||
-    pathname === '/configuracoes/areas'
+    pathname === '/mais'
   ) ? 1 : 0;
 }
 
-// TESTE: "Mais" usa uma transição diferente do push/pop padrão — sobe de
-// baixo pra cima cobrindo a tela inteira (como um modal/bottom-sheet em tela
-// cheia), em vez de entrar deslizando da direita. A tela de baixo escurece
-// no lugar (sem recuar/deslizar) em vez do parallax sutil usado pra telas de
-// detalhe. Só se aplica à rota /mais — todo o resto do app continua com o
-// push/pop padrão (ver depthOf/direction em Shell()).
-function isModalRoute(pathname) {
-  return pathname === '/mais';
-}
-
 const TRANSITION = { type: 'tween', ease: [0.32, 0.72, 0, 1], duration: 0.32 };
-const MODAL_TRANSITION = { type: 'tween', ease: [0.22, 1, 0.36, 1], duration: 0.38 };
 
-// Toda variante declara x/y/opacity explicitamente, mesmo quando o valor é
-// "neutro" (0/1) — se uma variante de destino omite uma propriedade que a
-// variante de origem definia (ex: 'top' sem 'y', chegando vindo de
-// 'offscreenBottom' que tem y:'100%'), o Motion não anima essa propriedade
-// de volta: ele simplesmente a deixa congelada no valor atual, por padrão só
-// anima o que está explícito em AMBOS os lados da transição. Foi exatamente
-// essa omissão (variantes antigas nunca precisaram de 'y', só 'x') que
-// travava a tela "Mais" para sempre em y:'100%' (offscreenBottom) mesmo com
-// animate="top" sendo aplicado corretamente — 'top' nunca mencionava 'y',
-// então não havia nada pra animar.
 const variants = {
   // Topo da pilha (a tela de detalhe): entra 100% da direita, sai 100% pela direita.
-  offscreenRight: { x: '100%', y: 0, opacity: 1 },
-  top: { x: 0, y: 0, opacity: 1 },
-  // Base da pilha (a tela de baixo, ex: Lugares): recua sutilmente quando o
-  // detalhe é empurrado por cima, volta ao normal quando ele é fechado.
-  receded: { x: '-22%', y: 0, opacity: 0.92 },
-  // TESTE: tela "Mais" sobe de baixo pra cima cobrindo tudo.
-  offscreenBottom: { x: 0, y: '100%', opacity: 1 },
-  // TESTE: tela de baixo (Roteiro) ao abrir "Mais" — escurece no lugar, sem
-  // deslizar. O escurecimento em si é um overlay próprio (ver Screen), não
-  // uma opacidade do conteúdo inteiro — baixar a opacity do bloco inteiro
-  // deixaria texto/imagens "lavados"; um véu escuro por cima preserva o
-  // contraste do conteúdo e só reduz a luminosidade percebida, como o
-  // scrim atrás de um bottom-sheet no Android/iOS.
-  darkened: { x: 0, y: 0, opacity: 1 },
+  offscreenRight: { x: '100%', opacity: 1 },
+  top: { x: 0, opacity: 1 },
+};
+
+// EXPERIMENTO: efeito de entrada/saída alternativo, isolado às "telas
+// solitárias" — acessadas por um botão avulso, não por um item de lista
+// (/mais, "Ver todos os dias" do Roteiro, "Roteiro de Atrações") — não mexe
+// em depthOf/direction/isTopOfStack (o mecanismo compartilhado por todas as
+// outras telas continua 100% intocado). Troca QUAIS variantes/transição
+// essa tela específica usa: em vez de deslizar da direita, "desce" cobrindo
+// a tela (y: -100% → 0) e sai voltando a subir (y: 0 → -100%), como um wipe
+// vertical. NÃO se aplica a telas abertas a partir de um item de lista (ex:
+// um lugar específico em Lugares, uma atração específica em Atrações) —
+// essas usam seu próprio efeito, ver usesListDetailTransition abaixo.
+function usesWipeTransition(pathname) {
+  return pathname === '/mais' || pathname === '/roteiro/dias' || pathname === '/atracoes/roteiro';
+}
+
+const WIPE_TRANSITION = { type: 'tween', ease: [0.32, 0.72, 0, 1], duration: 0.36 };
+
+const wipeVariants = {
+  offscreenTop: { y: '-100%', opacity: 1 },
+  top: { y: 0, opacity: 1 },
+};
+
+// A tela de baixo (ex: Roteiro sob Mais, Lugares sob o detalhe de um lugar)
+// fica sempre parada no eixo X e só encolhe sutilmente (scale) — nunca mais
+// desloca lateralmente (x:-22%, usado antes só na entrada lateral padrão).
+// Testado com um véu escuro por cima também, mas removido a pedido: o
+// recuo/scale já basta, o escurecimento ficava redundante.
+const recededVariants = {
+  top: { x: 0, scale: 1, opacity: 1 },
+  receded: { x: 0, scale: 0.96, opacity: 1 },
 };
 
 // Rotas vivem aqui dentro, não no Shell — cada instância de Screen recebe seu
@@ -123,39 +126,74 @@ function ScreenRoutes({ location }) {
   );
 }
 
-function Screen({ depth, direction, location, isModalTransition, onExited }) {
-  // direction: 'push' | 'pop' | null (transição no mesmo nível, sem animação)
-  const isTopOfStack = depth === 1;
-  const isModalScreen = isModalRoute(location.pathname);
+function Screen({ depth, direction, isTopOfStack, location, onExited }) {
+  // O FixedHeader de cada tela (ver design-system/FixedHeader.jsx) é
+  // `position: fixed` — ignora completamente o `overflow` do container pai
+  // e o `scale` do próprio motion.div (ele vira "fixed ao containing block
+  // com transform mais próximo", mas continua VISÍVEL e ocupando espaço
+  // físico perto do topo real da tela mesmo quando esta entrada está
+  // recuada atrás de outra). Bug real reportado pelo usuário: fragmentos
+  // de um header de tela recuada (ícone + texto de um item de lista)
+  // "vazando" por cima/sob o conteúdo da tela ativa. `hideWhenReceded` só
+  // vira true DEPOIS que a animação de recuar já terminou de verdade (via
+  // onAnimationComplete abaixo) — nunca durante a transição em si, senão a
+  // tela sumiria de repente no meio do movimento de scale, quebrando o
+  // efeito visual.
+  const [hideWhenReceded, setHideWhenReceded] = useState(false);
+  const isWipeScreen = isTopOfStack && usesWipeTransition(location.pathname);
+  const offscreenState = isWipeScreen ? 'offscreenTop' : 'offscreenRight';
+  // Dois conjuntos de variantes: a tela de topo usa `variants` (slide
+  // lateral) ou `wipeVariants` (desce/sobe); a tela de baixo SEMPRE usa
+  // `recededVariants` (parada + scale), nunca o deslocamento lateral antigo.
+  const activeVariants = isTopOfStack ? (isWipeScreen ? wipeVariants : variants) : recededVariants;
 
-  let initial, animate, exit;
-  if (isModalTransition) {
-    // TESTE: "Mais" sobe de baixo pra cima cobrindo a tela inteira; a tela
-    // que ficou por baixo escurece no lugar (ver overlay em style, abaixo) —
-    // nenhuma das duas desliza lateralmente nessa transição específica.
-    if (isModalScreen) {
-      initial = direction === 'push' ? 'offscreenBottom' : 'darkened';
-      animate = direction === 'push' ? 'top' : 'offscreenBottom';
-      exit = direction === 'push' ? 'darkened' : 'offscreenBottom';
-    } else {
-      initial = 'top';
-      animate = direction === 'push' ? 'darkened' : 'top';
-      exit = direction === 'push' ? 'darkened' : 'top';
-    }
-  } else if (direction === null) {
-    initial = animate = exit = 'top';
+  // IMPORTANTE: `exit` NUNCA depende de `direction` — só de `isTopOfStack`
+  // (que é fixo pra cada entrada, igual `depth`). Quando o Shell remove uma
+  // entrada do array `screens` (usuário voltou, ver setScreens), o React
+  // nunca mais chama Screen(...) de novo pra ela com props atualizadas — só
+  // o Motion a mantém montada via AnimatePresence, CONGELADA com as ÚLTIMAS
+  // props que recebeu (as de quando ela foi criada, com a `direction` de
+  // ENTÃO). Se `exit` dependesse de `direction`, ele usaria essa direction
+  // congelada (ex: sempre 'push', de quando entrou) — e como 'push' sempre
+  // mapeava exit para 'top' (igual a animate), o useEffect de "variante de
+  // saída igual à de entrada" removia a tela SEM NUNCA ANIMAR a saída (bug
+  // real: a tela de detalhe sempre "sumia" em vez de deslizar pra fora ao
+  // voltar, só mascarado pela tela de baixo já estar visível no lugar).
+  // A saída real de QUALQUER entrada (de topo ou recuada) é sempre a MESMA,
+  // não importa que direction a tirou de cena: topo sempre sai pro seu
+  // offscreen; recuada sempre volta a 'top' (ela nunca desmonta de fato
+  // nesse caso, só muda de variant — ver comentário em `animate` abaixo).
+  const exit = isTopOfStack ? offscreenState : 'top';
+
+  // `initial`/`animate`, ao contrário de `exit`, são seguros de calcular a
+  // partir de `direction` — só importam enquanto a entrada ainda está
+  // `isPresent` (recebendo props atualizadas normalmente a cada render).
+  let initial, animate;
+  if (direction === null) {
+    initial = animate = 'top';
   } else if (isTopOfStack) {
     // Esta instância É a tela de detalhe: entra da direita (sempre — só
-    // existe uma forma de "estar em cima"), sai pela direita.
-    initial = direction === 'push' ? 'offscreenRight' : 'top';
+    // existe uma forma de "estar em cima"), sai pela direita. Exceto telas
+    // "wipe" (ver acima), que descem/sobem no lugar de deslizar lateral.
+    initial = direction === 'push' ? offscreenState : 'top';
     animate = 'top';
-    exit = direction === 'push' ? 'top' : 'offscreenRight';
   } else {
     // Esta instância é a tela de baixo (Lugares): recua quando o detalhe
-    // entra por cima, volta ao normal quando ele sai.
+    // entra por cima, volta ao normal quando ele sai. `animate` é sempre
+    // 'receded' aqui (nunca depende de `direction`) — isTopOfStack já
+    // decide que ela NÃO é a de maior profundidade agora, então por
+    // definição deve estar recuada. Bug real que isso corrige: calcular
+    // a partir de `direction === 'push'` assumia que um 'pop' sempre
+    // significava "a tela de cima fechou, volto a 'top'" — falso quando
+    // existem 3+ níveis empilhados (ex: Roteiro → Mais → Configurações):
+    // ao voltar de Configurações pra Mais (pop), a entrada de Roteiro
+    // também recebe direction:'pop' (toda entrada remanescente recebe a
+    // mesma direction, ver setScreens) e erroneamente voltava a 'top',
+    // sobrepondo visualmente com Mais (ainda isTopOfStack:false pra ela,
+    // já que Mais continua por cima) — o "ghosting" de duas telas na
+    // mesma posição reportado pelo usuário.
     initial = 'top';
-    animate = direction === 'push' ? 'receded' : 'top';
-    exit = direction === 'push' ? 'receded' : 'top';
+    animate = 'receded';
   }
 
   // usePresence (em vez de confiar só no AnimatePresence.onExitComplete do
@@ -188,17 +226,27 @@ function Screen({ depth, direction, location, isModalTransition, onExited }) {
 
   const currentVariant = isPresent ? animate : exit;
 
+  // Assim que a tela volta a ser a de topo (ex: voltou de Configurações pra
+  // Mais), o header precisa reaparecer IMEDIATAMENTE — não esperar o fim da
+  // animação de entrada, senão a tela ficaria sem header visível durante
+  // toda a transição de volta a 'top'.
+  useEffect(() => {
+    if (isTopOfStack) setHideWhenReceded(false);
+  }, [isTopOfStack]);
+
   return (
     <motion.div
-      variants={variants}
+      variants={activeVariants}
       initial={initial}
       animate={currentVariant}
-      transition={direction === null ? { duration: 0 } : isModalTransition ? MODAL_TRANSITION : TRANSITION}
+      transition={direction === null ? { duration: 0 } : isWipeScreen ? WIPE_TRANSITION : TRANSITION}
       onAnimationComplete={() => {
         if (!isPresent) {
           safeToRemove();
           onExited();
+          return;
         }
+        if (!isTopOfStack) setHideWhenReceded(true);
       }}
       data-scroll-root
       style={{
@@ -206,33 +254,28 @@ function Screen({ depth, direction, location, isModalTransition, onExited }) {
         inset: 0,
         overflowY: 'auto',
         WebkitOverflowScrolling: 'touch',
+        visibility: hideWhenReceded ? 'hidden' : 'visible',
         // Este motion.div — não o html/body — é quem de fato rola cada tela
         // (o body inteiro tem overflow:hidden, ver App abaixo). overscroll-
         // -behavior:none tentava impedir o "bounce" no elemento errado antes;
         // contain evita que ele vaze pro body por trás (revelando a cor de
         // fundo do sistema) sem travar o scroll do próprio elemento.
         overscrollBehavior: 'contain',
+        // Agora que uma entrada "recuada" (ex: Mais sob Configurações)
+        // permanece montada em vez de desmontar (ver setScreens), o Chrome
+        // aplicava scroll anchoring nela: ao encolher via scale (variants
+        // `receded`/`wipeRecededVariants`), ele reposicionava sozinho o
+        // scrollTop pra "compensar" a mudança de layout enquanto o elemento
+        // estava fora da viewport visível — bug real reportado pelo
+        // usuário (tela voltava com os primeiros itens cortados, como se
+        // tivesse rolado um pouco sozinha). overflow-anchor:none desativa
+        // esse comportamento automático nessas telas.
+        overflowAnchor: 'none',
       }}
     >
-      {/* TESTE: véu escuro da tela de baixo durante a transição modal —
-          só existe (e só anima) na instância que NÃO é /mais, e só enquanto
-          ela está na variante 'darkened'. pointerEvents:none pra não roubar
-          toque do conteúdo de verdade quando a opacidade ainda é baixa. */}
-      {isModalTransition && !isModalScreen && (
-        <motion.div
-          initial={false}
-          animate={{ opacity: currentVariant === 'darkened' ? 0.55 : 0 }}
-          transition={MODAL_TRANSITION}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: '#000',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
-      )}
-      <ScreenRoutes location={location} />
+      <ActiveScreenProvider value={isTopOfStack}>
+        <ScreenRoutes location={location} />
+      </ActiveScreenProvider>
     </motion.div>
   );
 }
@@ -274,29 +317,11 @@ function Shell() {
   // em dev, ver main.jsx) executa DUAS VEZES de propósito pra detectar esse
   // tipo de bug: a mutação da ref "vazava" da primeira execução fantasma pra
   // segunda, fazendo currentDepth===prevDepth parecer verdadeiro mesmo numa
-  // navegação real, e `direction` sair sempre `null` (sem slide nenhum) —
-  // cada tela usar essa prop incorretamente achava que não havia transição,
-  // o bug ficava mascarado no push/pop padrão (null também não anima nada
-  // visível ali) mas travava por completo a transição modal (que depende de
-  // `direction` pra saber se deve ir pra 'top' ou ficar em 'offscreenBottom').
+  // navegação real, e `direction` sair sempre `null` (sem slide nenhum).
   const lastEntry = screens[screens.length - 1];
   if (location.pathname !== lastEntry.location.pathname) {
     const prevDepth = lastEntry.depth;
     const direction = currentDepth === prevDepth ? null : currentDepth > prevDepth ? 'push' : 'pop';
-    // TESTE: transição "modal" (ver variants.offscreenBottom/darkened em
-    // Screen) sempre que /mais entra ou sai — tanto a entrada nova quanto a
-    // saída que ela estava cobrindo precisam saber que fazem parte dessa
-    // transição especial, não do push/pop padrão.
-    const isModalTransition = isModalRoute(location.pathname) || isModalRoute(lastEntry.location.pathname);
-    // A entrada antiga (lastEntry) também precisa saber a `direction` desta
-    // transição — ela nasceu com a dela PRÓPRIA (normalmente `null`, de
-    // quando foi criada), que nunca muda sozinha depois disso. Sem atualizar
-    // aqui, a tela de baixo numa transição modal recebia isModalTransition
-    // correto mas direction continuava `null` (congelada do passado),
-    // caindo sempre no branch `direction === 'push' ? 'darkened' : 'top'`
-    // como `false` — o overlay escuro nunca aparecia, mesmo com tudo mais
-    // calculado certo.
-    //
     // A key da nova entrada usa um número de "geração" (gen) calculado
     // DENTRO do updater, como max(gen de todas as entradas em current) + 1 —
     // não um contador em ref mutada no corpo da função (um contador assim
@@ -314,33 +339,82 @@ function Shell() {
     // via handleExited — ao contrário de current.length, que oscilaria com
     // entradas saindo e poderia reaproveitar um número já usado antes.
     setScreens((current) => {
+      // `lastEntry` só CONTINUA na lista de children do AnimatePresence
+      // (nunca removida, só muda de variant pra 'receded') quando esta
+      // navegação é um PUSH — ela vira a tela de BAIXO da nova entrada
+      // entrando por cima. Em qualquer outro caso (POP, fechando a tela de
+      // cima; ou null, trocando de aba entre duas telas raiz de mesma
+      // depth) ela é REMOVIDA — é isso que faz isPresent virar false pra
+      // ela e disparar sua animação de saída (ver usePresence/
+      // onAnimationComplete em Screen). Bug real que isso corrige: antes só
+      // tratava `direction === 'pop'` como caso de remoção — trocar de aba
+      // pela tab bar (Atrações → Lugares, ambas depth 0, direction: null)
+      // nunca removia a entrada anterior, acumulando uma entrada NOVA a
+      // cada troca de aba para sempre, todas sobrepostas e visíveis ao
+      // mesmo tempo (o "ghosting" de conteúdo misturado de duas telas raiz
+      // diferentes reportado pelo usuário).
+      const withoutExiting = direction === 'push'
+        ? current
+        : current.filter((s) => s.key !== lastEntry.key);
+      // Num POP, a entrada que está voltando a ser "topo" (ex: Roteiro) JÁ
+      // existe em `withoutExiting` (nunca foi removida quando foi empurrada
+      // pra baixo, ver acima) — reaproveita ela em vez de criar uma
+      // `newEntry`, senão existiriam DUAS entradas para o mesmo pathname
+      // simultaneamente (a antiga recuada + uma nova por cima dela). Troca
+      // de aba (direction: null) nunca tem uma entrada preexistente pra
+      // reaproveitar desse jeito — cada aba raiz vive sozinha, sem nunca
+      // ficar "recuada" por baixo de outra aba raiz.
+      const existingEntry = direction === 'pop'
+        ? withoutExiting.find((s) => s.location.pathname === location.pathname)
+        : null;
+      if (existingEntry) {
+        // A ordem de renderização (screens.map no JSX) é a ordem de
+        // empilhamento visual no DOM (sem z-index explícito — ver Screen):
+        // quem vem depois fica por cima. `existingEntry` estava numa
+        // posição antiga do array (de quando foi criada, lá atrás), mas
+        // agora volta a ser a entrada de MAIOR depth (ativa) — precisa ir
+        // pro FINAL do array, não ficar atualizada na mesma posição via
+        // .map(). Bug real que isso corrige: ao voltar (ex: Configurações
+        // → Roteiro, ou detalhe de lugar → lista de Lugares), a entrada
+        // reaproveitada continuava na posição antiga (geralmente a
+        // primeira), renderizada ANTES das entradas recuadas que vieram
+        // depois dela — essas ficavam visualmente POR CIMA da tela que
+        // deveria estar ativa (fragmentos de texto/ícone "vazando" por
+        // cima do conteúdo correto, navbar reaparecendo por último).
+        const rest = withoutExiting
+          .filter((s) => s.key !== existingEntry.key)
+          .map((s) => ({ ...s, direction }));
+        return [...rest, { ...existingEntry, location, depth: currentDepth, direction }];
+      }
       const nextGen = Math.max(0, ...current.map((s) => s.gen ?? 0)) + 1;
       const newEntry = {
         key: `${location.pathname}-${nextGen}`,
         location,
         depth: currentDepth,
         direction,
-        isModalTransition,
         gen: nextGen,
       };
-      // A entrada que estava "por cima" (lastEntry) é REMOVIDA da lista de
-      // children do AnimatePresence agora (filter) — é isso que faz
-      // isPresent virar false pra ela e disparar sua animação de saída (ver
-      // usePresence/onAnimationComplete em Screen). As demais entradas
-      // (ex: a tela que ficou enterrada/escurecida por baixo da modal)
-      // continuam presentes, mas TODAS recebem a nova direction/
-      // isModalTransition — sem isso, a entrada enterrada retomava o
-      // controle (vira a nova "última" depois do filter) carregando ainda a
-      // direction da navegação ANTERIOR (ex: 'push', de quando foi
-      // escurecida), nunca recalculada pra 'pop' nesta navegação de volta —
-      // ela ficava presa em 'darkened' para sempre, sem nunca chamar
-      // onAnimationComplete (que só dispara quando HÁ uma transição real
-      // acontecendo) nem, por tabela, nenhum onExited.
       return [
-        ...current.filter((s) => s.key !== lastEntry.key).map((s) => ({ ...s, isModalTransition, direction })),
+        ...withoutExiting.map((s) => ({ ...s, direction })),
         newEntry,
       ];
     });
+  } else if (location !== lastEntry.location) {
+    // Mesmo pathname, mas o objeto `location` mudou (ex: location.state
+    // mudou — abrir/fechar um mapa embutido numa tela, que empurra uma
+    // entrada de histórico com o MESMO pathname só pra "voltar" funcionar
+    // sozinho, ver ScheduleScreen/PlacesScreen/AttractionsScreen). Sem
+    // atualizar `location` aqui, a tela usa <Routes location={screen.location}>
+    // (ver ScreenRoutes) com o location CONGELADO do momento em que essa
+    // entrada nasceu — React Router sobrescreve o contexto de useLocation()
+    // pra toda a subárvore com esse valor fixo, então o componente nunca
+    // "vê" o novo state (useLocation() sempre devolve o antigo), mesmo o
+    // navigate() real do browser já tendo acontecido (history.length muda
+    // normalmente). Isso fazia abrir o mapa funcionar (setMapOpen local) mas
+    // fechar (que dependia de ler o novo state) não refletir no primeiro
+    // clique. Atualiza só a entrada ativa, sem gen/direction novos — não é
+    // uma navegação push/pop, não deve disparar nenhuma animação.
+    setScreens((current) => current.map((s) => (s.key === lastEntry.key ? { ...s, location } : s)));
   }
 
   // Chamado por uma Screen específica (pela sua própria key) quando ela
@@ -374,9 +448,16 @@ function Shell() {
           <Screen
             key={screen.key}
             depth={screen.depth}
+            // "Topo da pilha" = tem a MAIOR profundidade entre as entradas
+            // ativas agora — relativo às outras, não um valor fixo (ex: 1).
+            // Precisa ser relativo porque /configuracoes (depth 2) empurrada
+            // por cima de /mais (depth 1) e /configuracoes/areas (depth 3)
+            // empurrada por cima de /configuracoes (depth 2) são AMBAS "a
+            // tela de detalhe entrando por cima" em suas respectivas
+            // transições, apesar de terem depths absolutos diferentes.
+            isTopOfStack={screen.depth === Math.max(...screens.map((s) => s.depth))}
             direction={screen.direction}
             location={screen.location}
-            isModalTransition={screen.isModalTransition}
             onExited={() => handleExited(screen.key)}
           />
         ))}

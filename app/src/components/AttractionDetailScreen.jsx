@@ -18,7 +18,9 @@ import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
 import { ATTRACTION_STATUS_LABEL } from '../data/attractionStatus.js';
 import EditActionBar from './EditActionBar.jsx';
 import { NavBar, Toggle, navControlStyle, navControlTextColor, Skeleton, FieldLabel, inputStyle, YoutubePlayButton, YoutubeVideoModal, color as tokenColor, radius, spacing } from '../design-system/index.js';
+import { LIST_DETAIL_STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 import { extractYoutubeId } from '../data/youtube.js';
+import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
 const INTENSITY_LABEL = {
   Alta: 'Muito radical',
@@ -120,6 +122,7 @@ export default function AttractionDetailScreen() {
   const { parks, setParks, loading } = useAttractionsData();
   const [scrollY, setScrollY] = useState(0);
   const { getLiveQueue, getLiveStatus } = useLiveQueueTimes();
+  const staggerKey = useStaggerKey();
 
   const attraction = useMemo(() => findAttraction(parks, id), [parks, id]);
 
@@ -222,7 +225,15 @@ export default function AttractionDetailScreen() {
 
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '100dvh', background: '#fff', boxSizing: 'border-box', paddingBottom: 40 }}>
-      <div
+      {/* opacity animada por fora (Motion) em paralelo ao transform de
+          parallax controlado via CSS inline (transition própria,
+          inalterada) — a foto só aparece depois que o slide de entrada da
+          tela termina, junto com o resto do conteúdo em stagger, em vez de
+          já vir visível enquanto a tela ainda desliza. */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25, delay: 0.32 }}
         style={{
           position: 'fixed',
           top: 0,
@@ -270,7 +281,7 @@ export default function AttractionDetailScreen() {
             <YoutubePlayButton />
           </div>
         )}
-      </div>
+      </motion.div>
 
       <NavBar
         visible={navBarVisible}
@@ -323,7 +334,13 @@ export default function AttractionDetailScreen() {
           borderTopRightRadius: 24,
         }}
       >
-        <div style={{ padding: '10px 22px 20px' }}>
+        <motion.div
+          key={`${staggerKey}-${id}`}
+          variants={LIST_DETAIL_STAGGER_CONTAINER}
+          initial="hidden"
+          animate="show"
+          style={{ padding: '10px 22px 20px' }}
+        >
           {loading ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Skeleton width={44} height={44} radius={12} />
@@ -336,7 +353,7 @@ export default function AttractionDetailScreen() {
             <div style={{ color: '#9a9186', fontSize: 15, fontWeight: 600 }}>Atração não encontrada.</div>
           ) : (
             <>
-              <div style={{ minWidth: 0 }}>
+              <motion.div variants={STAGGER_ITEM} style={{ minWidth: 0 }}>
                 <div style={{ color: '#1c1a17', fontSize: 22, fontWeight: 800, lineHeight: 1.2, marginTop: 8 }}>
                   {attraction.name}
                 </div>
@@ -345,13 +362,14 @@ export default function AttractionDetailScreen() {
                     {attraction.type}
                   </div>
                 )}
-              </div>
+              </motion.div>
 
               {/* Card dedicado pro toggle "está no roteiro" — continua fora
                   do modo de edição (igual o toggle de favorito de um lugar):
                   não é um campo de texto que precisa de rascunho/Salvar, o
                   clique já aplica na hora, então fica visível sempre. */}
-              <div
+              <motion.div
+                variants={STAGGER_ITEM}
                 onClick={() => handleToggleRequired(!attraction.required)}
                 style={{
                   display: 'flex',
@@ -379,7 +397,7 @@ export default function AttractionDetailScreen() {
                   </div>
                 </div>
                 <Toggle checked={attraction.required} onChange={handleToggleRequired} />
-              </div>
+              </motion.div>
 
               {/* Ficha técnica inteira (grid + avisos) some em modo de
                   edição — todo esse bloco vem fixo da planilha original
@@ -387,7 +405,7 @@ export default function AttractionDetailScreen() {
                   sentido continuar visível competindo com o campo que de
                   fato pode ser editado. */}
               {!editing && (
-                <>
+                <motion.div variants={STAGGER_ITEM}>
                   {/* Grid de ficha técnica — 3 colunas, todos os cards do
                       mesmo tamanho, 2 por linha (Tipo voltou a aparecer
                       como texto embutido embaixo do título, não é mais um
@@ -436,7 +454,7 @@ export default function AttractionDetailScreen() {
                       )}
                     </div>
                   </div>
-                </>
+                </motion.div>
               )}
 
               {editing && (
@@ -455,7 +473,7 @@ export default function AttractionDetailScreen() {
               )}
             </>
           )}
-        </div>
+        </motion.div>
       </div>
 
       {editing && <EditActionBar key="edit-action-bar" onCancel={handleCancel} onSave={handleSave} saving={saving} />}

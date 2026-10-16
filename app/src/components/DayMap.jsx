@@ -472,11 +472,14 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
         overflow: 'hidden',
       }}
     >
+      {/* Mesmo efeito de entrada/saída da tela Mais (ver usesWipeTransition
+          em App.jsx): desce cobrindo a tela, sai voltando a subir — sem o
+          stagger do conteúdo. */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.98 }}
-        transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+        initial={{ y: '-100%', opacity: 1 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '-100%', opacity: 1 }}
+        transition={{ type: 'tween', ease: [0.32, 0.72, 0, 1], duration: 0.36 }}
         style={{ position: 'absolute', inset: 0, background: color.surfaceMuted }}
       >
       <div ref={containerRef} style={{ position: 'absolute', inset: 0, zIndex: 0 }} />

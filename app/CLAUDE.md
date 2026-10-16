@@ -194,7 +194,7 @@ Este arquivo é lido automaticamente pelo Claude Code sempre que uma conversa co
 
 ## Estado atual
 
-Tudo commitado e publicado em produção até o commit `b261f27` ("Boot loading, progresso real de imagem, efeito wipe para telas solitárias/mapas, re-trigger de stagger, confete em Compras e correção de bug grave de ghosting").
+Tudo commitado e publicado em produção até o commit `f835f4e` ("Reverte progresso real de imagem para skeleton simples (fotos não carregavam no celular)").
 
 ## Combinados de processo (importante lembrar)
 

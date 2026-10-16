@@ -178,7 +178,7 @@ Este arquivo é lido automaticamente pelo Claude Code sempre que uma conversa co
 
 ## Estado atual
 
-Tudo commitado e publicado em produção até o commit (ver `git log` — seção 23 acima ainda não tinha commit próprio até esta publicação).
+Tudo commitado e publicado em produção até o commit `b535842` ("Nav bar fixa sem overlap, pull-to-refresh visual, transição Roteiro→Mais estilo Cuberto, pills deslizantes nas abas, skeleton de imagem e dropdowns animados").
 
 ## Combinados de processo (importante lembrar)
 

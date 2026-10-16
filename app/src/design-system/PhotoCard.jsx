@@ -1,5 +1,4 @@
-import ImageLoadingBar from './ImageLoadingBar.jsx';
-import { useImageProgress } from '../hooks/useImageProgress.js';
+import { useEffect, useState } from 'react';
 import { color, cardPhotoGradient, cardPhotoGradientHeight, cardPhotoHeight, radius, spacing } from './tokens.js';
 
 // Card com foto de fundo + gradiente escuro na parte de baixo, para legibilidade
@@ -8,12 +7,25 @@ import { color, cardPhotoGradient, cardPhotoGradientHeight, cardPhotoHeight, rad
 // já posicionado em fluxo normal dentro da área com padding.
 // `height` tem default único (cardPhotoHeight) — todo card com foto do app é
 // do mesmo tamanho a menos que a tela tenha um motivo explícito pra variar.
+//
+// IMPORTANTE: a tag <img> carrega a foto diretamente (sem fetch manual) —
+// chegamos a usar fetch+ReadableStream pra mostrar um progresso real de
+// download (ver useImageProgress.js, ainda no repo mas não usado aqui), mas
+// em testes reais no celular a barra nunca enchia e, pior, boa parte das
+// fotos NUNCA carregava — a combinação Service Worker (que faz cache das
+// fotos via Workbox, ver sw.js) + fetch manual + leitura de stream se
+// mostrou frágil no WebKit/PWA instalado. <img> nativa é o caminho que o
+// navegador/Service Worker sempre souberam servir de forma confiável.
 export default function PhotoCard({ photo, height = cardPhotoHeight, onClick, children, contentStyle, style }) {
-  const { elementRef, progress, objectUrl, loaded } = useImageProgress(photo);
+  const [loaded, setLoaded] = useState(false);
+
+  // Reseta o skeleton se a foto do card mudar (ex: card reciclado em lista virtualizada).
+  useEffect(() => {
+    setLoaded(false);
+  }, [photo]);
 
   return (
     <div
-      ref={elementRef}
       onClick={onClick}
       style={{
         position: 'relative',
@@ -32,23 +44,22 @@ export default function PhotoCard({ photo, height = cardPhotoHeight, onClick, ch
           style={{
             position: 'absolute',
             inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            background: color.surfaceMuted,
+            animation: 'image-pulse 1.4s ease-in-out infinite',
             opacity: loaded ? 0 : 1,
             transition: 'opacity 0.35s ease',
             pointerEvents: 'none',
           }}
-        >
-          <ImageLoadingBar progress={progress} />
-        </div>
+        />
       )}
 
-      {objectUrl && (
+      {photo && (
         <img
-          src={objectUrl}
+          src={photo}
           alt=""
+          loading="lazy"
           decoding="async"
+          onLoad={() => setLoaded(true)}
           style={{
             position: 'absolute',
             inset: 0,

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { shellMaxWidth } from './tokens.js';
+import { useHidesTabBar } from '../hooks/useEditingState.js';
 
 // Visualizador de foto(s) em fullscreen: arrasta horizontal pra navegar
 // entre várias fotos, arrasta vertical pra fechar (estilo Fotos do iOS).
@@ -10,6 +11,10 @@ import { shellMaxWidth } from './tokens.js';
 // navegador (pinch-zoom, segurar-pra-salvar) via classe .allow-native-touch,
 // diferente do resto do app onde esses gestos ficam desativados.
 export default function PhotoLightbox({ photos, photoIndex, onIndexChange, onClose }) {
+  // Sem isso a tab bar ficava montada (e clicável) por baixo da foto, apesar
+  // do zIndex menor — mesmo motivo documentado em useEditingState.js.
+  useHidesTabBar(true);
+
   // O Embla foi desenhado pra um único eixo de arrasto — aqui precisamos de
   // dois gestos concorrentes (arrastar horizontal navega entre fotos,
   // arrastar vertical fecha o lightbox), então mantemos o controle manual

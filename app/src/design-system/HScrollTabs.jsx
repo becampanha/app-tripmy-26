@@ -1,11 +1,18 @@
 import { useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { useDragScroll } from '../hooks/useDragScroll.js';
 import { color, radius, spacing, type } from './tokens.js';
 
 // Tabs de scroll horizontal com chip retangular ativo/inativo — padrão usado
 // para categorias de Lugares, parques de Atrações e o seletor de categoria
 // do modal de vincular lugar. Cada item: { key, label, icon?: Component, count? }.
-export default function HScrollTabs({ items, activeKey, onSelect, loading, loadingCount = 3, style }) {
+// `instanceId` (opcional, default por propósito de cada chamador que precisa
+// ser único): algumas telas montam duas instâncias de HScrollTabs ao mesmo
+// tempo (ex: AttractionsScreen + ParkMap aberto por cima, PlacesScreen +
+// PlacesMap) — sem um layoutId diferente por instância, o Motion tentaria
+// animar o indicador ativo como se fosse o MESMO elemento voando entre essas
+// duas árvores não relacionadas (mesmo cuidado já tomado em DayTabs.jsx).
+export default function HScrollTabs({ items, activeKey, onSelect, loading, loadingCount = 3, style, instanceId = 'default' }) {
   const { scrollerRef, dragRef, dragHandlers } = useDragScroll();
   const activeRef = useRef(null);
 
@@ -59,6 +66,7 @@ export default function HScrollTabs({ items, activeKey, onSelect, loading, loadi
               onSelect(item.key);
             }}
             style={{
+              position: 'relative',
               flex: 'none',
               display: 'flex',
               alignItems: 'center',
@@ -68,14 +76,25 @@ export default function HScrollTabs({ items, activeKey, onSelect, loading, loadi
               ...type.chip,
               cursor: 'pointer',
               userSelect: 'none',
-              background: active ? color.dark : color.surfaceMuted,
+              background: active ? undefined : color.surfaceMuted,
               color: active ? color.white : color.mutedDeep,
             }}
           >
-            {Icon && <Icon size={15} color={active ? color.white : (item.iconColor || color.mutedDeep)} />}
-            {item.emoji && <span>{item.emoji}</span>}
-            {item.label}
-            {item.count != null && <span style={{ opacity: 0.7 }}>({item.count})</span>}
+            {/* layoutId compartilhado entre os chips desta instância — o
+                fundo preto "voa" fisicamente de uma aba pra outra em vez de
+                sumir numa e aparecer na outra (mesmo padrão de
+                DayTabs.jsx/BottomTabBar.jsx). */}
+            {active && (
+              <motion.div
+                layoutId={`h-scroll-tabs-pill-${instanceId}`}
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                style={{ position: 'absolute', inset: 0, borderRadius: radius.chip, background: color.dark }}
+              />
+            )}
+            {Icon && <Icon size={15} color={active ? color.white : (item.iconColor || color.mutedDeep)} style={{ position: 'relative' }} />}
+            {item.emoji && <span style={{ position: 'relative' }}>{item.emoji}</span>}
+            <span style={{ position: 'relative' }}>{item.label}</span>
+            {item.count != null && <span style={{ position: 'relative', opacity: 0.7 }}>({item.count})</span>}
           </div>
         );
       })}

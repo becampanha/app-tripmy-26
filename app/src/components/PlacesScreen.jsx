@@ -1,13 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import PlaceCard from './PlaceCard.jsx';
 import PlacesMap from './PlacesMap.jsx';
 import { AddIcon } from '@solar-icons/react/linear/add';
 import { MapIcon } from '@solar-icons/react/bold/map';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
 import { StarIcon } from '@solar-icons/react/bold/star';
-import { MapPointIcon } from '@solar-icons/react/bold/map-point';
 import { fetchPlaces, toggleFavoritePlace } from '../api/itineraryApi.js';
 import { showErrorToast } from '../hooks/useToast.js';
 import { getTravelerIdentity } from '../hooks/useTravelerIdentity.js';
@@ -18,7 +17,8 @@ import { getPlacesScreenState, savePlacesScreenState, getCachedPlaces, setCached
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
-import { FixedHeader, HScrollTabs, SearchInput, SectionHeader, Skeleton, Select, color, radius, space, spacing } from '../design-system/index.js';
+import { FixedHeader, HScrollTabs, SearchInput, SectionHeader, Skeleton, FilterMenu, color, radius, space, spacing } from '../design-system/index.js';
+import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
@@ -211,6 +211,7 @@ export default function PlacesScreen() {
               setCategory(cat);
               setSubcategory('');
             }}
+            instanceId="places"
             style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }}
           />
         }
@@ -251,71 +252,45 @@ export default function PlacesScreen() {
         }
       />
 
-      <div
+      <motion.div
+        // key muda ao trocar de categoria (aba) ou ao sair do estado "sem
+        // dado ainda" (skeleton) pela primeira vez — em ambos os casos o
+        // bloco desmonta/remonta e o stagger (initial="hidden" animate=
+        // "show") dispara de novo, reanimando o conteúdo novo. Enquanto
+        // `loading`, a key fica fixa: os skeletons não entram na coreografia.
+        key={loading ? 'skeleton' : `category-${category}-${subcategory || 'all'}`}
+        variants={STAGGER_CONTAINER}
+        initial="hidden"
+        animate="show"
         style={{
           marginTop: headerHeight + spacing.controlGap,
           boxSizing: 'border-box',
           padding: `2px ${space.screenGutter}px 120px`,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'stretch', gap: spacing.gapMd, marginBottom: 14 }}>
+        <motion.div variants={STAGGER_ITEM} style={{ display: 'flex', alignItems: 'stretch', gap: spacing.gapMd, marginBottom: 14 }}>
           <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nome" style={{ flex: 1, marginBottom: 0 }} />
 
-          <div
-            onClick={() => setOnlyInItinerary((v) => !v)}
-            title="Lugares que estão no roteiro"
-            style={{
-              flex: 'none',
-              width: 38,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: radius.input,
-              border: `1px solid ${onlyInItinerary ? color.success : color.border}`,
-              background: onlyInItinerary ? color.success : color.bg,
-              cursor: 'pointer',
-            }}
-          >
-            <CheckCircleIcon size={17} color={onlyInItinerary ? '#fff' : color.faintIcon} />
-          </div>
-
-          <div
-            onClick={() => setOnlyFavorite((v) => !v)}
-            title="Lugares favoritos"
-            style={{
-              flex: 'none',
-              width: 38,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: radius.input,
-              border: `1px solid ${onlyFavorite ? color.accent : color.border}`,
-              background: onlyFavorite ? color.accent : color.bg,
-              cursor: 'pointer',
-            }}
-          >
-            <StarIcon size={17} color={onlyFavorite ? '#fff' : color.faintIcon} />
-          </div>
-
-          {subcategoryOptions.length > 0 && (
-            <Select
-              label="Área"
-              placeholder="Todas as áreas"
-              value={subcategory}
-              onChange={setSubcategory}
-              options={subcategoryOptions}
-              icon={MapPointIcon}
-              buttonStyle={{ height: 38, boxSizing: 'border-box' }}
-            />
-          )}
-        </div>
+          <FilterMenu
+            active={onlyInItinerary || onlyFavorite || !!subcategory}
+            checksLabel="Filtros"
+            checks={[
+              { label: 'Está no roteiro', icon: CheckCircleIcon, checked: onlyInItinerary, onChange: setOnlyInItinerary },
+              { label: 'Favoritos', icon: StarIcon, checked: onlyFavorite, onChange: setOnlyFavorite },
+            ]}
+            areaLabel="Filtrar por área"
+            areaOptions={subcategoryOptions}
+            areaValue={subcategory}
+            onAreaChange={setSubcategory}
+          />
+        </motion.div>
 
         {loading && Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} height={300} radius={radius.cardPhoto} style={{ marginBottom: 16 }} />
         ))}
 
         {!loading && groupedSections && groupedSections.map((section) => (
-          <div key={section.title}>
+          <motion.div key={section.title} variants={STAGGER_ITEM}>
             <SectionHeader style={{ top: headerHeight }}>{section.title}</SectionHeader>
             {section.items.map((place) => (
               <PlaceCard
@@ -327,26 +302,30 @@ export default function PlacesScreen() {
                 inItinerary={placesInItinerary ? placesInItinerary.has(place.id) : false}
               />
             ))}
-          </div>
+          </motion.div>
         ))}
 
-        {!loading && !groupedSections && filtered.map((place) => (
-          <PlaceCard
-            key={place.id}
-            place={place}
-            onAction={() => goToPlace(place.id)}
-            onToggleFavorite={() => handleToggleFavorite(place)}
-            isFavorite={identity ? (place.favoritedBy || []).includes(identity) : false}
-            inItinerary={placesInItinerary ? placesInItinerary.has(place.id) : false}
-          />
-        ))}
+        {!loading && !groupedSections && (
+          <motion.div variants={STAGGER_ITEM}>
+            {filtered.map((place) => (
+              <PlaceCard
+                key={place.id}
+                place={place}
+                onAction={() => goToPlace(place.id)}
+                onToggleFavorite={() => handleToggleFavorite(place)}
+                isFavorite={identity ? (place.favoritedBy || []).includes(identity) : false}
+                inItinerary={placesInItinerary ? placesInItinerary.has(place.id) : false}
+              />
+            ))}
+          </motion.div>
+        )}
 
         {!loading && filtered.length === 0 && (
           <div style={{ padding: '30px 0', textAlign: 'center', color: color.faint, fontSize: 13.5, fontWeight: 600 }}>
             Nenhum lugar encontrado nessa categoria.
           </div>
         )}
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {mapOpen && <PlacesMap key="places-map" places={places} onClose={closeMap} />}

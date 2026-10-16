@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { useDragScroll } from '../hooks/useDragScroll.js';
 import { color } from '../design-system/index.js';
 
@@ -17,7 +18,12 @@ const bubbleBase = {
   userSelect: 'none',
 };
 
-export default function DayTabs({ days, selected, onSelect, style }) {
+// `instanceId` (opcional): DayTabs é renderizado em paralelo em dois lugares
+// (ScheduleScreen normal + DayMap aberto por cima, ambos montados ao mesmo
+// tempo) — sem um layoutId diferente por instância, o Motion tentaria animar
+// o indicador ativo como se fosse o MESMO elemento voando entre essas duas
+// árvores não relacionadas. Cada chamador passa um id fixo e distinto.
+export default function DayTabs({ days, selected, onSelect, style, instanceId = 'default' }) {
   const { scrollerRef, dragRef, dragHandlers } = useDragScroll();
   const activeRef = useRef(null);
 
@@ -76,11 +82,24 @@ export default function DayTabs({ days, selected, onSelect, style }) {
             }}
             style={{
               ...bubbleBase,
-              background: active ? color.dark : color.surfaceMuted,
+              position: 'relative',
+              background: active ? undefined : color.surfaceMuted,
             }}
           >
+            {/* layoutId compartilhado entre as bolhas desta instância — o
+                fundo preto "voa" fisicamente de uma data pra outra em vez de
+                sumir numa e aparecer na outra (mesmo padrão de
+                BottomTabBar.jsx/ViewModeSegmentedToggle). */}
+            {active && (
+              <motion.div
+                layoutId={`day-tabs-pill-${instanceId}`}
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                style={{ position: 'absolute', inset: 0, borderRadius: 18, background: color.dark }}
+              />
+            )}
             <div
               style={{
+                position: 'relative',
                 fontSize: 10.5,
                 fontWeight: 700,
                 letterSpacing: 0.3,
@@ -90,7 +109,7 @@ export default function DayTabs({ days, selected, onSelect, style }) {
             >
               {day.weekday}
             </div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: active ? color.white : color.dark }}>
+            <div style={{ position: 'relative', fontSize: 16, fontWeight: 800, color: active ? color.white : color.dark }}>
               {day.date.split('/')[0]}
             </div>
           </div>

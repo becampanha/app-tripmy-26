@@ -116,6 +116,28 @@ export function toggleFavoritePlace(id, traveler, favorite) {
   });
 }
 
+export function fetchAreas() {
+  return request('/api/places?resource=areas');
+}
+
+export function createArea(category, name) {
+  return request('/api/places?resource=areas', {
+    method: 'POST',
+    body: JSON.stringify({ category, name }),
+  });
+}
+
+export function renameArea(id, name) {
+  return request(`/api/places?resource=areas&id=${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function deleteArea(id) {
+  return request(`/api/places?resource=areas&id=${id}`, { method: 'DELETE' });
+}
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

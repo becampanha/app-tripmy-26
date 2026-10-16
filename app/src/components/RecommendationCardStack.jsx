@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useMotionValue, animate } from 'motion/react';
 import { PhotoCard, YoutubePlayButton, YoutubeVideoModal, Skeleton, color, radius, spacing } from '../design-system/index.js';
+import { STAGGER_ITEM } from '../design-system/motionPresets.js';
 import { travelerLabel } from '../data/travelers.js';
 import { resolveYoutubeThumbnail } from '../data/youtube.js';
 
@@ -370,14 +371,22 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
           transform: 'translateX(-50%)',
           width: '100%',
           maxWidth: 480,
-          padding: '30px 0',
-          textAlign: 'center',
-          color: color.faint,
-          fontSize: 13.5,
-          fontWeight: 600,
         }}
       >
-        Nenhuma dica publicada ainda.
+        <motion.div
+          variants={STAGGER_ITEM}
+          initial="hidden"
+          animate="show"
+          style={{
+            padding: '30px 0',
+            textAlign: 'center',
+            color: color.faint,
+            fontSize: 13.5,
+            fontWeight: 600,
+          }}
+        >
+          Nenhuma dica publicada ainda.
+        </motion.div>
       </div>
     );
   }
@@ -398,8 +407,13 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
 
   return (
     <>
+    {/* Wrapper só de posicionamento (CSS transform puro, pra centralizar) —
+        separado do motion.div de dentro porque o Motion assume controle
+        total da propriedade `transform` de qualquer elemento onde aplica
+        `variants`/x/y: um `style.transform: translateX(-50%)` nesse mesmo
+        elemento seria descartado, deslocando o card inteiro pra fora do
+        centro (só aparecia a metade direita dele). */}
     <div
-      ref={containerRef}
       style={{
         position: 'fixed',
         top,
@@ -407,6 +421,14 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
         transform: 'translateX(-50%)',
         width: '100%',
         maxWidth: 480,
+      }}
+    >
+    <motion.div
+      ref={containerRef}
+      variants={STAGGER_ITEM}
+      initial="hidden"
+      animate="show"
+      style={{
         boxSizing: 'border-box',
         overflow: 'hidden',
       }}
@@ -452,6 +474,7 @@ export default function RecommendationCardStack({ recommendations, headerHeight 
           gutter={spacing.screenGutter}
         />
       )}
+    </motion.div>
     </div>
 
     <AnimatePresence>

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { color, cardPhotoGradient, cardPhotoGradientHeight, cardPhotoHeight, radius, spacing } from './tokens.js';
 
 // Card com foto de fundo + gradiente escuro na parte de baixo, para legibilidade
@@ -7,6 +8,13 @@ import { color, cardPhotoGradient, cardPhotoGradientHeight, cardPhotoHeight, rad
 // `height` tem default único (cardPhotoHeight) — todo card com foto do app é
 // do mesmo tamanho a menos que a tela tenha um motivo explícito pra variar.
 export default function PhotoCard({ photo, height = cardPhotoHeight, onClick, children, contentStyle, style }) {
+  const [loaded, setLoaded] = useState(false);
+
+  // Reseta o skeleton se a foto do card mudar (ex: card reciclado em lista virtualizada).
+  useEffect(() => {
+    setLoaded(false);
+  }, [photo]);
+
   return (
     <div
       onClick={onClick}
@@ -23,12 +31,34 @@ export default function PhotoCard({ photo, height = cardPhotoHeight, onClick, ch
       }}
     >
       {photo && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: color.surfaceMuted,
+            animation: 'image-pulse 1.4s ease-in-out infinite',
+            opacity: loaded ? 0 : 1,
+            transition: 'opacity 0.35s ease',
+          }}
+        />
+      )}
+
+      {photo && (
         <img
           src={photo}
           alt=""
           loading="lazy"
           decoding="async"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+          onLoad={() => setLoaded(true)}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: loaded ? 1 : 0,
+            transition: 'opacity 0.35s ease',
+          }}
         />
       )}
 

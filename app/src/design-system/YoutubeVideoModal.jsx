@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { shellMaxWidth } from './tokens.js';
+import { useHidesTabBar } from '../hooks/useEditingState.js';
 
 // Vídeo em tela cheia, aberto a partir de um botão de play (ver
 // YoutubePlayButton) — mostra direto o iframe com autoplay=1, então a capa
@@ -8,6 +9,10 @@ import { shellMaxWidth } from './tokens.js';
 // chega a aparecer, já que ela só existe no estado parado do player. Mesmo
 // componente usado em Atrações e Dicas.
 export default function YoutubeVideoModal({ videoId, title = 'Vídeo', onClose }) {
+  // Sem isso a tab bar ficava montada (e clicável) por baixo do vídeo, apesar
+  // do zIndex menor — mesmo motivo documentado em useEditingState.js.
+  useHidesTabBar(true);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}

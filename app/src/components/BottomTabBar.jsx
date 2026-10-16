@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { MapIcon } from '@solar-icons/react/bold/map';
 import { HeartIcon } from '@solar-icons/react/bold/heart';
 import { ShopIcon } from '@solar-icons/react/bold/shop';
@@ -38,6 +39,7 @@ export default function BottomTabBar() {
             key={tab.key}
             onClick={() => navigate(tab.path)}
             style={{
+              position: 'relative',
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
@@ -45,14 +47,29 @@ export default function BottomTabBar() {
               justifyContent: 'center',
               gap: 4,
               padding: '6px 0',
-              borderRadius: radius.pillBarButton,
-              background: isActive ? color.dark : 'transparent',
-              boxShadow: isActive ? `0 3px 8px ${overlay.shadowStrong}` : 'none',
               cursor: 'pointer',
             }}
           >
-            <Icon size={22} color={iconColor} />
-            <div style={{ fontSize: 11, fontWeight: 700, color: iconColor }}>{tab.label}</div>
+            {/* layoutId compartilhado entre as 5 abas — em vez de cada uma
+                aparecer/sumir com fundo preto na hora, o Motion detecta que
+                este elemento "é o mesmo" mudando de posição entre renders e
+                anima o deslocamento sozinho (mesmo padrão já usado no
+                segmented toggle de Dicas, ViewModeSegmentedToggle). */}
+            {isActive && (
+              <motion.div
+                layoutId="bottom-tab-bar-pill"
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius: radius.pillBarButton,
+                  background: color.dark,
+                  boxShadow: `0 3px 8px ${overlay.shadowStrong}`,
+                }}
+              />
+            )}
+            <Icon size={22} color={iconColor} style={{ position: 'relative' }} />
+            <div style={{ position: 'relative', fontSize: 11, fontWeight: 700, color: iconColor }}>{tab.label}</div>
           </div>
         );
       })}

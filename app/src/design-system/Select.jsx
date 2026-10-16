@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
 import { CheckIcon } from '@solar-icons/react/linear/check';
 import { color, radius, type } from './tokens.js';
+
+// Mesmo efeito de abertura usado no FilterMenu.jsx — popover nasce a partir
+// do canto do botão que o abriu (scale + fade), em vez de aparecer instantâneo.
+const POPOVER_TRANSITION = { type: 'spring', stiffness: 500, damping: 32 };
 
 // Select customizado (botão pill + popover pequeno ancorado nele), no estilo
 // do resto do app — substitui o <select> nativo do navegador, cuja aparência
@@ -66,11 +71,17 @@ export default function Select({
         <AltArrowDownIcon size={14} color={color.faintIcon} style={{ flex: 'none' }} />
       </div>
 
+      <AnimatePresence>
       {open && (
-        <div
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.92 }}
+          transition={POPOVER_TRANSITION}
           style={{
             position: 'absolute',
             top: 'calc(100% + 6px)',
+            transformOrigin: fullWidth ? 'top center' : align === 'right' ? 'top right' : 'top left',
             ...(fullWidth
               ? { left: 0, right: 0 }
               : align === 'right'
@@ -141,8 +152,9 @@ export default function Select({
               </div>
             );
           })}
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

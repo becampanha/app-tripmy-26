@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { AddIcon } from '@solar-icons/react/linear/add';
 import { CartLargeMinimalisticIcon } from '@solar-icons/react/bold/cart-large-minimalistic';
 import { LinkMinimalisticIcon } from '@solar-icons/react/linear/link-minimalistic';
@@ -20,6 +20,7 @@ import { fetchShoppingItems, createShoppingItem, updateShoppingItem, deleteShopp
 import { TRAVELERS } from '../data/travelers.js';
 import { SHOPPING_CATEGORIES, SHOPPING_CATEGORY_ICON } from '../data/shoppingCategories.js';
 import { FixedHeader, FieldLabel, HScrollTabs, Select, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
+import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 
 const SUMMARY_KEY = '__summary__';
 
@@ -520,7 +521,7 @@ export default function ShoppingScreen() {
             </>
           )
         }
-        tabs={identity && <HScrollTabs items={tabItems} activeKey={category} onSelect={setCategory} style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
+        tabs={identity && <HScrollTabs items={tabItems} activeKey={category} onSelect={setCategory} instanceId="shopping" style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
       />
 
       {!identity ? (
@@ -528,7 +529,16 @@ export default function ShoppingScreen() {
           <WhoAreYouContent onConfirm={handleChangeIdentity} />
         </div>
       ) : (
-        <div style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
+        <motion.div
+          // key muda ao trocar de categoria (aba) ou ao sair do estado "sem
+          // dado ainda" pela primeira vez — ver mesmo padrão em
+          // ScheduleScreen.jsx.
+          key={items === null ? 'skeleton' : `category-${category}`}
+          variants={STAGGER_CONTAINER}
+          initial="hidden"
+          animate="show"
+          style={{ marginTop: headerHeight + spacing.controlGap, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}
+        >
           {items === null && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {Array.from({ length: 3 }).map((_, i) => (
@@ -537,10 +547,14 @@ export default function ShoppingScreen() {
             </div>
           )}
 
-          {items !== null && isSummary && <ShoppingSummary items={items} onSelectCategory={setCategory} />}
+          {items !== null && isSummary && (
+            <motion.div variants={STAGGER_ITEM}>
+              <ShoppingSummary items={items} onSelectCategory={setCategory} />
+            </motion.div>
+          )}
 
           {items !== null && !isSummary && itemsInCategory.length > 0 && (
-            <>
+            <motion.div variants={STAGGER_ITEM}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.controlGap }}>
                 <div style={{ color: color.muted, fontSize: 12.5, fontWeight: 700 }}>{itemsInCategory.length} item(ns)</div>
                 <div style={{ color: color.dark, fontSize: 14, fontWeight: 800 }}>Total: US$ {formatUSD(totalInCategory)}</div>
@@ -555,7 +569,7 @@ export default function ShoppingScreen() {
                   />
                 ))}
               </div>
-            </>
+            </motion.div>
           )}
 
           {items !== null && !isSummary && itemsInCategory.length === 0 && (
@@ -581,7 +595,7 @@ export default function ShoppingScreen() {
               </div>
             </div>
           )}
-        </div>
+        </motion.div>
       )}
 
       <AnimatePresence>

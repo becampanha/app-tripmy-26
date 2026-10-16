@@ -99,6 +99,11 @@ button {
   50% { opacity: 0.5; }
 }
 
+@keyframes image-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.15; }
+}
+
 @keyframes story-progress {
   from { width: 0%; }
   to { width: 100%; }

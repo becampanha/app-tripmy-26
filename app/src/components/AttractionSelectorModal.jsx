@@ -68,6 +68,7 @@ export default function AttractionSelectorModal({ onSelect, onClose, zIndex = 20
           activeKey={parkIndex}
           onSelect={setParkIndex}
           loading={loading}
+          instanceId="attraction-selector-modal"
         />
       </div>
 

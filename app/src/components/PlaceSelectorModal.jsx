@@ -133,6 +133,7 @@ export default function PlaceSelectorModal({ onSelect, onClose, zIndex = 20 }) {
             setCategory(cat);
             setSubcategory('');
           }}
+          instanceId="place-selector-modal"
         />
       </div>
 

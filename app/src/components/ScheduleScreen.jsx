@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AnimatePresence, Reorder } from 'motion/react';
+import { AnimatePresence, Reorder, motion } from 'motion/react';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { AddIcon } from '@solar-icons/react/linear/add';
 import { ListIcon } from '@solar-icons/react/linear/list';
@@ -19,11 +19,13 @@ import { useDayWeather } from '../hooks/useDayWeather.js';
 import { setGlobalEditing } from '../hooks/useEditingState.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
 import { useScrollY } from '../hooks/useScrollY.js';
+import { usePullToRefresh } from '../hooks/usePullToRefresh.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { getScheduleScreenState, saveScheduleScreenState } from '../hooks/useScheduleScreenState.js';
 import { createActivity, updateActivity, deleteActivity, reorderActivities, updateDay, moveActivityToDay } from '../api/itineraryApi.js';
 import { weatherEmoji } from '../data/weatherCodes.js';
-import { FixedHeader, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
+import { FixedHeader, PullToRefreshIndicator, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
+import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 
 const EDITABLE_FIELDS = ['time', 'title', 'subtitle', 'placeId', 'attractionId'];
 
@@ -107,6 +109,7 @@ export default function ScheduleScreen() {
   const { days, loading, reload } = useItinerary();
   const { scrollY, anchorRef } = useScrollY();
   const { ref: headerRef, height: headerHeight } = useElementHeight();
+  const pullToRefresh = usePullToRefresh(anchorRef);
 
   // Salva o dia selecionado a cada mudança, pra sobreviver à desmontagem ao
   // navegar para outra tela e voltar (mesmo padrão de usePlacesScreenState).
@@ -350,7 +353,7 @@ export default function ScheduleScreen() {
         scrollY={scrollY}
         title="Roteiro"
         left={!editing && <HamburgerMenuButton />}
-        tabs={!editing && <DayTabs days={days} selected={selectedDay} onSelect={setSelectedDay} style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
+        tabs={!editing && <DayTabs days={days} selected={selectedDay} onSelect={setSelectedDay} instanceId="schedule" style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
         right={
           !editing && (
             <>
@@ -390,7 +393,26 @@ export default function ScheduleScreen() {
         }
       />
 
-      <div
+      <div style={{ position: 'absolute', top: headerHeight, left: 0, right: 0 }}>
+        <PullToRefreshIndicator {...pullToRefresh} />
+      </div>
+
+      <motion.div
+        // key muda quando (a) o dia selecionado muda, ou (b) o conteúdo sai
+        // do estado "sem dado ainda" (skeleton) pra "tenho displayDay" pela
+        // primeira vez — em ambos os casos o React desmonta e remonta este
+        // bloco do zero, o que faz o stagger (initial="hidden" animate=
+        // "show") disparar de novo. Enquanto não há displayDay (nem cache,
+        // nem resposta da API ainda), a key fica fixa em 'skeleton': o bloco
+        // não remonta a cada render nesse meio tempo, e os skeletons (que
+        // não têm variants) aparecem direto, sem entrar na coreografia —
+        // misturar skeleton no stagger fazia a troca skeleton→conteúdo real
+        // (quando os dados chegam depois do primeiro render) não reanimar
+        // direito, porque o container já tinha disparado "show" uma vez.
+        key={displayDay ? `day-${selectedDay}` : 'skeleton'}
+        variants={STAGGER_CONTAINER}
+        initial="hidden"
+        animate="show"
         style={{
           marginTop: headerHeight + 16,
           boxSizing: 'border-box',
@@ -404,7 +426,8 @@ export default function ScheduleScreen() {
             tela cheia. Some durante a edição: não faz sentido abrir o mapa
             enquanto o roteiro está sendo editado em rascunho local. */}
         {!editing && (
-          <div
+          <motion.div
+            variants={STAGGER_ITEM}
             onClick={openMap}
             style={{
               position: 'relative',
@@ -448,10 +471,10 @@ export default function ScheduleScreen() {
                 </span>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, gap: 10 }}>
+        <motion.div variants={STAGGER_ITEM} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, gap: 10 }}>
           {editing && draft ? (
             <input
               value={draft.theme || ''}
@@ -488,7 +511,7 @@ export default function ScheduleScreen() {
               <Skeleton width={60} height={14} />
             )}
           </div>
-        </div>
+        </motion.div>
 
         {!displayDay && Array.from({ length: 4 }).map((_, i) => <ActivitySkeleton key={i} />)}
 
@@ -499,6 +522,7 @@ export default function ScheduleScreen() {
         {displayDay && (
           <Reorder.Group
             as="div"
+            variants={STAGGER_ITEM}
             axis="y"
             values={displayDay.activities}
             onReorder={editing ? handleReorder : () => {}}
@@ -545,7 +569,7 @@ export default function ScheduleScreen() {
             Sem atividades definidas para este dia.
           </div>
         )}
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {selectorFor && (

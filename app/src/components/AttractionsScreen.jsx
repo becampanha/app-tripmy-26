@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { MapIcon } from '@solar-icons/react/bold/map';
 import { ListIcon } from '@solar-icons/react/linear/list';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
@@ -13,6 +13,7 @@ import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import { FixedHeader, HScrollTabs, ParkMap, SearchInput, SectionHeader, Skeleton, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
+import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 
 // area vem em CAIXA ALTA da planilha original importada (ex: "ADVENTURELAND",
 // "DIAGON ALLEY") — aqui só pra exibição, sem mexer no dado em si (usado
@@ -115,7 +116,7 @@ export default function AttractionsScreen() {
         scrollY={scrollY}
         title="Atrações"
         left={<HamburgerMenuButton />}
-        tabs={<HScrollTabs items={tabItems} activeKey={parkIndex} onSelect={setParkIndex} loading={loading} style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
+        tabs={<HScrollTabs items={tabItems} activeKey={parkIndex} onSelect={setParkIndex} loading={loading} instanceId="attractions" style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
         right={
           <div
             onClick={() => navigate('/atracoes/roteiro', { state: { parkIndex } })}
@@ -136,7 +137,13 @@ export default function AttractionsScreen() {
         }
       />
 
-      <div
+      <motion.div
+        // key muda ao trocar de parque (aba) ou ao sair do estado "sem dado
+        // ainda" pela primeira vez — ver mesmo padrão em ScheduleScreen.jsx.
+        key={loading && parks.length === 0 ? 'skeleton' : `park-${parkIndex}`}
+        variants={STAGGER_CONTAINER}
+        initial="hidden"
+        animate="show"
         style={{
           marginTop: headerHeight + spacing.controlGap,
           boxSizing: 'border-box',
@@ -149,7 +156,8 @@ export default function AttractionsScreen() {
             antigo botão "Ver mapa do parque" que ficava dentro do
             ParkStrategyCard. */}
         {!loading && park && (
-          <div
+          <motion.div
+            variants={STAGGER_ITEM}
             onClick={openMap}
             style={{
               position: 'relative',
@@ -193,10 +201,10 @@ export default function AttractionsScreen() {
                 </span>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'stretch', gap: spacing.gapMd, marginBottom: 14 }}>
+        <motion.div variants={STAGGER_ITEM} style={{ display: 'flex', alignItems: 'stretch', gap: spacing.gapMd, marginBottom: 14 }}>
           <SearchInput value={search} onChange={setSearch} placeholder="Buscar atração" style={{ flex: 1, marginBottom: 0 }} />
 
           <div
@@ -216,14 +224,14 @@ export default function AttractionsScreen() {
           >
             <CheckCircleIcon size={17} color={onlyInItinerary ? '#fff' : color.faintIcon} />
           </div>
-        </div>
+        </motion.div>
 
         {loading && parks.length === 0 && Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} height={cardPhotoHeight} radius={radius.cardPhoto} style={{ marginBottom: spacing.controlGap }} />
         ))}
 
         {!loading && park && sections.map((section) => (
-          <div key={section.name}>
+          <motion.div key={section.name} variants={STAGGER_ITEM}>
             <SectionHeader style={{ top: headerHeight }}>{formatAreaLabel(section.name)}</SectionHeader>
             {section.attractions.map((attraction) => (
               <AttractionCard
@@ -233,7 +241,7 @@ export default function AttractionsScreen() {
                 liveStatus={getLiveStatus(attraction.name)}
               />
             ))}
-          </div>
+          </motion.div>
         ))}
 
         {!loading && park && sections.length === 0 && (
@@ -241,7 +249,7 @@ export default function AttractionsScreen() {
             Nenhuma atração encontrada.
           </div>
         )}
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {mapOpen && park && (

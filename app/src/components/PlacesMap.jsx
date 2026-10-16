@@ -344,6 +344,7 @@ export default function PlacesMap({ places, onClose }) {
               items={tabItems}
               activeKey={category}
               onSelect={setCategory}
+              instanceId="places-map"
               style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }}
             />
           }

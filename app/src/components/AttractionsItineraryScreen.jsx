@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AnimatePresence, Reorder, useDragControls } from 'motion/react';
+import { AnimatePresence, Reorder, motion, useDragControls } from 'motion/react';
 import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { HamburgerMenuIcon } from '@solar-icons/react/linear/hamburger-menu';
@@ -17,6 +17,7 @@ import { PARK_ICON_MAP } from '../data/parkIcons.js';
 import { ATTRACTION_STATUS_LABEL } from '../data/attractionStatus.js';
 import EditActionBar from './EditActionBar.jsx';
 import { FixedHeader, HScrollTabs, FieldLabel, inputStyle, ParkStrategyCard, Skeleton, color, radius, space, spacing, type } from '../design-system/index.js';
+import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 
 // Mesmo badge já usado pro lugar vinculado a uma atividade do roteiro de
 // dias (ActivityItem.jsx) — padding/radius/background/fonte idênticos —, com
@@ -290,15 +291,32 @@ export default function AttractionsItineraryScreen() {
             activeKey={selectedPark}
             onSelect={setSelectedPark}
             loading={loading}
+            instanceId="attractions-itinerary"
             style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }}
           />
         }
       />
 
-      <div style={{ marginTop: headerHeight + 16, boxSizing: 'border-box', padding: `0 ${space.screenGutter}px ${editing ? 110 : 40}px` }}>
+      <motion.div
+        // key muda ao trocar de parque (aba) ou ao sair do estado "sem dado
+        // ainda" pela primeira vez — ver mesmo padrão em ScheduleScreen.jsx.
+        // Fica travada em 'editing' durante o modo de edição: reanimar a
+        // lista toda enquanto o usuário está arrastando pra reordenar seria
+        // estranho, e o Reorder.Group já cuida da própria transição de
+        // reordenar.
+        key={editing ? 'editing' : loading ? 'skeleton' : `park-${selectedPark}`}
+        variants={STAGGER_CONTAINER}
+        initial="hidden"
+        animate="show"
+        style={{ marginTop: headerHeight + 16, boxSizing: 'border-box', padding: `0 ${space.screenGutter}px ${editing ? 110 : 40}px` }}
+      >
         {loading && Array.from({ length: 5 }).map((_, i) => <ItemSkeleton key={i} />)}
 
-        {!loading && park && !editing && <ParkStrategyCard strategy={park.strategy} />}
+        {!loading && park && !editing && (
+          <motion.div variants={STAGGER_ITEM}>
+            <ParkStrategyCard strategy={park.strategy} />
+          </motion.div>
+        )}
 
         {!loading && park && editing && (
           <div
@@ -326,8 +344,9 @@ export default function AttractionsItineraryScreen() {
           const statusLabel = !hasLiveQueue ? ATTRACTION_STATUS_LABEL[getLiveStatus(attraction.name)] : null;
           const tagValue = hasLiveQueue ? `${liveQueue} min` : statusLabel;
           return (
-            <div
+            <motion.div
               key={attraction.id}
+              variants={STAGGER_ITEM}
               onClick={() => navigate(`/atracoes/${attraction.id}`)}
               style={{
                 position: 'relative',
@@ -369,7 +388,7 @@ export default function AttractionsItineraryScreen() {
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           );
         })}
 
@@ -397,7 +416,7 @@ export default function AttractionsItineraryScreen() {
             Nenhuma atração marcada como "Está no roteiro" neste parque ainda.
           </div>
         )}
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {editing && (

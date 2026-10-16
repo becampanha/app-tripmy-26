@@ -387,6 +387,7 @@ export default function ParkMap({ parks, selectedPark, onSelectPark, onClose, ge
             items={tabItems}
             activeKey={selectedPark}
             onSelect={onSelectPark}
+            instanceId="park-map"
             style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }}
           />
         }

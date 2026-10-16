@@ -98,6 +98,25 @@ CREATE TABLE IF NOT EXISTS park_strategies (
 
 CREATE INDEX IF NOT EXISTS idx_place_recommendations_place_id ON place_recommendations(place_id);
 
+-- Opções de "área" (subcategoria geográfica) disponíveis por categoria de
+-- lugar, editável na tela Configurações > Áreas de lugares — substitui a
+-- lista antes hardcoded em src/data/subcategories.js. Cada categoria tem sua
+-- própria lista independente (editar/remover uma área de "Outlets" não afeta
+-- "Restaurante"), mesmo que o seed inicial duplique os mesmos nomes em várias
+-- categorias. `position` define a ordem de exibição nas abas/filtros.
+-- `places.subcategory` guarda o NOME da área (texto livre, não FK) — ver
+-- api/places/index.js (?resource=areas) para o CRUD, que bloqueia remover uma
+-- área em uso e propaga renomeação para places.subcategory em cascata.
+CREATE TABLE IF NOT EXISTS place_areas (
+  id SERIAL PRIMARY KEY,
+  category TEXT NOT NULL,
+  name TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (category, name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_place_areas_category ON place_areas(category);
+
 -- Lista de compras de cada viajante (ver TRAVELERS em TravelersScreen.jsx —
 -- não é uma tabela própria, a lista de nomes é fixa no front). `traveler` é
 -- o nome do viajante dono do item (texto livre, mas sempre um dos nomes

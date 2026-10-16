@@ -548,6 +548,7 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
             days={days}
             selected={selectedDay}
             onSelect={onSelectDay}
+            instanceId="day-map"
             style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }}
           />
         }

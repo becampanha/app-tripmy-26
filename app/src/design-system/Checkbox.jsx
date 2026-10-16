@@ -2,9 +2,9 @@ import { CheckIcon } from '@solar-icons/react/bold/check';
 import { color } from './tokens.js';
 
 // Checkbox quadrado — mesma linguagem visual do Toggle (verde quando marcado,
-// bege quando desmarcado). Sem uso no app ainda; nasce aqui pronto para a
-// próxima tela que precisar de seleção múltipla.
-export default function Checkbox({ checked, onChange, size = 22 }) {
+// bege quando desmarcado) por padrão; aceita `activeColor` para contextos que
+// não usam a cor de sucesso (ex: filtros, onde ativo = preto).
+export default function Checkbox({ checked, onChange, size = 22, activeColor = color.success }) {
   return (
     <div
       onClick={() => onChange(!checked)}
@@ -12,8 +12,8 @@ export default function Checkbox({ checked, onChange, size = 22 }) {
         width: size,
         height: size,
         borderRadius: size * 0.32,
-        background: checked ? color.success : color.bg,
-        border: `1.5px solid ${checked ? color.success : color.border}`,
+        background: checked ? activeColor : color.bg,
+        border: `1.5px solid ${checked ? activeColor : color.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

@@ -16,6 +16,7 @@ import RecommendationEditModal from './RecommendationEditModal.jsx';
 import RecommendationCardStack from './RecommendationCardStack.jsx';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import { FixedHeader, HScrollTabs, RecommendationCard, YoutubeVideoModal, SectionHeader, Skeleton, color, radius, spacing } from '../design-system/index.js';
+import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 
 const NO_AREA_LABEL = 'Outros lugares';
 const NO_PLACE_LABEL = 'Sem lugar';
@@ -269,6 +270,7 @@ export default function RecommendationsScreen() {
             items={tabItems}
             activeKey={category}
             onSelect={setCategory}
+            instanceId="recommendations"
             style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }}
           />
         }
@@ -300,7 +302,16 @@ export default function RecommendationsScreen() {
         // SectionHeader, que já tem seu próprio respiro de sobra — com o
         // controlGap extra, o espaço até "Disney" ficava maior que o das
         // telas que têm busca ali no meio.
-        <div style={{ marginTop: headerHeight, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}>
+        <motion.div
+          // key muda ao trocar de categoria (aba) ou ao sair do estado "sem
+          // dado ainda" pela primeira vez — ver mesmo padrão em
+          // ScheduleScreen.jsx.
+          key={recommendations === null ? 'skeleton' : `category-${category}`}
+          variants={STAGGER_CONTAINER}
+          initial="hidden"
+          animate="show"
+          style={{ marginTop: headerHeight, boxSizing: 'border-box', padding: `2px ${spacing.screenGutter}px 120px` }}
+        >
           {recommendations === null && <RecommendationsSkeleton />}
 
           {filteredRecommendations && filteredRecommendations.length === 0 && (
@@ -310,7 +321,7 @@ export default function RecommendationsScreen() {
           )}
 
           {sections && sections.map((section) => (
-            <div key={section.area}>
+            <motion.div key={section.area} variants={STAGGER_ITEM}>
               <SectionHeader style={{ top: headerHeight }}>{section.area}</SectionHeader>
               {section.items.map((rec) => (
                 <RecommendationCard
@@ -322,9 +333,9 @@ export default function RecommendationsScreen() {
                   onPlayVideo={() => setVideoModalRec(rec)}
                 />
               ))}
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       ) : (
         // key={category}: força remontar o carrossel ao trocar de aba — o
         // slide inicial sorteado (ver hasPickedStartRef em

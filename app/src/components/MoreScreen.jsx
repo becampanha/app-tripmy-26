@@ -4,6 +4,7 @@ import { RefreshIcon } from '@solar-icons/react/bold/refresh';
 import { PlayCircleIcon } from '@solar-icons/react/bold/play-circle';
 import { BellIcon } from '@solar-icons/react/bold/bell';
 import { InfoCircleIcon } from '@solar-icons/react/bold/info-circle';
+import { SettingsIcon } from '@solar-icons/react/bold/settings';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import { useScrollY } from '../hooks/useScrollY.js';
@@ -212,6 +213,38 @@ export default function MoreScreen() {
             <Toggle checked={pushEnabled && !pushBlocked} onChange={handleTogglePush} />
           </div>
         )}
+
+        <div
+          onClick={() => navigate('/configuracoes')}
+          style={{
+            marginTop: spacing.gapLg,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: spacing.cardPadding,
+            background: color.bg,
+            border: `1px solid ${color.border}`,
+            borderRadius: 18,
+            cursor: 'pointer',
+          }}
+        >
+          <div
+            style={{
+              flex: 'none',
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              background: color.surfaceMuted,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <SettingsIcon size={16} color={color.dark} />
+          </div>
+          <div style={{ flex: 1, color: color.dark, fontSize: 14.5, fontWeight: 700 }}>Configurações</div>
+          <AltArrowRightIcon size={16} color={color.muted} />
+        </div>
 
         <div
           onClick={() => setShowWelcome(true)}

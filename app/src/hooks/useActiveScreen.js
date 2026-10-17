@@ -29,7 +29,20 @@ export function useStaggerKey() {
   const wasActive = useRef(isActive);
 
   useEffect(() => {
-    if (isActive && !wasActive.current) setGen((g) => g + 1);
+    // rAF em vez de incrementar na hora: `isActive` vira true no mesmo
+    // commit em que o Screen pai (App.jsx) agenda `hideWhenReceded: false`
+    // (visibility: hidden → visible) — sem esperar o browser pintar essa
+    // mudança, o container de stagger seria desmontado/remontado (key muda)
+    // ainda com `visibility: hidden` aplicado. Bug real: todo <img
+    // loading="lazy"> dentro dos cards nascia "invisível" aos olhos do
+    // navegador e nunca mais disparava o carregamento lazy, mesmo depois da
+    // tela ficar visível de novo (ex: fotos da tela de Atrações sumindo e
+    // nunca mais carregando ao voltar da tela de detalhe).
+    if (isActive && !wasActive.current) {
+      const id = requestAnimationFrame(() => setGen((g) => g + 1));
+      wasActive.current = isActive;
+      return () => cancelAnimationFrame(id);
+    }
     wasActive.current = isActive;
   }, [isActive]);
 

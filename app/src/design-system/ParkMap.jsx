@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import useEmblaCarousel from 'embla-carousel-react';
-import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
+import { CloseIcon } from '@solar-icons/react/linear/close';
 import { RouteIcon } from '@solar-icons/react/bold/route';
 import { GpsIcon } from '@solar-icons/react/bold/gps';
 import { MagnifierZoomInIcon } from '@solar-icons/react/bold/magnifier-zoom-in';
@@ -381,7 +381,7 @@ export default function ParkMap({ parks, selectedPark, onSelectPark, onClose, ge
               cursor: 'pointer',
             }}
           >
-            <AltArrowLeftIcon size={19} color={color.dark} />
+            <CloseIcon size={20} color={color.dark} />
           </div>
         }
         tabs={

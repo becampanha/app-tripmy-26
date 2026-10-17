@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
+import { CloseIcon } from '@solar-icons/react/linear/close';
 import { GpsIcon } from '@solar-icons/react/bold/gps';
 import { GlobeIcon } from '@solar-icons/react/bold/globe';
 import { useGoogleMaps } from '../hooks/useGoogleMaps.js';
@@ -194,7 +194,7 @@ export default function SinglePlaceMap({ coords, name, address, photo, onClose }
                 cursor: 'pointer',
               }}
             >
-              <AltArrowLeftIcon size={19} color={color.dark} />
+              <CloseIcon size={20} color={color.dark} />
             </div>
           }
         />

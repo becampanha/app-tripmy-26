@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import useEmblaCarousel from 'embla-carousel-react';
-import { AltArrowLeftIcon } from '@solar-icons/react/linear/alt-arrow-left';
+import { CloseIcon } from '@solar-icons/react/linear/close';
 import { GpsIcon } from '@solar-icons/react/bold/gps';
 import { GlobeIcon } from '@solar-icons/react/bold/globe';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
@@ -340,7 +340,7 @@ export default function PlacesMap({ places, onClose }) {
                 cursor: 'pointer',
               }}
             >
-              <AltArrowLeftIcon size={19} color={color.dark} />
+              <CloseIcon size={20} color={color.dark} />
             </div>
           }
           tabs={

@@ -24,6 +24,21 @@ export default function PhotoCard({ photo, height = cardPhotoHeight, onClick, ch
     setLoaded(false);
   }, [photo]);
 
+  // Se a imagem já está no cache do navegador quando o <img> é montado
+  // (ex: reabrir uma tela cujas fotos já foram vistas antes — o Service
+  // Worker/cache HTTP já tem elas), o carregamento é instantâneo e o
+  // evento `load` pode disparar ANTES do React terminar de anexar o
+  // listener `onLoad` — o evento nunca chega a ser ouvido, `loaded` nunca
+  // vira true, e o skeleton fica cobrindo a foto pra sempre. Bug real
+  // reportado pelo usuário: fotos que já tinham carregado numa visita
+  // anterior "sumiam" (ficavam atrás do skeleton) ao reabrir a mesma tela
+  // uma segunda vez, mesmo com a imagem fisicamente pronta no navegador.
+  // Esse ref callback roda assim que o elemento é anexado ao DOM e checa
+  // `img.complete` direto — cobre o caso que `onLoad` sozinho perde.
+  const checkAlreadyLoaded = (img) => {
+    if (img?.complete && img.naturalWidth > 0) setLoaded(true);
+  };
+
   return (
     <div
       onClick={onClick}
@@ -55,6 +70,7 @@ export default function PhotoCard({ photo, height = cardPhotoHeight, onClick, ch
 
       {photo && (
         <img
+          ref={checkAlreadyLoaded}
           src={photo}
           alt=""
           loading="lazy"

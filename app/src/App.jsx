@@ -280,53 +280,9 @@ function Screen({ depth, direction, isTopOfStack, location, onExited }) {
   );
 }
 
-// Zona de borda (px) onde o iOS reconhece o gesto de arrastar pra "voltar" —
-// mesmo em PWA standalone (ícone na tela de início, sem barra do Safari), o
-// WebKit intercepta esse gesto e já anima visualmente a revelação da tela
-// anterior ANTES de disparar popstate. Ver uso em Shell abaixo.
-const EDGE_SWIPE_ZONE_PX = 24;
-
 function Shell() {
   const location = useLocation();
   const currentDepth = depthOf(location.pathname);
-
-  // Detecta se a navegação de "voltar" que está prestes a ser processada
-  // veio do gesto nativo de edge-swipe do iOS, não de um clique no botão
-  // Voltar. Bug real reportado pelo usuário: ao arrastar da borda esquerda
-  // pra voltar, a animação de "voltar" tocava 2x — uma vez porque o WebKit
-  // já anima a transição sozinho durante o próprio gesto de arrastar (antes
-  // de qualquer JS saber o que houve), e de novo porque, ao soltar o dedo,
-  // o popstate resultante chega normalmente até aqui e o Framer Motion toca
-  // a SUA PRÓPRIA animação de saída por cima — duas transições concatenadas.
-  // Só acontece com o gesto (clique no botão nunca passa por touchstart).
-  // `edgeSwipeRef` fica true por uma janela curta após soltar o dedo — tempo
-  // suficiente pro popstate correspondente chegar e ser identificado como
-  // "já animado pelo sistema", então a transição do Framer Motion abaixo é
-  // pulada pra essa navegação específica (ver uso de `direction` abaixo).
-  const edgeSwipeRef = useRef(false);
-  useEffect(() => {
-    let clearTimer = null;
-    const onTouchStart = (e) => {
-      const x = e.touches[0]?.clientX;
-      if (x !== undefined && x < EDGE_SWIPE_ZONE_PX) edgeSwipeRef.current = true;
-    };
-    const onTouchEnd = () => {
-      // Soltar o dedo não significa que o popstate já chegou — ele só chega
-      // depois que o WebKit decide que o gesto foi "completo" o suficiente
-      // pra navegar de fato. Mantém a flag viva por mais um instante; o
-      // consumo (abaixo, no corpo do Shell) a zera assim que usada.
-      clearTimer = setTimeout(() => { edgeSwipeRef.current = false; }, 400);
-    };
-    document.addEventListener('touchstart', onTouchStart, { passive: true });
-    document.addEventListener('touchend', onTouchEnd, { passive: true });
-    document.addEventListener('touchcancel', onTouchEnd, { passive: true });
-    return () => {
-      document.removeEventListener('touchstart', onTouchStart);
-      document.removeEventListener('touchend', onTouchEnd);
-      document.removeEventListener('touchcancel', onTouchEnd);
-      if (clearTimer) clearTimeout(clearTimer);
-    };
-  }, []);
 
   // Cada entrada é um Screen "congelado" com seu PRÓPRIO location — é isso
   // que permite ter a tela de saída e a de entrada montadas ao mesmo tempo,
@@ -365,18 +321,7 @@ function Shell() {
   const lastEntry = screens[screens.length - 1];
   if (location.pathname !== lastEntry.location.pathname) {
     const prevDepth = lastEntry.depth;
-    let direction = currentDepth === prevDepth ? null : currentDepth > prevDepth ? 'push' : 'pop';
-    // Pop causado pelo gesto de edge-swipe do iOS (ver edgeSwipeRef acima):
-    // o WebKit já tocou a transição visual sozinho durante o arrasto, então
-    // tratamos como `null` (mesmo branch usado pra troca de aba) — Screen
-    // usa `transition: { duration: 0 }` nesse caso, sem Framer Motion por
-    // cima. Zerar a flag aqui (não só no timeout de touchend) é seguro sob
-    // React.StrictMode: ao contrário de um contador que acumularia, zerar
-    // uma flag booleana duas vezes dá o mesmo resultado que zerar uma vez.
-    if (direction === 'pop' && edgeSwipeRef.current) {
-      direction = null;
-      edgeSwipeRef.current = false;
-    }
+    const direction = currentDepth === prevDepth ? null : currentDepth > prevDepth ? 'push' : 'pop';
     // A key da nova entrada usa um número de "geração" (gen) calculado
     // DENTRO do updater, como max(gen de todas as entradas em current) + 1 —
     // não um contador em ref mutada no corpo da função (um contador assim

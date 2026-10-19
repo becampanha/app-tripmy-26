@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { color, cardPhotoGradient, cardPhotoGradientHeight, cardPhotoHeight, radius, spacing } from './tokens.js';
+import { useTapHandler } from '../hooks/useTapHandler.js';
 
 // Card com foto de fundo + gradiente escuro na parte de baixo, para legibilidade
 // de texto sobreposto. Padrão canônico: PlaceCard. Usado também em AttractionCard
@@ -39,9 +40,13 @@ export default function PhotoCard({ photo, height = cardPhotoHeight, onClick, ch
     if (img?.complete && img.naturalWidth > 0) setLoaded(true);
   };
 
+  const tapHandlers = useTapHandler(onClick);
+
   return (
     <div
-      onClick={onClick}
+      {...tapHandlers}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
       style={{
         position: 'relative',
         height,

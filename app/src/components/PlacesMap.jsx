@@ -454,12 +454,14 @@ export default function PlacesMap({ places, onClose }) {
                         bottomContent={
                           <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.gapMd, pointerEvents: 'auto' }}>
                             <div
-                              onClick={(e) => {
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onPointerUp={(e) => {
                                 e.stopPropagation();
                                 if (!mapRef.current) return;
                                 mapRef.current.panTo({ lat: pin.coords.lat, lng: pin.coords.lng });
                                 mapRef.current.setZoom(17);
                               }}
+                              onClick={(e) => e.stopPropagation()}
                               style={{
                                 flex: 1,
                                 display: 'flex',
@@ -477,10 +479,12 @@ export default function PlacesMap({ places, onClose }) {
                               <span style={{ color: '#fff', ...type.button }}>Centralizar</span>
                             </div>
                             <div
-                              onClick={(e) => {
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onPointerUp={(e) => {
                                 e.stopPropagation();
                                 navigate(`/lugares/${pin.place.id}`);
                               }}
+                              onClick={(e) => e.stopPropagation()}
                               style={{
                                 flex: 1,
                                 display: 'flex',

@@ -47,10 +47,12 @@ export default function PlaceCard({ place, onAction, onToggleFavorite, isFavorit
           )}
 
           <div
-            onClick={(e) => {
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => {
               e.stopPropagation();
               onToggleFavorite();
             }}
+            onClick={(e) => e.stopPropagation()}
             style={{
               flex: 'none',
               width: 30,

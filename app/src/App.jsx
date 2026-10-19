@@ -353,7 +353,7 @@ function Screen({ depth, direction, isTopOfStack, skipAnimationViaUA, location, 
         overflowAnchor: 'none',
       }}
     >
-      <ActiveScreenProvider value={isTopOfStack}>
+      <ActiveScreenProvider value={{ isActive: isTopOfStack, direction, depth }}>
         <ScreenRoutes location={location} />
       </ActiveScreenProvider>
     </motion.div>

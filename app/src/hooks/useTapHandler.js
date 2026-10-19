@@ -29,11 +29,17 @@ export function useTapHandler(onTap) {
   // precisa ser suprimido também, não só o pointerup.
   const wasDragRef = useRef(false);
 
-  const fire = () => {
+  // Recebe o evento original e repassa pra onTap — consumidores que leem
+  // coordenadas do clique (ex: RecommendationCardStack decidindo esquerda/
+  // direita via e.clientX) dependem disso; sem repassar, onTap(e) chegava
+  // com `e` undefined e quebrava com TypeError em qualquer toque/clique
+  // real (bug encontrado em produção: navegação do carrossel de Dicas
+  // parou de funcionar por completo depois da migração pra useTapHandler).
+  const fire = (e) => {
     const now = Date.now();
     if (now - lastFiredAtRef.current < DEDUPE_WINDOW_MS) return;
     lastFiredAtRef.current = now;
-    onTap();
+    onTap(e);
   };
 
   if (!onTap) return {};
@@ -53,23 +59,23 @@ export function useTapHandler(onTap) {
       const dy = e.clientY - start.y;
       wasDragRef.current = Math.hypot(dx, dy) > TAP_MOVE_THRESHOLD;
       if (wasDragRef.current) return;
-      fire();
+      fire(e);
     },
     onPointerCancel: () => {
       startRef.current = null;
       wasDragRef.current = false;
     },
-    onClick: () => {
+    onClick: (e) => {
       if (wasDragRef.current) {
         wasDragRef.current = false;
         return;
       }
-      fire();
+      fire(e);
     },
     onKeyDown: (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        fire();
+        fire(e);
       }
     },
   };

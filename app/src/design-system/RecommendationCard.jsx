@@ -4,6 +4,7 @@ import { travelerLabel } from '../data/travelers.js';
 import { youtubeThumbnailProps } from '../data/youtube.js';
 import YoutubePlayButton from './YoutubePlayButton.jsx';
 import { color, radius, space } from './tokens.js';
+import { useTapHandler } from '../hooks/useTapHandler.js';
 
 function formatRecommendationDate(iso) {
   if (!iso) return '';
@@ -40,10 +41,13 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
   // dedo (Salvar Imagem, Copiar) — não um long-press customizado; por isso
   // fica de fora do touch-callout:none global (ver classe allow-native-touch).
   const cardClickable = !!onClick;
+  const cardTapHandlers = useTapHandler(cardClickable ? onClick : null);
 
   return (
     <div
-      onClick={cardClickable ? onClick : undefined}
+      {...cardTapHandlers}
+      role={cardClickable ? 'button' : undefined}
+      tabIndex={cardClickable ? 0 : undefined}
       style={{
         display: 'flex',
         gap: 12,
@@ -99,10 +103,12 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
             )}
             {onEdit && (
               <div
-                onClick={(e) => {
+                onPointerDown={(e) => e.stopPropagation()}
+                onPointerUp={(e) => {
                   e.stopPropagation();
                   onEdit();
                 }}
+                onClick={(e) => e.stopPropagation()}
                 style={{
                   flex: 'none',
                   width: 26,
@@ -125,12 +131,14 @@ export default function RecommendationCard({ recommendation, place, onOpenPhoto,
       {imgProps && (
         <div
           className="allow-native-touch"
-          onClick={(e) => {
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => {
             e.stopPropagation();
             if (hasVideo && onPlayVideo) onPlayVideo();
             else if (onOpenPhoto) onOpenPhoto();
             else if (onClick) onClick();
           }}
+          onClick={(e) => e.stopPropagation()}
           style={{
             position: 'relative',
             flex: 'none',

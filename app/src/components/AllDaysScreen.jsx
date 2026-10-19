@@ -10,6 +10,7 @@ import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { setGlobalEditing } from '../hooks/useEditingState.js';
 import { showToast, showErrorToast } from '../hooks/useToast.js';
+import { useTapHandler } from '../hooks/useTapHandler.js';
 import { swapDays } from '../api/itineraryApi.js';
 import { weatherEmoji } from '../data/weatherCodes.js';
 import { FloatingBar, FixedHeader, Skeleton, color, radius, space, type } from '../design-system/index.js';
@@ -24,6 +25,95 @@ function DayRowSkeleton() {
         <Skeleton width="35%" height={12} style={{ marginTop: 6 }} />
       </div>
     </div>
+  );
+}
+
+// Separado do corpo da tela porque useTapHandler é um hook — não pode ser
+// chamado dentro do .map() do componente pai (regra dos hooks).
+function DayRow({ day, i, weather, isPicked, activityCount, editing, togglePick, navigate }) {
+  const tapHandlers = useTapHandler(
+    editing ? () => togglePick(day.id) : () => navigate('/', { state: { selectedDay: i } })
+  );
+
+  return (
+    <motion.div
+      variants={STAGGER_ITEM}
+      {...tapHandlers}
+      role="button"
+      tabIndex={0}
+      style={{
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        padding: 14,
+        marginBottom: 10,
+        background: isPicked ? color.dark : color.bg,
+        border: `1px solid ${isPicked ? color.dark : color.border}`,
+        borderRadius: radius.card,
+        cursor: 'pointer',
+      }}
+    >
+      {isPicked && (
+        <div
+          style={{
+            position: 'absolute',
+            top: -8,
+            left: -8,
+            width: 24,
+            height: 24,
+            borderRadius: 12,
+            background: color.success,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 6px rgba(28,26,23,0.3)',
+          }}
+        >
+          <CheckIcon size={13} color="#fff" />
+        </div>
+      )}
+
+      <div
+        style={{
+          flex: 'none',
+          width: 48,
+          height: 48,
+          borderRadius: 14,
+          background: isPicked ? 'rgba(255,255,255,0.12)' : color.surfaceMuted,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 1,
+        }}
+      >
+        <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 0.3, textTransform: 'uppercase', color: isPicked ? 'rgba(255,255,255,0.7)' : color.muted }}>
+          {day.weekday}
+        </div>
+        <div style={{ fontSize: 17, fontWeight: 800, color: isPicked ? '#fff' : color.dark }}>{day.date.split('/')[0]}</div>
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ ...type.itemTitle, color: isPicked ? '#fff' : color.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {day.theme}
+        </div>
+        {activityCount > 0 && (
+          <div style={{ color: isPicked ? 'rgba(255,255,255,0.7)' : color.muted, fontSize: 12.5, fontWeight: 600, marginTop: 2 }}>
+            {activityCount} {activityCount === 1 ? 'atividade' : 'atividades'}
+          </div>
+        )}
+      </div>
+
+      {!editing && weather && (
+        <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: 15 }}>{weatherEmoji(weather.code)}</span>
+          <span style={{ color: color.muted, fontSize: 12.5, fontWeight: 600 }}>
+            {Math.round(weather.min)}°–{Math.round(weather.max)}°
+          </span>
+        </div>
+      )}
+    </motion.div>
   );
 }
 
@@ -145,83 +235,17 @@ export default function AllDaysScreen() {
           const pickedIndex = pickedIds.indexOf(day.id);
           const isPicked = pickedIndex !== -1;
           return (
-            <motion.div
+            <DayRow
               key={day.id}
-              variants={STAGGER_ITEM}
-              onClick={editing ? () => togglePick(day.id) : () => navigate('/', { state: { selectedDay: i } })}
-              style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                padding: 14,
-                marginBottom: 10,
-                background: isPicked ? color.dark : color.bg,
-                border: `1px solid ${isPicked ? color.dark : color.border}`,
-                borderRadius: radius.card,
-                cursor: 'pointer',
-              }}
-            >
-              {isPicked && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: -8,
-                    left: -8,
-                    width: 24,
-                    height: 24,
-                    borderRadius: 12,
-                    background: color.success,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 6px rgba(28,26,23,0.3)',
-                  }}
-                >
-                  <CheckIcon size={13} color="#fff" />
-                </div>
-              )}
-
-              <div
-                style={{
-                  flex: 'none',
-                  width: 48,
-                  height: 48,
-                  borderRadius: 14,
-                  background: isPicked ? 'rgba(255,255,255,0.12)' : color.surfaceMuted,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 1,
-                }}
-              >
-                <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 0.3, textTransform: 'uppercase', color: isPicked ? 'rgba(255,255,255,0.7)' : color.muted }}>
-                  {day.weekday}
-                </div>
-                <div style={{ fontSize: 17, fontWeight: 800, color: isPicked ? '#fff' : color.dark }}>{day.date.split('/')[0]}</div>
-              </div>
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ ...type.itemTitle, color: isPicked ? '#fff' : color.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {day.theme}
-                </div>
-                {activityCount > 0 && (
-                  <div style={{ color: isPicked ? 'rgba(255,255,255,0.7)' : color.muted, fontSize: 12.5, fontWeight: 600, marginTop: 2 }}>
-                    {activityCount} {activityCount === 1 ? 'atividade' : 'atividades'}
-                  </div>
-                )}
-              </div>
-
-              {!editing && weather && (
-                <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: 15 }}>{weatherEmoji(weather.code)}</span>
-                  <span style={{ color: color.muted, fontSize: 12.5, fontWeight: 600 }}>
-                    {Math.round(weather.min)}°–{Math.round(weather.max)}°
-                  </span>
-                </div>
-              )}
-            </motion.div>
+              day={day}
+              i={i}
+              weather={weather}
+              isPicked={isPicked}
+              activityCount={activityCount}
+              editing={editing}
+              togglePick={togglePick}
+              navigate={navigate}
+            />
           );
         })}
       </motion.div>

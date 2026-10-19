@@ -16,6 +16,7 @@ import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useGeolocation } from '../hooks/useGeolocation.js';
 import { useHidesTabBar } from '../hooks/useEditingState.js';
 import { FixedHeader, color, shellMaxWidth, spacing, type } from '../design-system/index.js';
+import { useTapHandler } from '../hooks/useTapHandler.js';
 
 // AdvancedMarkerElement já ancora o conteúdo custom nativamente via
 // anchorLeft/anchorTop (CSS aplicado pelo próprio framework do Google, não
@@ -25,6 +26,35 @@ import { FixedHeader, color, shellMaxWidth, spacing, type } from '../design-syst
 // dava zoom (sintoma relatado: ponta do balão se movendo, lado oposto
 // parecendo fixo). anchorLeft/anchorTop são passados na criação do marker
 // (ver chamadas de `new AdvancedMarker(...)`), não mais via transform aqui.
+// Botão ícone + texto do carrossel de pins deste mapa — mesmo papel do
+// MapCardButton (design-system), mas com o estilo claro/escuro próprio do
+// DayMap (fundo color.bg/color.dark, não translúcido sobre foto).
+function DayMapCardButton({ icon: Icon, label, onClick, dark }) {
+  const tapHandlers = useTapHandler(onClick);
+  return (
+    <div
+      {...tapHandlers}
+      role="button"
+      tabIndex={0}
+      style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        padding: 12,
+        borderRadius: 16,
+        background: dark ? color.dark : color.bg,
+        border: dark ? undefined : `1px solid ${color.border}`,
+        cursor: 'pointer',
+      }}
+    >
+      <Icon size={15} color={dark ? '#fff' : color.dark} />
+      <span style={{ color: dark ? '#fff' : color.dark, ...type.button }}>{label}</span>
+    </div>
+  );
+}
+
 function myLocationElement() {
   const wrapper = document.createElement('div');
   wrapper.style.cssText = 'position:relative;width:18px;height:18px;';
@@ -676,68 +706,29 @@ export default function DayMap({ days, selectedDay, onSelectDay, onClose }) {
                         style={{ flex: 1, height: '100%' }}
                         bottomContent={
                           <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.gapMd }}>
-                            <div
+                            <DayMapCardButton
+                              icon={MagnifierZoomInIcon}
+                              label="Centralizar"
                               onClick={() => {
                                 if (!mapRef.current) return;
                                 mapRef.current.panTo({ lat: pin.coords.lat, lng: pin.coords.lng });
                                 mapRef.current.setZoom(17);
                               }}
-                              style={{
-                                flex: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 6,
-                                padding: 12,
-                                borderRadius: 16,
-                                background: color.bg,
-                                border: `1px solid ${color.border}`,
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <MagnifierZoomInIcon size={15} color={color.dark} />
-                              <span style={{ color: color.dark, ...type.button }}>Centralizar</span>
-                            </div>
+                            />
                             {pin.activity.place && (
-                              <div
+                              <DayMapCardButton
+                                icon={AltArrowRightIcon}
+                                label="Detalhes"
                                 onClick={() => navigate(`/lugares/${pin.activity.place.id}`)}
-                                style={{
-                                  flex: 1,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: 6,
-                                  padding: 12,
-                                  borderRadius: 16,
-                                  background: color.bg,
-                                  border: `1px solid ${color.border}`,
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                <AltArrowRightIcon size={15} color={color.dark} />
-                                <span style={{ color: color.dark, ...type.button }}>Detalhes</span>
-                              </div>
+                              />
                             )}
                             {isActive && (
-                              <div
+                              <DayMapCardButton
+                                icon={RouteIcon}
+                                label={routeTarget ? 'Ocultar' : 'Rota'}
+                                dark
                                 onClick={() => setRouteTarget((v) => (v ? null : pin.coords))}
-                                style={{
-                                  flex: 1,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: 6,
-                                  padding: 12,
-                                  borderRadius: 16,
-                                  background: color.dark,
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                <RouteIcon size={15} color="#fff" />
-                                <span style={{ color: '#fff', ...type.button }}>
-                                  {routeTarget ? 'Ocultar' : 'Rota'}
-                                </span>
-                              </div>
+                              />
                             )}
                           </div>
                         }

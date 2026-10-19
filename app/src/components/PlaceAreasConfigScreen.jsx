@@ -14,6 +14,7 @@ import { useElementHeight } from '../hooks/useElementHeight.js';
 import { FixedHeader, HScrollTabs, Skeleton, color, radius, spacing } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 import { useStaggerKey } from '../hooks/useActiveScreen.js';
+import { useTapHandler } from '../hooks/useTapHandler.js';
 
 // Mesmas 10 categorias de PlacesScreen.jsx — cada uma tem sua própria lista
 // independente de áreas (ver place_areas no banco).
@@ -30,6 +31,64 @@ const CATEGORY_LABELS = {
   Aeroporto: 'Aeroportos',
   Outro: 'Outros',
 };
+
+function IconButton({ onClick, children }) {
+  const tapHandlers = useTapHandler(onClick);
+  return (
+    <div
+      {...tapHandlers}
+      role="button"
+      tabIndex={0}
+      style={{ width: 38, height: 38, borderRadius: 13, background: color.surfaceMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// Separado do corpo da tela porque useTapHandler é um hook — não pode ser
+// chamado dentro do .map() do componente pai (regra dos hooks).
+function AreaRow({ area, onClick }) {
+  const tapHandlers = useTapHandler(onClick);
+  return (
+    <motion.div
+      variants={STAGGER_ITEM}
+      {...tapHandlers}
+      role="button"
+      tabIndex={0}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: spacing.cardPadding,
+        background: color.bg,
+        border: `1px solid ${color.border}`,
+        borderRadius: 18,
+        marginBottom: 10,
+        cursor: 'pointer',
+      }}
+    >
+      <div
+        style={{
+          flex: 'none',
+          width: 32,
+          height: 32,
+          borderRadius: 10,
+          background: color.surfaceMuted,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <MapPointIcon size={16} color={color.dark} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0, color: color.dark, fontSize: 14.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {area.name}
+      </div>
+      <AltArrowRightIcon size={16} color={color.muted} />
+    </motion.div>
+  );
+}
 
 export default function PlaceAreasConfigScreen() {
   const navigate = useNavigate();
@@ -87,12 +146,9 @@ export default function PlaceAreasConfigScreen() {
         scrollY={scrollY}
         title="Áreas de lugares"
         left={
-          <div
-            onClick={() => navigate(-1)}
-            style={{ width: 38, height: 38, borderRadius: 13, background: color.surfaceMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          >
+          <IconButton onClick={() => navigate(-1)}>
             <ArrowLeftIcon size={19} color={color.dark} />
-          </div>
+          </IconButton>
         }
         tabs={
           <HScrollTabs
@@ -104,12 +160,9 @@ export default function PlaceAreasConfigScreen() {
           />
         }
         right={
-          <div
-            onClick={() => setEditingArea('new')}
-            style={{ width: 38, height: 38, borderRadius: 13, background: color.surfaceMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          >
+          <IconButton onClick={() => setEditingArea('new')}>
             <AddIcon size={17} color={color.dark} />
-          </div>
+          </IconButton>
         }
       />
 
@@ -134,41 +187,7 @@ export default function PlaceAreasConfigScreen() {
         )}
 
         {areas.map((area) => (
-          <motion.div
-            key={area.id}
-            variants={STAGGER_ITEM}
-            onClick={() => setEditingArea(area)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: spacing.cardPadding,
-              background: color.bg,
-              border: `1px solid ${color.border}`,
-              borderRadius: 18,
-              marginBottom: 10,
-              cursor: 'pointer',
-            }}
-          >
-            <div
-              style={{
-                flex: 'none',
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                background: color.surfaceMuted,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <MapPointIcon size={16} color={color.dark} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0, color: color.dark, fontSize: 14.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {area.name}
-            </div>
-            <AltArrowRightIcon size={16} color={color.muted} />
-          </motion.div>
+          <AreaRow key={area.id} area={area} onClick={() => setEditingArea(area)} />
         ))}
       </motion.div>
 

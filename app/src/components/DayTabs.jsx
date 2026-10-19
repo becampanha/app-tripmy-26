@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { useDragScroll } from '../hooks/useDragScroll.js';
+import { useTapHandler } from '../hooks/useTapHandler.js';
 import { color } from '../design-system/index.js';
 
 const bubbleBase = {
@@ -17,6 +18,51 @@ const bubbleBase = {
   transition: 'background .2s',
   userSelect: 'none',
 };
+
+// Separado do DayTabs porque useTapHandler é um hook — não pode ser chamado
+// dentro do .map() do componente pai (regra dos hooks).
+function DayTab({ day, active, activeRef, dragRef, onSelect, instanceId }) {
+  const tapHandlers = useTapHandler(() => {
+    if (!dragRef.current || !dragRef.current.moved) onSelect();
+  });
+
+  return (
+    <div
+      ref={active ? activeRef : undefined}
+      {...tapHandlers}
+      role="button"
+      tabIndex={0}
+      style={{
+        ...bubbleBase,
+        position: 'relative',
+        background: active ? undefined : color.surfaceMuted,
+      }}
+    >
+      {active && (
+        <motion.div
+          layoutId={`day-tabs-pill-${instanceId}`}
+          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+          style={{ position: 'absolute', inset: 0, borderRadius: 18, background: color.dark }}
+        />
+      )}
+      <div
+        style={{
+          position: 'relative',
+          fontSize: 10.5,
+          fontWeight: 700,
+          letterSpacing: 0.3,
+          textTransform: 'uppercase',
+          color: active ? 'rgba(255,255,255,0.65)' : color.muted,
+        }}
+      >
+        {day.weekday}
+      </div>
+      <div style={{ position: 'relative', fontSize: 16, fontWeight: 800, color: active ? color.white : color.dark }}>
+        {day.date.split('/')[0]}
+      </div>
+    </div>
+  );
+}
 
 // `instanceId` (opcional): DayTabs é renderizado em paralelo em dois lugares
 // (ScheduleScreen normal + DayMap aberto por cima, ambos montados ao mesmo
@@ -71,50 +117,17 @@ export default function DayTabs({ days, selected, onSelect, style, instanceId = 
         ...style,
       }}
     >
-      {days.map((day, i) => {
-        const active = i === selected;
-        return (
-          <div
-            key={day.date}
-            ref={active ? activeRef : undefined}
-            onClick={() => {
-              if (!dragRef.current || !dragRef.current.moved) onSelect(i);
-            }}
-            style={{
-              ...bubbleBase,
-              position: 'relative',
-              background: active ? undefined : color.surfaceMuted,
-            }}
-          >
-            {/* layoutId compartilhado entre as bolhas desta instância — o
-                fundo preto "voa" fisicamente de uma data pra outra em vez de
-                sumir numa e aparecer na outra (mesmo padrão de
-                BottomTabBar.jsx/ViewModeSegmentedToggle). */}
-            {active && (
-              <motion.div
-                layoutId={`day-tabs-pill-${instanceId}`}
-                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                style={{ position: 'absolute', inset: 0, borderRadius: 18, background: color.dark }}
-              />
-            )}
-            <div
-              style={{
-                position: 'relative',
-                fontSize: 10.5,
-                fontWeight: 700,
-                letterSpacing: 0.3,
-                textTransform: 'uppercase',
-                color: active ? 'rgba(255,255,255,0.65)' : color.muted,
-              }}
-            >
-              {day.weekday}
-            </div>
-            <div style={{ position: 'relative', fontSize: 16, fontWeight: 800, color: active ? color.white : color.dark }}>
-              {day.date.split('/')[0]}
-            </div>
-          </div>
-        );
-      })}
+      {days.map((day, i) => (
+        <DayTab
+          key={day.date}
+          day={day}
+          active={i === selected}
+          activeRef={activeRef}
+          dragRef={dragRef}
+          onSelect={() => onSelect(i)}
+          instanceId={instanceId}
+        />
+      ))}
     </div>
   );
 }

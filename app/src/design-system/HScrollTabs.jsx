@@ -1,7 +1,62 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { useDragScroll } from '../hooks/useDragScroll.js';
+import { useTapHandler } from '../hooks/useTapHandler.js';
 import { color, radius, spacing, type } from './tokens.js';
+
+// Separado do HScrollTabs porque useTapHandler é um hook — não pode ser
+// chamado dentro do .map() do componente pai (regra dos hooks).
+function HScrollTab({ item, active, activeRef, dragRef, onSelect, instanceId }) {
+  const Icon = item.icon;
+  const tapHandlers = useTapHandler(() => {
+    // Preserva a checagem de arrasto de mouse do scroller horizontal (ver
+    // useDragScroll.js) — o useTapHandler já ignora arrasto por toque via
+    // seu próprio threshold de deslocamento, mas o drag de mouse do
+    // scroller pai usa um mecanismo prório (scrollLeft manual), por isso
+    // essa checagem adicional continua necessária aqui.
+    if (dragRef.current && dragRef.current.moved) return;
+    onSelect(item.key);
+  });
+
+  return (
+    <div
+      ref={active ? activeRef : undefined}
+      {...tapHandlers}
+      role="button"
+      tabIndex={0}
+      style={{
+        position: 'relative',
+        flex: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        gap: spacing.gapSm,
+        padding: `${spacing.gapMd}px 16px`,
+        borderRadius: radius.chip,
+        ...type.chip,
+        cursor: 'pointer',
+        userSelect: 'none',
+        background: active ? undefined : color.surfaceMuted,
+        color: active ? color.white : color.mutedDeep,
+      }}
+    >
+      {/* layoutId compartilhado entre os chips desta instância — o
+          fundo preto "voa" fisicamente de uma aba pra outra em vez de
+          sumir numa e aparecer na outra (mesmo padrão de
+          DayTabs.jsx/BottomTabBar.jsx). */}
+      {active && (
+        <motion.div
+          layoutId={`h-scroll-tabs-pill-${instanceId}`}
+          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+          style={{ position: 'absolute', inset: 0, borderRadius: radius.chip, background: color.dark }}
+        />
+      )}
+      {Icon && <Icon size={15} color={active ? color.white : (item.iconColor || color.mutedDeep)} style={{ position: 'relative' }} />}
+      {item.emoji && <span style={{ position: 'relative' }}>{item.emoji}</span>}
+      <span style={{ position: 'relative' }}>{item.label}</span>
+      {item.count != null && <span style={{ position: 'relative', opacity: 0.7 }}>({item.count})</span>}
+    </div>
+  );
+}
 
 // Tabs de scroll horizontal com chip retangular ativo/inativo — padrão usado
 // para categorias de Lugares, parques de Atrações e o seletor de categoria
@@ -54,50 +109,17 @@ export default function HScrollTabs({ items, activeKey, onSelect, loading, loadi
         />
       ))}
 
-      {items.map((item) => {
-        const active = item.key === activeKey;
-        const Icon = item.icon;
-        return (
-          <div
-            key={item.key}
-            ref={active ? activeRef : undefined}
-            onClick={() => {
-              if (dragRef.current && dragRef.current.moved) return;
-              onSelect(item.key);
-            }}
-            style={{
-              position: 'relative',
-              flex: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: spacing.gapSm,
-              padding: `${spacing.gapMd}px 16px`,
-              borderRadius: radius.chip,
-              ...type.chip,
-              cursor: 'pointer',
-              userSelect: 'none',
-              background: active ? undefined : color.surfaceMuted,
-              color: active ? color.white : color.mutedDeep,
-            }}
-          >
-            {/* layoutId compartilhado entre os chips desta instância — o
-                fundo preto "voa" fisicamente de uma aba pra outra em vez de
-                sumir numa e aparecer na outra (mesmo padrão de
-                DayTabs.jsx/BottomTabBar.jsx). */}
-            {active && (
-              <motion.div
-                layoutId={`h-scroll-tabs-pill-${instanceId}`}
-                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                style={{ position: 'absolute', inset: 0, borderRadius: radius.chip, background: color.dark }}
-              />
-            )}
-            {Icon && <Icon size={15} color={active ? color.white : (item.iconColor || color.mutedDeep)} style={{ position: 'relative' }} />}
-            {item.emoji && <span style={{ position: 'relative' }}>{item.emoji}</span>}
-            <span style={{ position: 'relative' }}>{item.label}</span>
-            {item.count != null && <span style={{ position: 'relative', opacity: 0.7 }}>({item.count})</span>}
-          </div>
-        );
-      })}
+      {items.map((item) => (
+        <HScrollTab
+          key={item.key}
+          item={item}
+          active={item.key === activeKey}
+          activeRef={activeRef}
+          dragRef={dragRef}
+          onSelect={onSelect}
+          instanceId={instanceId}
+        />
+      ))}
     </div>
   );
 }

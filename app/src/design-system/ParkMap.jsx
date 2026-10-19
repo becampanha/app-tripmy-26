@@ -17,6 +17,7 @@ import { useHidesTabBar } from '../hooks/useEditingState.js';
 import { PARK_ICON_MAP } from '../data/parkIcons.js';
 import { ATTRACTION_STATUS_LABEL } from '../data/attractionStatus.js';
 import { color, shellMaxWidth, spacing } from './tokens.js';
+import MapCardButton from './MapCardButton.jsx';
 
 // Mapa fullscreen de um parque — mesma estrutura/interação do mapa do dia
 // (DayMap.jsx): navbar real com abas (aqui, de PARQUES em vez de dias),
@@ -497,49 +498,19 @@ export default function ParkMap({ parks, selectedPark, onSelectPark, onClose, ge
                       disableNavigate
                       bottomContent={
                         <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.gapMd }}>
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
+                          <MapCardButton
+                            icon={MagnifierZoomInIcon}
+                            label="Centralizar"
+                            onClick={() => {
                               if (!mapRef.current) return;
                               mapRef.current.setView([pin.coords.lat, pin.coords.lng], 18);
                             }}
-                            style={{
-                              flex: 1,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: 6,
-                              padding: 12,
-                              borderRadius: 16,
-                              background: 'rgba(255,255,255,0.12)',
-                              border: '1px solid rgba(255,255,255,0.3)',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <MagnifierZoomInIcon size={15} color="#fff" />
-                            <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>Centralizar</span>
-                          </div>
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/atracoes/${pin.attraction.id}`);
-                            }}
-                            style={{
-                              flex: 1,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: 6,
-                              padding: 12,
-                              borderRadius: 16,
-                              background: 'rgba(255,255,255,0.12)',
-                              border: '1px solid rgba(255,255,255,0.3)',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <AltArrowRightIcon size={15} color="#fff" />
-                            <span style={{ color: '#fff', fontSize: 13.5, fontWeight: 700 }}>Detalhes</span>
-                          </div>
+                          />
+                          <MapCardButton
+                            icon={AltArrowRightIcon}
+                            label="Detalhes"
+                            onClick={() => navigate(`/atracoes/${pin.attraction.id}`)}
+                          />
                         </div>
                       }
                       style={{ flex: 1, height: '100%' }}

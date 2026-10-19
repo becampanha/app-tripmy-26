@@ -15,7 +15,7 @@ import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useGeolocation } from '../hooks/useGeolocation.js';
 import { useHidesTabBar } from '../hooks/useEditingState.js';
 import { usePlacesInItinerary } from '../hooks/usePlacesInItinerary.js';
-import { FixedHeader, HScrollTabs, color, shellMaxWidth, spacing, type } from '../design-system/index.js';
+import { FixedHeader, HScrollTabs, MapCardButton, color, shellMaxWidth, spacing, type } from '../design-system/index.js';
 
 const CATEGORIES = ['Restaurante', 'Mercado', 'Centros', 'Outlets', 'Shopping', 'Loja', 'Parque', 'Hotel', 'Aeroporto', 'Outro'];
 
@@ -453,54 +453,20 @@ export default function PlacesMap({ places, onClose }) {
                         style={{ flex: 1, height: 220, marginBottom: 0 }}
                         bottomContent={
                           <div style={{ display: 'flex', gap: spacing.gapMd, marginTop: spacing.gapMd, pointerEvents: 'auto' }}>
-                            <div
-                              onPointerDown={(e) => e.stopPropagation()}
-                              onPointerUp={(e) => {
-                                e.stopPropagation();
+                            <MapCardButton
+                              icon={MagnifierZoomInIcon}
+                              label="Centralizar"
+                              onClick={() => {
                                 if (!mapRef.current) return;
                                 mapRef.current.panTo({ lat: pin.coords.lat, lng: pin.coords.lng });
                                 mapRef.current.setZoom(17);
                               }}
-                              onClick={(e) => e.stopPropagation()}
-                              style={{
-                                flex: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 6,
-                                padding: 12,
-                                borderRadius: 16,
-                                background: 'rgba(255,255,255,0.12)',
-                                border: '1px solid rgba(255,255,255,0.3)',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <MagnifierZoomInIcon size={15} color="#fff" />
-                              <span style={{ color: '#fff', ...type.button }}>Centralizar</span>
-                            </div>
-                            <div
-                              onPointerDown={(e) => e.stopPropagation()}
-                              onPointerUp={(e) => {
-                                e.stopPropagation();
-                                navigate(`/lugares/${pin.place.id}`);
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              style={{
-                                flex: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 6,
-                                padding: 12,
-                                borderRadius: 16,
-                                background: 'rgba(255,255,255,0.12)',
-                                border: '1px solid rgba(255,255,255,0.3)',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <AltArrowRightIcon size={15} color="#fff" />
-                              <span style={{ color: '#fff', ...type.button }}>Detalhes</span>
-                            </div>
+                            />
+                            <MapCardButton
+                              icon={AltArrowRightIcon}
+                              label="Detalhes"
+                              onClick={() => navigate(`/lugares/${pin.place.id}`)}
+                            />
                           </div>
                         }
                       />

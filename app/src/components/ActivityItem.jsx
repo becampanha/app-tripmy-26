@@ -11,6 +11,7 @@ import { CloseIcon } from '@solar-icons/react/linear/close';
 import { AltArrowRightIcon } from '@solar-icons/react/linear/alt-arrow-right';
 import { ClockCircleIcon } from '@solar-icons/react/bold/clock-circle';
 import { FieldLabel, inputStyle, color, radius, type } from '../design-system/index.js';
+import { useTapHandler } from '../hooks/useTapHandler.js';
 
 export default function ActivityItem({
   activity,
@@ -59,15 +60,19 @@ export default function ActivityItem({
   // reaproveitado em telas sem Group (ex: card do lugar no mapa do dia,
   // DayMap.jsx), então vira uma div comum pra não quebrar nesses casos.
   const Container = editing ? Reorder.Item : 'div';
+  const tapHandlers = useTapHandler(
+    clickable ? () => navigate(place ? `/lugares/${place.id}` : `/atracoes/${attraction.id}`) : null
+  );
   const containerProps = editing
     ? { value: activity, dragListener: false, dragControls }
-    : {};
+    : tapHandlers;
 
   return (
     <>
     <Container
       {...containerProps}
-      onClick={clickable ? () => navigate(place ? `/lugares/${place.id}` : `/atracoes/${attraction.id}`) : undefined}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
       style={cardStyle}
     >
       {editing && (

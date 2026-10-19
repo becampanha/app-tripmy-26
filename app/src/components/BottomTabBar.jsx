@@ -6,6 +6,7 @@ import { ShopIcon } from '@solar-icons/react/bold/shop';
 import { FerrisWheelIcon } from '@solar-icons/react/bold/ferris-wheel';
 import { CartLargeMinimalisticIcon } from '@solar-icons/react/bold/cart-large-minimalistic';
 import { FloatingBar, color, overlay, radius } from '../design-system/index.js';
+import { useTapHandler } from '../hooks/useTapHandler.js';
 
 const TABS = [
   { key: 'roteiro', label: 'Roteiro', icon: MapIcon, path: '/' },
@@ -14,6 +15,52 @@ const TABS = [
   { key: 'atracoes', label: 'Atrações', icon: FerrisWheelIcon, path: '/atracoes' },
   { key: 'compras', label: 'Compras', icon: CartLargeMinimalisticIcon, path: '/compras' },
 ];
+
+function TabBarButton({ tab, isActive, onNavigate }) {
+  const iconColor = isActive ? color.white : color.dark;
+  const Icon = tab.icon;
+  const tapHandlers = useTapHandler(onNavigate);
+
+  return (
+    <div
+      {...tapHandlers}
+      role="button"
+      tabIndex={0}
+      style={{
+        position: 'relative',
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+        padding: '6px 0',
+        cursor: 'pointer',
+      }}
+    >
+      {/* layoutId compartilhado entre as 5 abas — em vez de cada uma
+          aparecer/sumir com fundo preto na hora, o Motion detecta que
+          este elemento "é o mesmo" mudando de posição entre renders e
+          anima o deslocamento sozinho (mesmo padrão já usado no
+          segmented toggle de Dicas, ViewModeSegmentedToggle). */}
+      {isActive && (
+        <motion.div
+          layoutId="bottom-tab-bar-pill"
+          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: radius.pillBarButton,
+            background: color.dark,
+            boxShadow: `0 3px 8px ${overlay.shadowStrong}`,
+          }}
+        />
+      )}
+      <Icon size={22} color={iconColor} style={{ position: 'relative' }} />
+      <div style={{ position: 'relative', fontSize: 11, fontWeight: 700, color: iconColor }}>{tab.label}</div>
+    </div>
+  );
+}
 
 export default function BottomTabBar() {
   const navigate = useNavigate();
@@ -32,45 +79,13 @@ export default function BottomTabBar() {
           tab.path === '/'
             ? location.pathname === '/'
             : location.pathname.startsWith(tab.path);
-        const iconColor = isActive ? color.white : color.dark;
-        const Icon = tab.icon;
         return (
-          <div
+          <TabBarButton
             key={tab.key}
-            onClick={() => navigate(tab.path)}
-            style={{
-              position: 'relative',
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 4,
-              padding: '6px 0',
-              cursor: 'pointer',
-            }}
-          >
-            {/* layoutId compartilhado entre as 5 abas — em vez de cada uma
-                aparecer/sumir com fundo preto na hora, o Motion detecta que
-                este elemento "é o mesmo" mudando de posição entre renders e
-                anima o deslocamento sozinho (mesmo padrão já usado no
-                segmented toggle de Dicas, ViewModeSegmentedToggle). */}
-            {isActive && (
-              <motion.div
-                layoutId="bottom-tab-bar-pill"
-                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  borderRadius: radius.pillBarButton,
-                  background: color.dark,
-                  boxShadow: `0 3px 8px ${overlay.shadowStrong}`,
-                }}
-              />
-            )}
-            <Icon size={22} color={iconColor} style={{ position: 'relative' }} />
-            <div style={{ position: 'relative', fontSize: 11, fontWeight: 700, color: iconColor }}>{tab.label}</div>
-          </div>
+            tab={tab}
+            isActive={isActive}
+            onNavigate={() => navigate(tab.path)}
+          />
         );
       })}
     </FloatingBar>

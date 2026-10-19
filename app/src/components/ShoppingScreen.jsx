@@ -22,6 +22,7 @@ import { SHOPPING_CATEGORIES, SHOPPING_CATEGORY_ICON } from '../data/shoppingCat
 import { FixedHeader, FieldLabel, HScrollTabs, Select, Skeleton, Confetti, color, radius, spacing, type } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 import { useStaggerKey } from '../hooks/useActiveScreen.js';
+import { useTapHandler } from '../hooks/useTapHandler.js';
 
 const SUMMARY_KEY = '__summary__';
 
@@ -130,10 +131,13 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
   // Confete só ao MARCAR como comprado (não ao desmarcar) — nasce a partir
   // do ponto exato do clique (coordenadas do evento), não da tela inteira.
   const [confettiOrigin, setConfettiOrigin] = useState(null);
+  const tapHandlers = useTapHandler(onClick);
 
   return (
     <div
-      onClick={onClick}
+      {...tapHandlers}
+      role="button"
+      tabIndex={0}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -178,6 +182,8 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
             href={item.link}
             target="_blank"
             rel="noreferrer"
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 3, color: color.dark, fontSize: 11.5, fontWeight: 700, textDecoration: 'none' }}
           >
@@ -194,7 +200,8 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
           </div>
         )}
         <div
-          onClick={(e) => {
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => {
             e.stopPropagation();
             if (!item.purchased) {
               const r = e.currentTarget.getBoundingClientRect();
@@ -202,6 +209,7 @@ function ShoppingItemCard({ item, onClick, onTogglePurchased }) {
             }
             onTogglePurchased();
           }}
+          onClick={(e) => e.stopPropagation()}
           style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
         >
           {item.purchased ? (
@@ -242,9 +250,12 @@ function SummaryStatRow({ label, count, value, valueColor }) {
 // Clicável: leva direto pra aba daquela categoria (ver onSelectCategory).
 function SummaryCategoryRow({ category, stats, onClick }) {
   const Icon = SHOPPING_CATEGORY_ICON[category];
+  const tapHandlers = useTapHandler(onClick);
   return (
     <div
-      onClick={onClick}
+      {...tapHandlers}
+      role="button"
+      tabIndex={0}
       style={{ padding: spacing.cardPadding, background: color.bg, border: `1px solid ${color.border}`, borderRadius: 16, cursor: 'pointer' }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>

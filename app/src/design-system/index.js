@@ -27,3 +27,4 @@ export { default as PullToRefreshIndicator } from './PullToRefreshIndicator.jsx'
 export { default as BootLoader } from './BootLoader.jsx';
 export { default as ImageLoadingBar } from './ImageLoadingBar.jsx';
 export { default as Confetti } from './Confetti.jsx';
+export { default as MapCardButton } from './MapCardButton.jsx';

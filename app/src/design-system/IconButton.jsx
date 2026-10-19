@@ -1,4 +1,5 @@
 import { color, overlay, radius } from './tokens.js';
+import { useTapHandler } from '../hooks/useTapHandler.js';
 
 // Botão circular de ação (voltar, fechar, editar). `variant` cobre as
 // variações de fundo já em uso no app:
@@ -12,10 +13,13 @@ export default function IconButton({ icon: Icon, onClick, size = 38, variant = '
     dark: { background: color.dark, iconColor: color.white, backdropFilter: undefined },
   };
   const v = variants[variant];
+  const tapHandlers = useTapHandler(onClick);
 
   return (
     <div
-      onClick={onClick}
+      {...tapHandlers}
+      role="button"
+      tabIndex={0}
       style={{
         width: size,
         height: size,

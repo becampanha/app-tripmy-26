@@ -41,6 +41,34 @@ import { ActiveScreenProvider } from './hooks/useActiveScreen.js';
 // próprio variant a partir da SUA profundidade — não de um isPush/isSameLevel
 // global recalculado a cada render do Shell, que seria idêntico para as duas
 // instâncias simultâneas durante a transição.
+// Captura PopStateEvent.hasUAVisualTransition (Safari 18+/iOS 18+, também
+// Chrome 118+/Firefox 149+) assim que o módulo carrega — ANTES do React
+// Router montar e processar qualquer navegação. `hasUAVisualTransition` é
+// true quando o PRÓPRIO WebKit já animou visualmente a navegação (gesto de
+// edge-swipe pra voltar, inclusive em PWA standalone) antes de disparar o
+// popstate. Segunda tentativa de corrigir a animação de "voltar" tocando 2x
+// no swipe (ver seção 25 do CLAUDE.md pra a 1ª tentativa, revertida por
+// causar um flash/piscar pior que o bug original — ela matava a animação
+// inteira via `duration: 0`, fazendo a troca de tela ficar seca em vez de
+// suave). Desta vez: quando a flag vier true, o Shell não vai pular a
+// animação — vai fazer a tela já NASCER na posição final (sem nunca ter
+// existido fora da tela), porque o WebKit já mostrou essa transição; não há
+// "pulo" porque não há nunca um estado "fora da tela" pra saltar a partir
+// dele. Um único listener em nível de módulo (não dentro de um componente)
+// — sobrevive a qualquer remount e nunca compete com o listener interno do
+// React Router: múltiplos listeners de popstate rodam sincronamente, na
+// ordem de registro, sem preventDefault/stopPropagation aqui.
+let lastPopstateHadUAVisualTransition = false;
+function handleModulePopstate(e) {
+  lastPopstateHadUAVisualTransition = e.hasUAVisualTransition === true;
+}
+window.addEventListener('popstate', handleModulePopstate);
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    window.removeEventListener('popstate', handleModulePopstate);
+  });
+}
+
 function depthOf(pathname) {
   // Hierarquia real de navegação (push empilha, pop desempilha): raiz (0) →
   // /mais (1) → /configuracoes (2) → /configuracoes/areas (3). Cada rota só
@@ -126,7 +154,7 @@ function ScreenRoutes({ location }) {
   );
 }
 
-function Screen({ depth, direction, isTopOfStack, location, onExited }) {
+function Screen({ depth, direction, isTopOfStack, skipAnimationViaUA, location, onExited }) {
   // O FixedHeader de cada tela (ver design-system/FixedHeader.jsx) é
   // `position: fixed` — ignora completamente o `overflow` do container pai
   // e o `scale` do próprio motion.div (ele vira "fixed ao containing block
@@ -210,6 +238,35 @@ function Screen({ depth, direction, isTopOfStack, location, onExited }) {
   // transição).
   const [isPresent, safeToRemove] = usePresence();
 
+  // A entrada que está SAINDO (ex: a tela de detalhe, ao voltar) é removida
+  // do array `screens` no Shell e nunca mais recebe props atualizadas — ela
+  // continua montada só por conta do AnimatePresence, "congelada" com as
+  // últimas props de quando ainda existia (ver comentário grande sobre
+  // `exit` não depender de `direction`, acima). `skipAnimationViaUA` (prop)
+  // só chega atualizada nas entradas que CONTINUAM no array — a de saída
+  // nunca a recebe assim. Mas o componente Screen dela continua rodando
+  // normalmente enquanto sai (só isPresent vira false) — captura aqui, no
+  // PRÓPRIO RENDER (não num useEffect, que só rodaria DEPOIS deste render já
+  // ter calculado currentVariant com o valor antigo — foi exatamente esse o
+  // bug na 1ª tentativa desta correção: skipExitAnimationViaUA.current só
+  // ficava true um render tarde demais, depois do Motion já ter calculado a
+  // posição 'exit' e começado a animar pra lá), o valor da flag de módulo
+  // (ver topo do arquivo) como um snapshot em ref: é o único jeito de saber,
+  // bem no render em que isPresent vira false pela primeira vez, se o
+  // popstate que está causando esta saída veio de um gesto que o WebKit já
+  // animou sozinho. Mutar uma ref diretamente no corpo do componente durante
+  // o render é seguro aqui (diferente do alerta sobre StrictMode no Shell,
+  // que tratava de um CONTADOR que acumularia incrementos a cada invocação
+  // fantasma) — esta é uma trava de "primeira vez": a 2ª invocação fantasma
+  // do StrictMode leria `wasPresentRef.current` já `false` e não escreveria
+  // de novo, idempotente.
+  const skipExitAnimationViaUA = useRef(false);
+  const wasPresentRef = useRef(isPresent);
+  if (wasPresentRef.current && !isPresent) {
+    skipExitAnimationViaUA.current = lastPopstateHadUAVisualTransition;
+  }
+  wasPresentRef.current = isPresent;
+
   useEffect(() => {
     // Quando a variante de saída é IGUAL à de entrada (ex: duas telas de
     // mesma profundidade, direction null — ambas usam 'top'), a posição
@@ -217,13 +274,30 @@ function Screen({ depth, direction, isTopOfStack, location, onExited }) {
     // animação e onAnimationComplete (abaixo) jamais seria chamado de novo —
     // a tela ficaria montada pra sempre, exatamente a causa do "ghosting"
     // persistente visto em navegações rápidas em sequência. Nesse caso não
-    // há nada pra esperar visualmente: remove na hora.
-    if (!isPresent && animate === exit) {
+    // há nada pra esperar visualmente: remove na hora. Mesma lógica agora
+    // cobre skipAnimationViaUA/skipExitAnimationViaUA (ver abaixo): também
+    // não há nada pra animar, a remoção é imediata.
+    if (!isPresent && (animate === exit || skipExitAnimationViaUA.current)) {
       safeToRemove();
       onExited();
     }
   }, [isPresent]);
 
+  // Se o WebKit já animou essa saída via gesto, a entrada vai DIRETO pra
+  // `exit` (offscreen) sem transição (duration:0, ver abaixo) — ela já foi
+  // fisicamente tirada de cena pelo gesto, então precisa ACABAR invisível,
+  // só sem interpolar visualmente até lá (o "pulo" que o usuário já viu no
+  // dedo dele). BUG REAL encontrado nesta sessão (1ª versão desta correção):
+  // esta linha usava `animate` em vez de `exit` nesse caso — `animate` pra
+  // uma entrada com isTopOfStack ainda true (ela só deixa de ser 'true'
+  // depois de sair do array, não antes) resolve pra 'top' (x:0, centralizada
+  // e VISÍVEL), não offscreen. Resultado: a tela de detalhe saindo ficava
+  // "grudada" no centro por baixo da tela de Lugares reaparecendo por cima
+  // dela, visível em transparência/sobreposição durante toda a troca —
+  // ainda parecia uma segunda animação, só que de um jeito diferente do
+  // flash original (seção 25). `exit` é sempre o destino visual correto de
+  // QUALQUER saída, com ou sem UA transition — só a transição entre pontos
+  // (TRANSITION/duration:0) muda.
   const currentVariant = isPresent ? animate : exit;
 
   // Assim que a tela volta a ser a de topo (ex: voltou de Configurações pra
@@ -239,7 +313,13 @@ function Screen({ depth, direction, isTopOfStack, location, onExited }) {
       variants={activeVariants}
       initial={initial}
       animate={currentVariant}
-      transition={direction === null ? { duration: 0 } : isWipeScreen ? WIPE_TRANSITION : TRANSITION}
+      transition={
+        direction === null || skipAnimationViaUA || skipExitAnimationViaUA.current
+          ? { duration: 0 }
+          : isWipeScreen
+            ? WIPE_TRANSITION
+            : TRANSITION
+      }
       onAnimationComplete={() => {
         if (!isPresent) {
           safeToRemove();
@@ -322,6 +402,14 @@ function Shell() {
   if (location.pathname !== lastEntry.location.pathname) {
     const prevDepth = lastEntry.depth;
     const direction = currentDepth === prevDepth ? null : currentDepth > prevDepth ? 'push' : 'pop';
+    // Consome a flag (ver listener de popstate acima) SEM resetá-la aqui —
+    // resetar no corpo do componente seria mutação impura durante o render,
+    // perigosa sob StrictMode (2 invocações da mesma navegação, a 2ª leria
+    // o valor já zerado pela 1ª). A variável de módulo é sobrescrita sozinha
+    // a cada novo popstate (sempre para o valor daquele evento específico),
+    // então nunca precisa de reset manual — só vale a pena LER aqui quando
+    // é de fato um pop (push/null nunca vêm de popstate/gesto de voltar).
+    const skipAnimationViaUA = direction === 'pop' && lastPopstateHadUAVisualTransition;
     // A key da nova entrada usa um número de "geração" (gen) calculado
     // DENTRO do updater, como max(gen de todas as entradas em current) + 1 —
     // não um contador em ref mutada no corpo da função (um contador assim
@@ -383,8 +471,8 @@ function Shell() {
         // cima do conteúdo correto, navbar reaparecendo por último).
         const rest = withoutExiting
           .filter((s) => s.key !== existingEntry.key)
-          .map((s) => ({ ...s, direction }));
-        return [...rest, { ...existingEntry, location, depth: currentDepth, direction }];
+          .map((s) => ({ ...s, direction, skipAnimationViaUA }));
+        return [...rest, { ...existingEntry, location, depth: currentDepth, direction, skipAnimationViaUA }];
       }
       const nextGen = Math.max(0, ...current.map((s) => s.gen ?? 0)) + 1;
       const newEntry = {
@@ -392,10 +480,14 @@ function Shell() {
         location,
         depth: currentDepth,
         direction,
+        // Sempre false neste branch — só existe quando `existingEntry` é
+        // encontrado (ver acima), que exige direction === 'pop'; push/null
+        // nunca vêm de popstate/gesto de voltar.
+        skipAnimationViaUA: false,
         gen: nextGen,
       };
       return [
-        ...withoutExiting.map((s) => ({ ...s, direction })),
+        ...withoutExiting.map((s) => ({ ...s, direction, skipAnimationViaUA: false })),
         newEntry,
       ];
     });
@@ -457,6 +549,7 @@ function Shell() {
             // transições, apesar de terem depths absolutos diferentes.
             isTopOfStack={screen.depth === Math.max(...screens.map((s) => s.depth))}
             direction={screen.direction}
+            skipAnimationViaUA={screen.skipAnimationViaUA}
             location={screen.location}
             onExited={() => handleExited(screen.key)}
           />

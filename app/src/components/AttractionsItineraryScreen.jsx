@@ -4,8 +4,6 @@ import { AnimatePresence, Reorder, motion, useDragControls } from 'motion/react'
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { HamburgerMenuIcon } from '@solar-icons/react/linear/hamburger-menu';
-import { ClockCircleIcon } from '@solar-icons/react/bold/clock-circle';
-import { LockKeyholeMinimalisticIcon } from '@solar-icons/react/bold/lock-keyhole-minimalistic';
 import { useAttractionsData } from '../hooks/useAttractionsData.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useScrollY } from '../hooks/useScrollY.js';
@@ -16,55 +14,8 @@ import { updateParkStrategy } from '../api/itineraryApi.js';
 import { PARK_ICON_MAP } from '../data/parkIcons.js';
 import { ATTRACTION_STATUS_LABEL } from '../data/attractionStatus.js';
 import EditActionBar from './EditActionBar.jsx';
-import { FixedHeader, HScrollTabs, FieldLabel, inputStyle, ParkStrategyCard, Skeleton, color, radius, space, spacing, type } from '../design-system/index.js';
+import { FixedHeader, HScrollTabs, FieldLabel, inputStyle, ParkStrategyCard, Skeleton, LiveQueueTag, color, radius, space, spacing, type } from '../design-system/index.js';
 import { STAGGER_ITEM, WIPE_STAGGER_CONTAINER } from '../design-system/motionPresets.js';
-
-// Mesmo badge já usado pro lugar vinculado a uma atividade do roteiro de
-// dias (ActivityItem.jsx) — padding/radius/background/fonte idênticos —, com
-// o ícone de relógio + valor + o pontinho verde pulsante do AttractionCard
-// (só quando isLive: indica tempo real, não um status tipo "Fechada"/"Em
-// manutenção", que também usa esta tag mas sem o pulso). Fixo no canto
-// superior direito do card, na mesma altura do título, em vez de inline —
-// não devia empurrar o título nem quebrar linha.
-function LiveQueueTag({ value, isLive, isClosed }) {
-  const tagColor = isClosed ? color.warning : color.dark;
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        top: 14,
-        right: 14,
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        padding: '4px 8px 4px 10px',
-        borderRadius: radius.badge,
-        background: color.surfaceMuted,
-        color: tagColor,
-        fontSize: 11.5,
-        fontWeight: 700,
-      }}
-    >
-      {isClosed ? (
-        <LockKeyholeMinimalisticIcon size={13} color={tagColor} />
-      ) : (
-        <ClockCircleIcon size={13} color={tagColor} />
-      )}
-      <span style={{ whiteSpace: 'nowrap' }}>{value}</span>
-      {isLive && (
-        <span
-          style={{
-            width: 5,
-            height: 5,
-            borderRadius: 3,
-            background: color.success,
-            animation: 'pulse 1.6s ease-in-out infinite',
-          }}
-        />
-      )}
-    </div>
-  );
-}
 
 // Linha arrastável do modo de edição — número da posição some em favor do
 // handle de arrastar (HamburgerMenuIcon), já que a ordem passa a mudar na
@@ -94,7 +45,7 @@ function DraggableAttractionItem({ attraction, liveQueue, liveStatus }) {
         borderRadius: radius.card,
       }}
     >
-      {tagValue && <LiveQueueTag value={tagValue} isLive={hasLiveQueue} isClosed={!!statusLabel} />}
+      {tagValue && <LiveQueueTag value={tagValue} isLive={hasLiveQueue} isClosed={!!statusLabel} style={{ position: 'absolute', top: 14, right: 14 }} />}
 
       <button
         type="button"
@@ -361,7 +312,7 @@ export default function AttractionsItineraryScreen() {
                 cursor: 'pointer',
               }}
             >
-              {tagValue && <LiveQueueTag value={tagValue} isLive={hasLiveQueue} isClosed={!!statusLabel} />}
+              {tagValue && <LiveQueueTag value={tagValue} isLive={hasLiveQueue} isClosed={!!statusLabel} style={{ position: 'absolute', top: 14, right: 14 }} />}
 
               <div
                 style={{

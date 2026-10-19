@@ -24,10 +24,10 @@ export function unsubscribeFromPush(endpoint) {
   });
 }
 
-export function createActivity({ dayId, time, title, subtitle, address, placeId, attractionId }) {
+export function createActivity({ dayId, type, time, title, subtitle, address, placeId, attractionId, parentActivityId }) {
   return request('/api/activities', {
     method: 'POST',
-    body: JSON.stringify({ dayId, time, title, subtitle, address, placeId, attractionId }),
+    body: JSON.stringify({ dayId, type, time, title, subtitle, address, placeId, attractionId, parentActivityId }),
   });
 }
 

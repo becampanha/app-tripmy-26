@@ -4,9 +4,11 @@ import { AnimatePresence, Reorder, motion } from 'motion/react';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { AddIcon } from '@solar-icons/react/linear/add';
 import { ListIcon } from '@solar-icons/react/linear/list';
+import { RouteIcon } from '@solar-icons/react/bold/route';
 import { MapIcon } from '@solar-icons/react/bold/map';
 import DayTabs from './DayTabs.jsx';
 import ActivityItem from './ActivityItem.jsx';
+import ItineraryCardItem from './ItineraryCardItem.jsx';
 import DistanceBetween from './DistanceBetween.jsx';
 import PlaceSelectorModal from './PlaceSelectorModal.jsx';
 import AttractionSelectorModal from './AttractionSelectorModal.jsx';
@@ -32,6 +34,7 @@ const EDITABLE_FIELDS = ['time', 'title', 'subtitle', 'placeId', 'attractionId']
 
 function activityFields(act) {
   return {
+    type: act.type || 'simple',
     time: act.time || '',
     title: act.title || '',
     subtitle: act.subtitle || '',
@@ -39,29 +42,36 @@ function activityFields(act) {
     place: act.place || null,
     attractionId: act.attraction ? act.attraction.id : null,
     attraction: act.attraction || null,
+    // Fase 3: card 'itinerary' ganha subitens no draft, mas ainda não são
+    // editáveis por aqui — preserva o que já veio da API intacto, sem
+    // achatar/perder (seriam sobrescritos ao reabrir o modo edição senão).
+    // CRUD de subitens vem na fase 4.
+    items: act.items ? act.items.map((sub) => ({ id: sub.id, ...activityFields(sub) })) : undefined,
   };
 }
 
 let nextDraftId = -1;
 
 // Divisor clicável entre dois itens (ou antes do primeiro/depois do último)
-// pra inserir uma nova atividade naquela posição exata, em vez de só no fim
-// da lista. Fica discreto (sem borda tracejada grande) pra não parecer um
-// item de atividade de verdade no meio da lista.
-function AddActivityDivider({ onClick }) {
+// pra inserir conteúdo novo naquela posição exata, em vez de só no fim da
+// lista. Fica discreto (sem borda tracejada grande) pra não parecer um item
+// de atividade de verdade no meio da lista. Dois alvos lado a lado — não um
+// ActionSheet — pra criar uma atividade simples (igual sempre foi) ou um
+// card "Roteiro" novo (mini-roteiro com subitens, ver ItineraryCardItem.jsx).
+function AddActivityDivider({ onAddActivity, onAddItineraryCard }) {
   return (
     <div
-      onClick={onClick}
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        gap: 8,
         height: 22,
         margin: '-4px 0 2px',
-        cursor: 'pointer',
       }}
     >
       <div
+        onClick={onAddActivity}
         style={{
           width: 26,
           height: 26,
@@ -71,9 +81,26 @@ function AddActivityDivider({ onClick }) {
           alignItems: 'center',
           justifyContent: 'center',
           background: color.bg,
+          cursor: 'pointer',
         }}
       >
         <AddIcon size={14} color={color.dark} />
+      </div>
+      <div
+        onClick={onAddItineraryCard}
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 13,
+          border: `1.5px dashed ${color.dashedBorder}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: color.bg,
+          cursor: 'pointer',
+        }}
+      >
+        <RouteIcon size={14} color={color.dark} />
       </div>
     </div>
   );
@@ -252,7 +279,7 @@ export default function ScheduleScreen() {
 
   const handleAddActivity = (atIndex) => {
     const id = nextDraftId--;
-    const newActivity = { id, time: '', title: '', subtitle: '', placeId: null, place: null, attractionId: null, attraction: null };
+    const newActivity = { id, type: 'simple', time: '', title: '', subtitle: '', placeId: null, place: null, attractionId: null, attraction: null };
     setDraft((d) => {
       const activities = d.activities.slice();
       const insertAt = atIndex === undefined ? activities.length : atIndex;
@@ -261,13 +288,107 @@ export default function ScheduleScreen() {
     });
   };
 
+  // Mesmo padrão de handleAddActivity, mas type:'itinerary' e items: [].
+  const handleAddItineraryCard = (atIndex) => {
+    const id = nextDraftId--;
+    const newCard = { id, type: 'itinerary', time: '', title: '', subtitle: '', placeId: null, place: null, attractionId: null, attraction: null, items: [] };
+    setDraft((d) => {
+      const activities = d.activities.slice();
+      const insertAt = atIndex === undefined ? activities.length : atIndex;
+      activities.splice(insertAt, 0, newCard);
+      return { ...d, activities };
+    });
+  };
+
+  // Subitens vivem dentro de activity.items (array), não no nível raiz do
+  // draft — todas as funções abaixo navegam até o card pelo cardId antes de
+  // alterar o item. Sem horário próprio (ver ItinerarySubItem) — a ordem
+  // entre irmãos é só a posição no array.
+  const patchDraftSubItem = (cardId, subItemId, fields) => {
+    setDraft((d) => ({
+      ...d,
+      activities: d.activities.map((a) =>
+        a.id === cardId
+          ? { ...a, items: a.items.map((sub) => (sub.id === subItemId ? { ...sub, ...fields } : sub)) }
+          : a
+      ),
+    }));
+  };
+
+  const handleAddSubItem = (cardId, atIndex) => {
+    const id = nextDraftId--;
+    const newSubItem = { id, type: 'itinerary_item', time: '', title: '', subtitle: '', placeId: null, place: null, attractionId: null, attraction: null };
+    setDraft((d) => ({
+      ...d,
+      activities: d.activities.map((a) => {
+        if (a.id !== cardId) return a;
+        const items = a.items.slice();
+        const insertAt = atIndex === undefined ? items.length : atIndex;
+        items.splice(insertAt, 0, newSubItem);
+        return { ...a, items };
+      }),
+    }));
+  };
+
+  const handleDeleteSubItem = (cardId, subItemId) => {
+    setDraft((d) => ({
+      ...d,
+      activities: d.activities.map((a) =>
+        a.id === cardId ? { ...a, items: a.items.filter((sub) => sub.id !== subItemId) } : a
+      ),
+    }));
+  };
+
+  const handleMoveSubItem = (cardId, index, delta) => {
+    setDraft((d) => ({
+      ...d,
+      activities: d.activities.map((a) => {
+        if (a.id !== cardId) return a;
+        const items = a.items.slice();
+        const targetIndex = index + delta;
+        if (targetIndex < 0 || targetIndex >= items.length) return a;
+        [items[index], items[targetIndex]] = [items[targetIndex], items[index]];
+        return { ...a, items };
+      }),
+    }));
+  };
+
+  // Callback do Reorder.Group interno de um card — já recebe o array inteiro
+  // reordenado pronto (mesmo padrão de handleReorder no nível raiz).
+  const handleReorderSubItems = (cardId, items) => {
+    setDraft((d) => ({
+      ...d,
+      activities: d.activities.map((a) => (a.id === cardId ? { ...a, items } : a)),
+    }));
+  };
+
+  const handleUnlinkSubItemPlace = (cardId, subItemId) => {
+    patchDraftSubItem(cardId, subItemId, { placeId: null, place: null });
+  };
+
+  const handleUnlinkSubItemAttraction = (cardId, subItemId) => {
+    patchDraftSubItem(cardId, subItemId, { attractionId: null, attraction: null });
+  };
+
+  // selectorFor/attractionSelectorFor guardam um id simples (atividade de
+  // nível raiz) OU { cardId, subItemId } (subitem de um card) — os dois
+  // formatos convivem no mesmo state pra reaproveitar PlaceSelectorModal/
+  // AttractionSelectorModal sem duplicar modal nem state por nível.
   const handleSelectPlace = (place) => {
-    patchDraftActivity(selectorFor, { placeId: place.id, place, attractionId: null, attraction: null });
+    if (selectorFor && typeof selectorFor === 'object') {
+      patchDraftSubItem(selectorFor.cardId, selectorFor.subItemId, { placeId: place.id, place, attractionId: null, attraction: null });
+    } else {
+      patchDraftActivity(selectorFor, { placeId: place.id, place, attractionId: null, attraction: null });
+    }
     setSelectorFor(null);
   };
 
   const handleSelectAttraction = (attraction) => {
-    patchDraftActivity(attractionSelectorFor, { attractionId: attraction.id, attraction, placeId: null, place: null });
+    if (attractionSelectorFor && typeof attractionSelectorFor === 'object') {
+      patchDraftSubItem(attractionSelectorFor.cardId, attractionSelectorFor.subItemId, { attractionId: attraction.id, attraction, placeId: null, place: null });
+    } else {
+      patchDraftActivity(attractionSelectorFor, { attractionId: attraction.id, attraction, placeId: null, place: null });
+    }
     setAttractionSelectorFor(null);
   };
 
@@ -311,12 +432,15 @@ export default function ScheduleScreen() {
         }
       }
 
-      // Itens novos (criados durante a edição, id temporário negativo).
+      // Itens novos (criados durante a edição, id temporário negativo). Um
+      // card novo ('itinerary') nasce sem subitens no banco — eles são
+      // criados logo abaixo, já com o id real do card como parentActivityId.
       const idMap = {};
       for (const act of after) {
         if (act.id < 0) {
           const created = await createActivity({
             dayId: draft.dayId,
+            type: act.type,
             time: act.time,
             title: act.title,
             subtitle: act.subtitle,
@@ -331,6 +455,65 @@ export default function ScheduleScreen() {
       await reorderActivities(
         after.map((act, i) => ({ id: idMap[act.id] || act.id, dayId: draft.dayId, sortOrder: i }))
       );
+
+      // Diff de subitens, um card por vez — mesma lógica de "removido /
+      // mudou / novo / ordem final" do nível raiz acima, só que escopada aos
+      // irmãos de um mesmo parentActivityId em vez de um dayId inteiro.
+      for (const act of after) {
+        if (act.type !== 'itinerary') continue;
+        const cardRealId = idMap[act.id] || act.id;
+        const originalCard = before.find((a) => a.id === act.id);
+        const beforeItems = originalCard?.items || [];
+        const afterItems = act.items || [];
+        const beforeItemIds = new Set(beforeItems.map((sub) => sub.id));
+
+        for (const sub of beforeItems) {
+          if (!afterItems.some((s) => s.id === sub.id)) {
+            await deleteActivity(sub.id);
+          }
+        }
+
+        for (const sub of afterItems) {
+          if (!beforeItemIds.has(sub.id)) continue;
+          const originalSub = beforeItems.find((s) => s.id === sub.id);
+          const changed = EDITABLE_FIELDS.some((f) => sub[f] !== originalSub[f]);
+          if (changed) {
+            await updateActivity(sub.id, {
+              title: sub.title,
+              subtitle: sub.subtitle,
+              placeId: sub.placeId,
+              attractionId: sub.attractionId,
+            });
+          }
+        }
+
+        const subItemIdMap = {};
+        for (const sub of afterItems) {
+          if (sub.id < 0) {
+            const created = await createActivity({
+              dayId: draft.dayId,
+              type: 'itinerary_item',
+              parentActivityId: cardRealId,
+              title: sub.title,
+              subtitle: sub.subtitle,
+              placeId: sub.placeId,
+              attractionId: sub.attractionId,
+            });
+            subItemIdMap[sub.id] = created.id;
+          }
+        }
+
+        if (afterItems.length > 0) {
+          await reorderActivities(
+            afterItems.map((sub, i) => ({
+              id: subItemIdMap[sub.id] || sub.id,
+              dayId: draft.dayId,
+              sortOrder: i,
+              parentActivityId: cardRealId,
+            }))
+          );
+        }
+      }
 
       setEditing(false);
       setDraft(null);
@@ -369,7 +552,7 @@ export default function ScheduleScreen() {
                 }}
               >
                 <ListIcon size={17} color={color.dark} />
-                <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Roteiro</span>
+                <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Resumo</span>
               </div>
               <div
                 onClick={startEditing}
@@ -514,7 +697,7 @@ export default function ScheduleScreen() {
         {!displayDay && Array.from({ length: 4 }).map((_, i) => <ActivitySkeleton key={i} />)}
 
         {displayDay && editing && (
-          <AddActivityDivider onClick={() => handleAddActivity(0)} />
+          <AddActivityDivider onAddActivity={() => handleAddActivity(0)} onAddItineraryCard={() => handleAddItineraryCard(0)} />
         )}
 
         {displayDay && (
@@ -528,6 +711,39 @@ export default function ScheduleScreen() {
           >
             {displayDay.activities.map((act, i) => {
               const next = displayDay.activities[i + 1];
+              // Fase 4: CRUD completo do card e seus subitens — drag-and-drop
+              // dos subitens vem na fase 5.
+              if (act.type === 'itinerary') {
+                return (
+                  <div key={act.id} style={{ marginBottom: 12 }}>
+                    <ItineraryCardItem
+                      activity={act}
+                      editing={editing}
+                      onEditTime={(time) => patchDraftActivity(act.id, { time })}
+                      onEditTitle={(title) => patchDraftActivity(act.id, { title })}
+                      onEditSubtitle={(subtitle) => patchDraftActivity(act.id, { subtitle })}
+                      onSelectPlace={() => setSelectorFor(act.id)}
+                      onUnlinkPlace={() => handleUnlinkPlace(act.id)}
+                      onSelectAttraction={() => setAttractionSelectorFor(act.id)}
+                      onUnlinkAttraction={() => handleUnlinkAttraction(act.id)}
+                      onDelete={() => handleDelete(act.id)}
+                      onMoveToDay={act.id > 0 ? () => setMovingActivity(act) : undefined}
+                      onAddSubItem={(atIndex) => handleAddSubItem(act.id, atIndex)}
+                      onReorderSubItems={(items) => handleReorderSubItems(act.id, items)}
+                      onEditSubItemTitle={(subId, title) => patchDraftSubItem(act.id, subId, { title })}
+                      onEditSubItemSubtitle={(subId, subtitle) => patchDraftSubItem(act.id, subId, { subtitle })}
+                      onSelectSubItemPlace={(subId) => setSelectorFor({ cardId: act.id, subItemId: subId })}
+                      onUnlinkSubItemPlace={(subId) => handleUnlinkSubItemPlace(act.id, subId)}
+                      onSelectSubItemAttraction={(subId) => setAttractionSelectorFor({ cardId: act.id, subItemId: subId })}
+                      onUnlinkSubItemAttraction={(subId) => handleUnlinkSubItemAttraction(act.id, subId)}
+                      onDeleteSubItem={(subId) => handleDeleteSubItem(act.id, subId)}
+                      onMoveSubItemUp={(index) => handleMoveSubItem(act.id, index, -1)}
+                      onMoveSubItemDown={(index) => handleMoveSubItem(act.id, index, 1)}
+                    />
+                    {editing && <AddActivityDivider onAddActivity={() => handleAddActivity(i + 1)} onAddItineraryCard={() => handleAddItineraryCard(i + 1)} />}
+                  </div>
+                );
+              }
               return (
                 <ActivityItem
                   key={act.id}
@@ -553,7 +769,7 @@ export default function ScheduleScreen() {
                           <DistanceBetween from={act.place} to={next.place} />
                         )}
                       </div>
-                      {editing && <AddActivityDivider onClick={() => handleAddActivity(i + 1)} />}
+                      {editing && <AddActivityDivider onAddActivity={() => handleAddActivity(i + 1)} onAddItineraryCard={() => handleAddItineraryCard(i + 1)} />}
                     </>
                   }
                 />

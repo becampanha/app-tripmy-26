@@ -47,6 +47,7 @@ export default async function handler(req, res) {
       SELECT
         d.id AS day_id, d.date, d.weekday, d.theme, d.sort_order AS day_sort_order,
         a.id AS activity_id, a.time, a.title, a.subtitle, a.address, a.sort_order AS activity_sort_order,
+        a.type AS activity_type, a.parent_activity_id,
         p.id AS place_id, p.name AS place_name, p.category AS place_category, p.tag AS place_tag,
         p.address AS place_address, p.rating AS place_rating, p.google_maps_uri AS place_google_maps_uri,
         p.photo AS place_photo, p.dish_photos AS place_dish_photos, p.cost AS place_cost,
@@ -63,10 +64,14 @@ export default async function handler(req, res) {
       LEFT JOIN activities a ON a.day_id = d.id
       LEFT JOIN places p ON p.id = a.place_id
       LEFT JOIN attractions att ON att.id = a.attraction_id
-      ORDER BY d.sort_order, a.sort_order
+      ORDER BY d.sort_order, a.parent_activity_id NULLS FIRST, a.sort_order
     `);
 
     const daysMap = new Map();
+    // Activities indexadas por id, pra resolver subitens (parent_activity_id)
+    // na mesma passada — a query ordena parent_activity_id NULLS FIRST, então
+    // o card pai sempre chega antes de qualquer subitem seu.
+    const activitiesById = new Map();
     for (const row of rows) {
       if (!daysMap.has(row.day_id)) {
         daysMap.set(row.day_id, {
@@ -78,15 +83,24 @@ export default async function handler(req, res) {
         });
       }
       if (row.activity_id) {
-        daysMap.get(row.day_id).activities.push({
+        const activity = {
           id: row.activity_id,
+          type: row.activity_type,
           time: row.time,
           title: row.title,
           subtitle: row.subtitle,
           address: row.address,
           place: mapPlace(row),
           attraction: mapAttraction(row),
-        });
+        };
+        if (activity.type === 'itinerary') activity.items = [];
+        activitiesById.set(activity.id, activity);
+        if (row.parent_activity_id) {
+          const parent = activitiesById.get(row.parent_activity_id);
+          if (parent) parent.items.push(activity);
+        } else {
+          daysMap.get(row.day_id).activities.push(activity);
+        }
       }
     }
 

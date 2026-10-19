@@ -49,12 +49,24 @@ CREATE TABLE IF NOT EXISTS activities (
   address TEXT,                      -- endereço verificado, texto livre (legado)
   place_id TEXT REFERENCES places(id) ON DELETE SET NULL,  -- vínculo opcional a um lugar do catálogo
   attraction_id INTEGER REFERENCES attractions(id) ON DELETE SET NULL,  -- vínculo opcional a uma atração (mutuamente exclusivo com place_id — nunca os dois ao mesmo tempo, aplicado pela API)
-  sort_order INTEGER NOT NULL
+  sort_order INTEGER NOT NULL,
+  -- 'simple' = atividade normal (comportamento de sempre, sem mudança).
+  -- 'itinerary' = card "Roteiro": mini-roteiro dentro do dia, com horário e
+  -- local guarda-chuva opcionais (place_id/attraction_id acima), agrupando
+  -- subitens (type='itinerary_item') via parent_activity_id.
+  -- 'itinerary_item' = subitem de um card 'itinerary' — sempre time='',
+  -- sort_order relativo só aos irmãos do mesmo parent_activity_id (não ao
+  -- dia inteiro), place_id/attraction_id opcionais (igual a uma atividade
+  -- simples). Um card 'itinerary' nunca tem parent_activity_id preenchido
+  -- (sem aninhamento de 2 níveis); validado na API, não via CHECK no banco.
+  type TEXT NOT NULL DEFAULT 'simple',
+  parent_activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_activities_day_id ON activities(day_id);
 CREATE INDEX IF NOT EXISTS idx_activities_place_id ON activities(place_id);
 CREATE INDEX IF NOT EXISTS idx_activities_attraction_id ON activities(attraction_id);
+CREATE INDEX IF NOT EXISTS idx_activities_parent_activity_id ON activities(parent_activity_id);
 CREATE INDEX IF NOT EXISTS idx_places_category ON places(category);
 
 -- Recomendações publicadas por usuários, opcionalmente vinculadas a um lugar

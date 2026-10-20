@@ -11,7 +11,7 @@ import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
-import { FixedHeader, HScrollTabs, ParkMap, SearchInput, SectionHeader, Skeleton, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
+import { FilterMenu, FixedHeader, HScrollTabs, ParkMap, SearchInput, SectionHeader, Skeleton, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
@@ -190,23 +190,13 @@ export default function AttractionsScreen() {
         <motion.div variants={STAGGER_ITEM} style={{ display: 'flex', alignItems: 'stretch', gap: spacing.gapMd, marginBottom: 14 }}>
           <SearchInput value={search} onChange={setSearch} placeholder="Buscar atração" style={{ flex: 1, marginBottom: 0 }} />
 
-          <div
-            onClick={() => setOnlyInItinerary((v) => !v)}
-            title="Atrações que estão no roteiro"
-            style={{
-              flex: 'none',
-              width: 38,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: radius.input,
-              border: `1px solid ${onlyInItinerary ? color.dark : color.border}`,
-              background: onlyInItinerary ? color.dark : color.bg,
-              cursor: 'pointer',
-            }}
-          >
-            <CheckCircleIcon size={17} color={onlyInItinerary ? '#fff' : color.faintIcon} />
-          </div>
+          <FilterMenu
+            active={onlyInItinerary}
+            checksLabel="Filtros"
+            checks={[
+              { label: 'Está no roteiro', icon: CheckCircleIcon, checked: onlyInItinerary, onChange: setOnlyInItinerary },
+            ]}
+          />
         </motion.div>
 
         {loading && parks.length === 0 && Array.from({ length: 4 }).map((_, i) => (

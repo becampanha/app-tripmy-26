@@ -697,6 +697,7 @@ export default function ScheduleScreen() {
                       onMoveToDay={act.id > 0 ? () => setMovingActivity(act) : undefined}
                       onAddSubItem={(atIndex) => handleAddSubItem(act.id, atIndex)}
                       onReorderSubItems={(items) => handleReorderSubItems(act.id, items)}
+                      onEditSubItemTime={(subId, time) => patchDraftSubItem(act.id, subId, { time })}
                       onEditSubItemTitle={(subId, title) => patchDraftSubItem(act.id, subId, { title })}
                       onEditSubItemSubtitle={(subId, subtitle) => patchDraftSubItem(act.id, subId, { subtitle })}
                       onSelectSubItemPlace={(subId) => setSelectorFor({ cardId: act.id, subItemId: subId })}
@@ -707,6 +708,11 @@ export default function ScheduleScreen() {
                       onMoveSubItemUp={(index) => handleMoveSubItem(act.id, index, -1)}
                       onMoveSubItemDown={(index) => handleMoveSubItem(act.id, index, 1)}
                     />
+                    {!editing && next && act.place && next.place && (
+                      <div style={{ marginTop: 10 }}>
+                        <DistanceBetween from={act.place} to={next.place} />
+                      </div>
+                    )}
                     {editing && <ItineraryAddButton onAddActivity={() => handleAddActivity(i + 1)} onAddItineraryCard={() => handleAddItineraryCard(i + 1)} />}
                   </div>
                 );
@@ -794,7 +800,7 @@ export default function ScheduleScreen() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {editing && (
+        {editing && !selectorFor && !attractionSelectorFor && !movingActivity && (
           <EditActionBar key="edit-action-bar" onCancel={handleCancel} onSave={handleSave} saving={saving} />
         )}
       </AnimatePresence>

@@ -11,6 +11,7 @@ import { HamburgerMenuIcon } from '@solar-icons/react/linear/hamburger-menu';
 import { AltArrowUpIcon } from '@solar-icons/react/linear/alt-arrow-up';
 import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
 import { AddIcon } from '@solar-icons/react/linear/add';
+import { MapIcon } from '@solar-icons/react/linear/map';
 import { FieldLabel, inputStyle, color, radius, type } from '../design-system/index.js';
 import { useTapHandler } from '../hooks/useTapHandler.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
@@ -29,6 +30,7 @@ function ItinerarySubItem({
   getLiveQueue,
   getLiveStatus,
   editing,
+  onEditTime,
   onEditTitle,
   onEditSubtitle,
   onSelectPlace,
@@ -83,12 +85,20 @@ function ItinerarySubItem({
         </button>
 
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <input
-            value={subItem.title}
-            onChange={(e) => onEditTitle(e.target.value)}
-            placeholder="Título"
-            style={{ ...inputStyle, fontSize: 13, fontWeight: 700 }}
-          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              value={subItem.time || ''}
+              onChange={(e) => onEditTime(e.target.value)}
+              placeholder="Horário"
+              style={{ ...inputStyle, flex: 'none', width: 56, fontSize: 12, fontWeight: 700, textAlign: 'center' }}
+            />
+            <input
+              value={subItem.title}
+              onChange={(e) => onEditTitle(e.target.value)}
+              placeholder="Título"
+              style={{ ...inputStyle, flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}
+            />
+          </div>
           <textarea
             value={subItem.subtitle || ''}
             onChange={(e) => onEditSubtitle(e.target.value)}
@@ -179,10 +189,10 @@ function ItinerarySubItem({
       }}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
-        {tagValue && (
+        {subItem.time && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: color.muted, ...type.label, marginBottom: 4 }}>
             <ClockCircleIcon size={13} color={color.muted} />
-            {tagValue}
+            {subItem.time}
           </div>
         )}
         {subItem.title && (
@@ -193,6 +203,12 @@ function ItinerarySubItem({
         {subItem.subtitle && (
           <div style={{ color: color.dark, ...type.paragraph, marginTop: subItem.title ? 2 : 0 }}>
             {subItem.subtitle}
+          </div>
+        )}
+        {tagValue && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: color.muted, ...type.label, marginTop: 6 }}>
+            <ClockCircleIcon size={13} color={color.muted} />
+            {hasLiveQueue ? `Tempo de fila: ${tagValue}` : tagValue}
           </div>
         )}
         {(place || attraction) && (
@@ -269,6 +285,7 @@ export default function ItineraryCardItem({
   onMoveToDay,
   onAddSubItem,
   onReorderSubItems,
+  onEditSubItemTime,
   onEditSubItemTitle,
   onEditSubItemSubtitle,
   onSelectSubItemPlace,
@@ -515,6 +532,7 @@ export default function ItineraryCardItem({
                     getLiveQueue={getLiveQueue}
                     getLiveStatus={getLiveStatus}
                     editing={editing}
+                    onEditTime={(time) => onEditSubItemTime(subItem.id, time)}
                     onEditTitle={(title) => onEditSubItemTitle(subItem.id, title)}
                     onEditSubtitle={(subtitle) => onEditSubItemSubtitle(subItem.id, subtitle)}
                     onSelectPlace={() => onSelectSubItemPlace(subItem.id)}
@@ -574,6 +592,32 @@ export default function ItineraryCardItem({
               </div>
             )}
           </div>
+        )}
+
+        {!editing && attraction && (
+          <button
+            type="button"
+            onClick={() => navigate('/atracoes', { state: { parkName: attraction.parkName, mapOpen: true } })}
+            style={{
+              marginTop: 12,
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              padding: '9px 0',
+              borderRadius: radius.button,
+              border: `1.5px solid ${color.border}`,
+              background: 'none',
+              color: color.dark,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            <MapIcon size={15} color={color.dark} />
+            Ver mapa do parque
+          </button>
         )}
       </div>
 

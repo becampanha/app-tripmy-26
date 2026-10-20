@@ -47,6 +47,17 @@ export default function AttractionsScreen() {
   const staggerKey = useStaggerKey();
   const { progress: searchProgress } = usePullDownSearch(anchorRef);
 
+  // Facilitador pro botão "Ver no mapa" de um card de Roteiro (ver
+  // ItineraryCardItem.jsx): navegar pra cá com location.state.parkName
+  // resolve o índice certo assim que os parques carregarem — parkIndex não
+  // dá pra calcular de antemão (ScheduleScreen não tem os dados de parks).
+  useEffect(() => {
+    if (!location.state?.parkName || parks.length === 0) return;
+    const index = parks.findIndex((p) => p.name === location.state.parkName);
+    if (index >= 0) setParkIndex(index);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parks.length]);
+
   // Salva parque/filtros a cada mudança, pra sobreviver à desmontagem ao
   // navegar para outra tela e voltar (mesmo padrão de usePlacesScreenState).
   useEffect(() => {

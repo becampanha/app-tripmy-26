@@ -16,7 +16,7 @@ import { usePlacesInItinerary } from '../hooks/usePlacesInItinerary.js';
 import { getPlacesScreenState, savePlacesScreenState, getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
-import { useScrollDirectionReveal } from '../hooks/useScrollDirectionReveal.js';
+import { usePullDownSearch } from '../hooks/usePullDownSearch.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
 import { FixedHeader, HScrollTabs, RevealableSearch, SectionHeader, Skeleton, FilterMenu, color, radius, space, spacing } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
@@ -57,7 +57,7 @@ export default function PlacesScreen() {
   const { scrollY } = useScrollY(rootRef);
   const { ref: headerRef, height: headerHeight } = useElementHeight();
   const staggerKey = useStaggerKey();
-  const searchVisible = useScrollDirectionReveal(rootRef);
+  const { progress: searchProgress } = usePullDownSearch(rootRef);
 
   // Mesmo padrão do mapa do Roteiro (ver ScheduleScreen.jsx): abrir o mapa
   // empurra uma entrada real no histórico, pra "voltar" (botão dentro do
@@ -269,10 +269,10 @@ export default function PlacesScreen() {
           padding: `2px ${space.screenGutter}px 120px`,
         }}
       >
-        {/* Busca some ao rolar a lista pra baixo e reaparece ao rolar de
-            volta pra cima (padrão Safari/X) — ver
-            useScrollDirectionReveal.js. Fica acima do card de mapa. */}
-        <RevealableSearch visible={searchVisible} value={search} onChange={setSearch} placeholder="Buscar por nome" />
+        {/* Busca escondida por padrão, revelada com gesto elástico de puxar
+            (acompanha o dedo, assenta aberta ao soltar) — ver
+            usePullDownSearch.js. Fica acima do card de mapa. */}
+        <RevealableSearch progress={searchProgress} value={search} onChange={setSearch} placeholder="Buscar por nome" />
 
         {/* Call-to-action do mapa — mesmo padrão visual/posição do card
             "Ver mapa do parque" da tela de Atrações (imagem estática, sem

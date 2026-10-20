@@ -2,19 +2,23 @@ import SearchInput from './SearchInput.jsx';
 
 const HEIGHT = 46; // altura do SearchInput + respiro abaixo dele
 
-// Campo de busca que some ao rolar a lista pra baixo e reaparece ao rolar de
-// volta pra cima (padrão Safari/X) — ver useScrollDirectionReveal.js.
-// Diferente de um "revelar só durante o gesto": fica totalmente visível e
-// interativo (clicável, digitável) enquanto `visible` for true, sem
-// depender de o usuário continuar segurando nada.
-export default function RevealableSearch({ visible, value, onChange, placeholder }) {
+// Campo de busca escondido por padrão, revelado com o mesmo "feel" elástico
+// do pull-to-refresh do iOS — ver usePullDownSearch.js. `progress` (0→1)
+// acompanha a distância do arrasto em tempo real enquanto o dedo segura o
+// overscroll no topo; ao soltar depois de passar o threshold, o hook trava
+// progress em 1 (aberto) — diferente de uma 1ª tentativa que recolhia ao
+// soltar (inutilizável: não dava tempo de tocar/digitar no campo). Uma vez
+// aberto, fica visível e interativo até o usuário rolar a lista pra baixo o
+// suficiente (ver mesmo hook).
+export default function RevealableSearch({ progress, value, onChange, placeholder }) {
+  const isAnimating = progress === 0 || progress === 1;
   return (
     <div
       style={{
-        height: visible ? HEIGHT : 0,
-        opacity: visible ? 1 : 0,
+        height: HEIGHT * progress,
+        opacity: progress,
         overflow: 'hidden',
-        transition: 'height 0.22s ease, opacity 0.18s ease',
+        transition: isAnimating ? 'height 0.22s ease, opacity 0.18s ease' : 'none',
       }}
     >
       <SearchInput value={value} onChange={onChange} placeholder={placeholder} style={{ marginBottom: 0 }} />

@@ -67,6 +67,50 @@
   <img src="/icons/icon-192.png" alt="" />
   <div class="bar"></div>
 </div>
+<script>
+  // Watchdog de boot: roda ANTES do bundle principal (/src/main.jsx), como
+  // script inline puro — se o bundle nunca carregar/executar de verdade
+  // (ex: um Service Worker antigo servindo um index.html desatualizado via
+  // precache, que referencia um JS que já não corresponde mais ao restante
+  // do app), um setTimeout dentro do próprio bundle nunca dispararia, pois
+  // o bundle em si é o que está travado/nunca roda. Isso precisa viver fora
+  // dele. Se a tela de boot (ver #boot-progress acima) ainda estiver visível
+  // depois de alguns segundos, nada montou — desregistra o Service Worker,
+  // limpa os Caches Storage (incluindo o precache do Workbox, que pode estar
+  // com um manifesto antigo incompatível) e recarrega uma única vez, sem
+  // depender do usuário ver/clicar em nenhum banner. A flag em
+  // sessionStorage evita um loop infinito de reload caso o problema seja
+  // outro (ex: perda de rede persistente) — tenta só uma vez por sessão.
+  (function () {
+    var TIMEOUT_MS = 8000;
+    var RETRY_FLAG = 'bootWatchdogRetried';
+
+    setTimeout(function () {
+      var bootEl = document.getElementById('boot-progress');
+      if (!bootEl || !document.body.contains(bootEl)) return; // já montou normalmente
+
+      if (sessionStorage.getItem(RETRY_FLAG)) return; // já tentou uma vez nesta sessão, evita loop
+      sessionStorage.setItem(RETRY_FLAG, '1');
+
+      Promise.resolve()
+        .then(function () {
+          if (!('serviceWorker' in navigator)) return;
+          return navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return Promise.all(regs.map(function (r) { return r.unregister(); }));
+          });
+        })
+        .then(function () {
+          if (!('caches' in window)) return;
+          return caches.keys().then(function (keys) {
+            return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+          });
+        })
+        .finally(function () {
+          location.reload();
+        });
+    }, TIMEOUT_MS);
+  })();
+</script>
 <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

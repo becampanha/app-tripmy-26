@@ -42,3 +42,9 @@ if (bootProgress) {
     setTimeout(() => bootProgress.remove(), 250);
   });
 }
+
+// Confirma pro watchdog de boot (ver script inline em index.html) que o app
+// montou de verdade nesta sessão — sem isso, a trava de "só tenta uma vez"
+// ficaria presa para sempre depois de um recovery bem-sucedido, impedindo um
+// novo recovery automático numa sessão futura legítima.
+sessionStorage.removeItem('bootWatchdogRetried');

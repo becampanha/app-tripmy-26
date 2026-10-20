@@ -1,5 +1,5 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
-import { registerRoute } from 'workbox-routing';
+import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { CacheFirst, NetworkFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
@@ -11,6 +11,26 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 // Workbox em vez da config declarativa do vite-plugin-pwa.
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
+
+// Navegação (abrir/recarregar o app) sempre tenta a rede primeiro, com
+// fallback pro precache só se estiver offline de verdade — nunca serve um
+// index.html velho do precache enquanto a rede está disponível. Sem isso, um
+// usuário com uma versão antiga do SW ainda ativo (porque nunca viu/clicou
+// no banner de atualização, ver useSwUpdate.js) podia ficar servindo um
+// index.html desatualizado via precache por tempo indefinido, mesmo com uma
+// versão nova publicada e acessível — o app ficava preso na tela de boot
+// pra sempre, pois esse HTML velho referenciava um bundle JS que o SW velho
+// também tinha em cache, mas cujo conteúdo real não bate mais com o que o
+// restante do app (API, outras abas) espera.
+registerRoute(
+  new NavigationRoute(
+    new NetworkFirst({
+      cacheName: 'app-shell',
+      networkTimeoutSeconds: 4,
+      plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
+    })
+  )
+);
 
 registerRoute(
   ({ url }) => url.pathname.startsWith('/places/'),

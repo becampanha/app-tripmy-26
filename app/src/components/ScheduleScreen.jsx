@@ -768,6 +768,15 @@ export default function ScheduleScreen() {
             key="attraction-selector"
             onSelect={handleSelectAttraction}
             onClose={() => setAttractionSelectorFor(null)}
+            initialParkName={
+              // Facilitador: se o subitem pertence a um card de Roteiro cujo
+              // local principal já é uma atração (ex: card "Magic Kingdom"),
+              // abre o seletor direto na aba desse parque — evita o usuário
+              // ter que procurar de novo um parque que ele já escolheu antes.
+              typeof attractionSelectorFor === 'object'
+                ? displayDay?.activities.find((a) => a.id === attractionSelectorFor.cardId)?.attraction?.parkName
+                : undefined
+            }
           />
         )}
       </AnimatePresence>

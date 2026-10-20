@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { CloseIcon } from '@solar-icons/react/linear/close';
 import AttractionCard from './AttractionCard.jsx';
@@ -6,11 +6,25 @@ import { useAttractionsData } from '../hooks/useAttractionsData.js';
 import { PARK_ICON_MAP } from '../data/parkIcons.js';
 import { HScrollTabs, SearchInput, SectionHeader, IconButton, color, shellMaxWidth, space, spacing } from '../design-system/index.js';
 
-export default function AttractionSelectorModal({ onSelect, onClose, zIndex = 20 }) {
+// `initialParkName` (opcional): facilitador pra subitens de um card de
+// Roteiro — se o card já tem um parque como local principal (ex: "Magic
+// Kingdom"), abrir o seletor de atração pra um subitem já começa direto na
+// aba desse parque, em vez de sempre cair na primeira aba. Resolvido pelo
+// NOME do parque (não um índice fixo) porque a ordem de `parks` só fica
+// disponível depois que useAttractionsData() carrega — o índice é calculado
+// assim que os dados chegam, não de antemão.
+export default function AttractionSelectorModal({ onSelect, onClose, zIndex = 20, initialParkName }) {
   const { parks, loading } = useAttractionsData();
   const [parkIndex, setParkIndex] = useState(0);
   const [search, setSearch] = useState('');
   const park = parks[parkIndex];
+
+  useEffect(() => {
+    if (!initialParkName || parks.length === 0) return;
+    const index = parks.findIndex((p) => p.name === initialParkName);
+    if (index >= 0) setParkIndex(index);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parks.length]);
 
   const tabItems = parks.map((p, i) => {
     const mapped = PARK_ICON_MAP[p.name];

@@ -33,6 +33,35 @@ async function listAttractions(req, res) {
   const strategyRows = await sql.query(`SELECT park_id, summary, route FROM park_strategies`);
   const strategyByPark = new Map(strategyRows.map((r) => [r.park_id, r]));
 
+  // "Está no roteiro" deixou de ser um campo editável manualmente — agora é
+  // calculado: uma atração está no roteiro se houver pelo menos uma
+  // activity vinculada a ela em algum dia (direta, type='simple', ou como
+  // subitem de um card de roteiro, type='itinerary_item' — o JOIN não
+  // filtra por type, só exige attraction_id preenchido, cobrindo os dois
+  // casos de uma vez). Agrupado por attraction_id para também expor em
+  // quais dias cada atração está escalada (ver AttractionDetailScreen.jsx).
+  const itineraryRows = await sql.query(`
+    SELECT a.attraction_id, d.id AS day_id, d.date, d.weekday
+    FROM activities a
+    JOIN days d ON d.id = a.day_id
+    WHERE a.attraction_id IS NOT NULL
+    ORDER BY d.sort_order, a.sort_order
+  `);
+  // Dedup por dia: a mesma atração pode estar vinculada a mais de uma
+  // activity no mesmo dia (ex: uma atividade simples antiga + um subitem de
+  // card de roteiro criado depois) — "em quais dias está escalada" é por
+  // dia, não por ocorrência.
+  const itineraryDaysByAttraction = new Map();
+  for (const r of itineraryRows) {
+    if (!itineraryDaysByAttraction.has(r.attraction_id)) {
+      itineraryDaysByAttraction.set(r.attraction_id, new Map());
+    }
+    itineraryDaysByAttraction.get(r.attraction_id).set(r.day_id, { dayId: r.day_id, date: r.date, weekday: r.weekday });
+  }
+  for (const [attractionId, daysMap] of itineraryDaysByAttraction) {
+    itineraryDaysByAttraction.set(attractionId, Array.from(daysMap.values()));
+  }
+
   const parksById = new Map();
   for (const r of rows) {
     if (!parksById.has(r.park_id)) {
@@ -52,10 +81,12 @@ async function listAttractions(req, res) {
       area = { name: r.area, attractions: [] };
       park.areas.push(area);
     }
+    const itineraryDays = itineraryDaysByAttraction.get(r.id) || [];
     area.attractions.push({
       id: r.id,
       name: r.name,
-      required: r.required,
+      required: itineraryDays.length > 0,
+      itineraryDays,
       type: r.type,
       duration: r.duration,
       queue: r.queue_time,
@@ -141,10 +172,11 @@ async function locations(req, res) {
 }
 
 // PUT /api/attractions?action=update&id=<id> — edita campos de uma atração.
-// Só `required` ("está no roteiro") e `youtubeVideoId` (link do vídeo
-// mostrando a atração, cadastrado manualmente) são editáveis — os demais
-// campos vêm fixos da planilha original importada.
-const ATTRACTION_FIELD_MAP = { required: 'required', youtubeVideoId: 'youtube_video_id' };
+// Só `youtubeVideoId` (link do vídeo mostrando a atração, cadastrado
+// manualmente) é editável — os demais campos vêm fixos da planilha original
+// importada. `required` ("está no roteiro") deixou de ser editável aqui —
+// agora é sempre calculado a partir do Roteiro real (ver listAttractions).
+const ATTRACTION_FIELD_MAP = { youtubeVideoId: 'youtube_video_id' };
 
 async function updateAttraction(req, res) {
   const sql = getSql();

@@ -11,7 +11,7 @@ import { HamburgerMenuIcon } from '@solar-icons/react/linear/hamburger-menu';
 import { AltArrowUpIcon } from '@solar-icons/react/linear/alt-arrow-up';
 import { AltArrowDownIcon } from '@solar-icons/react/linear/alt-arrow-down';
 import { AddIcon } from '@solar-icons/react/linear/add';
-import { FieldLabel, inputStyle, color, radius, type, LiveQueueTag } from '../design-system/index.js';
+import { FieldLabel, inputStyle, color, radius, type } from '../design-system/index.js';
 import { useTapHandler } from '../hooks/useTapHandler.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
 
@@ -172,28 +172,19 @@ function ItinerarySubItem({
       style={{
         position: 'relative',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'stretch',
         gap: 12,
         padding: '10px 0',
         cursor: clickable ? 'pointer' : 'default',
       }}
     >
-      <div
-        style={{
-          flex: 'none',
-          width: 44,
-          height: 44,
-          borderRadius: 14,
-          background: color.surfaceMuted,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <div style={{ fontSize: 16, fontWeight: 800, color: color.dark }}>{index + 1}</div>
-      </div>
-
       <div style={{ flex: 1, minWidth: 0 }}>
+        {tagValue && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: color.muted, ...type.label, marginBottom: 4 }}>
+            <ClockCircleIcon size={13} color={color.muted} />
+            {tagValue}
+          </div>
+        )}
         {subItem.title && (
           <div style={{ color: color.dark, ...type.itemTitle, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {subItem.title}
@@ -229,7 +220,29 @@ function ItinerarySubItem({
         )}
       </div>
 
-      {tagValue && <LiveQueueTag value={tagValue} isLive={hasLiveQueue} isClosed={!!statusLabel} />}
+      {(place || attraction) && (
+        <div
+          className={(place || attraction).photo ? 'allow-native-touch' : undefined}
+          style={{
+            position: 'relative',
+            flex: 'none',
+            width: 96,
+            minHeight: 84,
+            alignSelf: 'stretch',
+            borderRadius: radius.chip,
+            overflow: 'hidden',
+            background: color.imagePlaceholder,
+          }}
+        >
+          {(place || attraction).photo && (
+            <img
+              src={(place || attraction).photo}
+              alt=""
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -416,49 +429,75 @@ export default function ItineraryCardItem({
             </div>
           </div>
         ) : (
-          <>
-            {activity.time && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: color.muted, ...type.label, marginBottom: 4 }}>
-                <ClockCircleIcon size={13} color={color.muted} />
-                {activity.time}
-              </div>
-            )}
-            {activity.title && (
-              <div style={{ color: color.dark, ...type.itemTitle }}>{activity.title}</div>
-            )}
-            {activity.subtitle && (
-              <div style={{ color: color.dark, ...type.paragraph, marginTop: 2 }}>
-                {activity.subtitle}
-              </div>
-            )}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {activity.time && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: color.muted, ...type.label, marginBottom: 4 }}>
+                  <ClockCircleIcon size={13} color={color.muted} />
+                  {activity.time}
+                </div>
+              )}
+              {activity.title && (
+                <div style={{ color: color.dark, ...type.itemTitle }}>{activity.title}</div>
+              )}
+              {activity.subtitle && (
+                <div style={{ color: color.dark, ...type.paragraph, marginTop: 2 }}>
+                  {activity.subtitle}
+                </div>
+              )}
+              {(place || attraction) && (
+                <div
+                  {...tapHandlers}
+                  role={clickable ? 'button' : undefined}
+                  tabIndex={clickable ? 0 : undefined}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    marginTop: 10,
+                    padding: '4px 8px 4px 10px',
+                    borderRadius: radius.badge,
+                    background: color.surfaceMuted,
+                    color: color.dark,
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    maxWidth: '100%',
+                    cursor: clickable ? 'pointer' : 'default',
+                  }}
+                >
+                  {place
+                    ? place.tag && <span style={{ flex: 'none' }}>{place.tag.split(' ')[0]}</span>
+                    : attraction.parkEmoji && <span style={{ flex: 'none' }}>{attraction.parkEmoji}</span>}
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{(place || attraction).name}</span>
+                  <AltArrowRightIcon size={13} color={color.dark} style={{ flex: 'none' }} />
+                </div>
+              )}
+            </div>
+
             {(place || attraction) && (
               <div
-                {...tapHandlers}
-                role={clickable ? 'button' : undefined}
-                tabIndex={clickable ? 0 : undefined}
+                className={(place || attraction).photo ? 'allow-native-touch' : undefined}
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  marginTop: 10,
-                  padding: '4px 8px 4px 10px',
-                  borderRadius: radius.badge,
-                  background: color.surfaceMuted,
-                  color: color.dark,
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  maxWidth: '100%',
-                  cursor: clickable ? 'pointer' : 'default',
+                  position: 'relative',
+                  flex: 'none',
+                  width: 96,
+                  minHeight: 84,
+                  alignSelf: 'stretch',
+                  borderRadius: radius.chip,
+                  overflow: 'hidden',
+                  background: color.imagePlaceholder,
                 }}
               >
-                {place
-                  ? place.tag && <span style={{ flex: 'none' }}>{place.tag.split(' ')[0]}</span>
-                  : attraction.parkEmoji && <span style={{ flex: 'none' }}>{attraction.parkEmoji}</span>}
-                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{(place || attraction).name}</span>
-                <AltArrowRightIcon size={13} color={color.dark} style={{ flex: 'none' }} />
+                {(place || attraction).photo && (
+                  <img
+                    src={(place || attraction).photo}
+                    alt=""
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                )}
               </div>
             )}
-          </>
+          </div>
         )}
 
         {(items.length > 0 || editing) && (

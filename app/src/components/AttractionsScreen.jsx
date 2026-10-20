@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { MapIcon } from '@solar-icons/react/bold/map';
-import { ListIcon } from '@solar-icons/react/linear/list';
 import { CheckCircleIcon } from '@solar-icons/react/bold/check-circle';
 import AttractionCard from './AttractionCard.jsx';
 import { useAttractionsData } from '../hooks/useAttractionsData.js';
@@ -119,24 +118,6 @@ export default function AttractionsScreen() {
         title="Atrações"
         left={<HamburgerMenuButton />}
         tabs={<HScrollTabs items={tabItems} activeKey={parkIndex} onSelect={setParkIndex} loading={loading} instanceId="attractions" style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
-        right={
-          <div
-            onClick={() => navigate('/atracoes/roteiro', { state: { parkIndex } })}
-            style={{
-              height: 38,
-              padding: '0 14px',
-              borderRadius: 13,
-              background: color.surfaceMuted,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              cursor: 'pointer',
-            }}
-          >
-            <ListIcon size={17} color={color.dark} />
-            <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Roteiro</span>
-          </div>
-        }
       />
 
       <motion.div

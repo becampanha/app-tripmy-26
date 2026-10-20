@@ -17,7 +17,7 @@ import { useAttractionsData } from '../hooks/useAttractionsData.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
 import { ATTRACTION_STATUS_LABEL } from '../data/attractionStatus.js';
 import EditActionBar from './EditActionBar.jsx';
-import { NavBar, Toggle, navControlStyle, navControlTextColor, Skeleton, FieldLabel, inputStyle, YoutubePlayButton, YoutubeVideoModal, color as tokenColor, radius, spacing } from '../design-system/index.js';
+import { NavBar, navControlStyle, navControlTextColor, Skeleton, FieldLabel, inputStyle, YoutubePlayButton, YoutubeVideoModal, color as tokenColor, radius, spacing } from '../design-system/index.js';
 import { LIST_DETAIL_STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 import { extractYoutubeId } from '../data/youtube.js';
 import { useStaggerKey } from '../hooks/useActiveScreen.js';
@@ -141,14 +141,6 @@ export default function AttractionDetailScreen() {
         })),
       }))
     );
-
-  const handleToggleRequired = (required) => {
-    applyField({ required });
-    updateAttraction(id, { required }).catch((err) => {
-      applyField({ required: !required });
-      showErrorToast(err, 'Não foi possível atualizar o status no roteiro.');
-    });
-  };
 
   // Modo de edição de tela inteira, mesmo padrão do PlaceDetailScreen.jsx:
   // ícone de lápis no NavBar (não mais dentro do card de vídeo), que ao
@@ -364,39 +356,38 @@ export default function AttractionDetailScreen() {
                 )}
               </motion.div>
 
-              {/* Card dedicado pro toggle "está no roteiro" — continua fora
-                  do modo de edição (igual o toggle de favorito de um lugar):
-                  não é um campo de texto que precisa de rascunho/Salvar, o
-                  clique já aplica na hora, então fica visível sempre. */}
+              {/* "Está no roteiro" deixou de ser editável manualmente — agora
+                  é só informativo, calculado a partir do Roteiro real (ver
+                  api/attractions.js, listAttractions): está no roteiro se e
+                  somente se a atração estiver vinculada a alguma activity em
+                  algum dia. Sem clique/toggle; mostra os dias quando houver. */}
               <motion.div
                 variants={STAGGER_ITEM}
-                onClick={() => handleToggleRequired(!attraction.required)}
                 style={{
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 12,
+                  flexDirection: 'column',
+                  gap: 4,
                   marginTop: spacing.controlGap,
                   padding: spacing.cardPadding,
                   borderRadius: radius.card,
                   background: tokenColor.surfaceMuted,
-                  cursor: 'pointer',
                 }}
               >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {attraction.required && <CheckCircleIcon size={16} color={tokenColor.success} />}
-                    <div style={{ color: tokenColor.dark, fontSize: 15.5, fontWeight: 800 }}>
-                      {attraction.required ? 'Está no roteiro' : 'Não está no roteiro'}
-                    </div>
-                  </div>
-                  <div style={{ color: tokenColor.muted, fontSize: 12.5, fontWeight: 600, marginTop: 2 }}>
-                    {attraction.required
-                      ? 'Essa atração aparece no seu roteiro de atrações'
-                      : 'Toque pra marcar como prioridade do seu roteiro'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {attraction.required && <CheckCircleIcon size={16} color={tokenColor.success} />}
+                  <div style={{ color: tokenColor.dark, fontSize: 15.5, fontWeight: 800 }}>
+                    {attraction.required ? 'Está no roteiro' : 'Não está no roteiro'}
                   </div>
                 </div>
-                <Toggle checked={attraction.required} onChange={handleToggleRequired} />
+                {attraction.required ? (
+                  <div style={{ color: tokenColor.muted, fontSize: 12.5, fontWeight: 600, marginTop: 2 }}>
+                    Escalada em: {attraction.itineraryDays.map((d) => `${d.weekday} ${d.date}`).join(', ')}
+                  </div>
+                ) : (
+                  <div style={{ color: tokenColor.muted, fontSize: 12.5, fontWeight: 600, marginTop: 2 }}>
+                    Adicione essa atração a um dia do Roteiro pra ela aparecer aqui
+                  </div>
+                )}
               </motion.div>
 
               {/* Ficha técnica inteira (grid + avisos) some em modo de

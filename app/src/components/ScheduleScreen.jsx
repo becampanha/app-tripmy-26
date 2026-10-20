@@ -2,9 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, Reorder, motion } from 'motion/react';
 import { PenIcon } from '@solar-icons/react/linear/pen';
-import { AddIcon } from '@solar-icons/react/linear/add';
 import { ListIcon } from '@solar-icons/react/linear/list';
-import { RouteIcon } from '@solar-icons/react/bold/route';
 import { MapIcon } from '@solar-icons/react/bold/map';
 import DayTabs from './DayTabs.jsx';
 import ActivityItem from './ActivityItem.jsx';
@@ -26,7 +24,7 @@ import { useElementHeight } from '../hooks/useElementHeight.js';
 import { getScheduleScreenState, saveScheduleScreenState } from '../hooks/useScheduleScreenState.js';
 import { createActivity, updateActivity, deleteActivity, reorderActivities, updateDay, moveActivityToDay } from '../api/itineraryApi.js';
 import { weatherEmoji } from '../data/weatherCodes.js';
-import { FixedHeader, PullToRefreshIndicator, Skeleton, color, radius, spacing, type } from '../design-system/index.js';
+import { FixedHeader, PullToRefreshIndicator, Skeleton, ItineraryAddButton, color, radius, spacing, type } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
@@ -51,60 +49,6 @@ function activityFields(act) {
 }
 
 let nextDraftId = -1;
-
-// Divisor clicável entre dois itens (ou antes do primeiro/depois do último)
-// pra inserir conteúdo novo naquela posição exata, em vez de só no fim da
-// lista. Fica discreto (sem borda tracejada grande) pra não parecer um item
-// de atividade de verdade no meio da lista. Dois alvos lado a lado — não um
-// ActionSheet — pra criar uma atividade simples (igual sempre foi) ou um
-// card "Roteiro" novo (mini-roteiro com subitens, ver ItineraryCardItem.jsx).
-function AddActivityDivider({ onAddActivity, onAddItineraryCard }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        height: 22,
-        margin: '-4px 0 2px',
-      }}
-    >
-      <div
-        onClick={onAddActivity}
-        style={{
-          width: 26,
-          height: 26,
-          borderRadius: 13,
-          border: `1.5px dashed ${color.dashedBorder}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: color.bg,
-          cursor: 'pointer',
-        }}
-      >
-        <AddIcon size={14} color={color.dark} />
-      </div>
-      <div
-        onClick={onAddItineraryCard}
-        style={{
-          width: 26,
-          height: 26,
-          borderRadius: 13,
-          border: `1.5px dashed ${color.dashedBorder}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: color.bg,
-          cursor: 'pointer',
-        }}
-      >
-        <RouteIcon size={14} color={color.dark} />
-      </div>
-    </div>
-  );
-}
 
 function ActivitySkeleton() {
   return (
@@ -697,7 +641,7 @@ export default function ScheduleScreen() {
         {!displayDay && Array.from({ length: 4 }).map((_, i) => <ActivitySkeleton key={i} />)}
 
         {displayDay && editing && (
-          <AddActivityDivider onAddActivity={() => handleAddActivity(0)} onAddItineraryCard={() => handleAddItineraryCard(0)} />
+          <ItineraryAddButton onAddActivity={() => handleAddActivity(0)} onAddItineraryCard={() => handleAddItineraryCard(0)} />
         )}
 
         {displayDay && (
@@ -740,7 +684,7 @@ export default function ScheduleScreen() {
                       onMoveSubItemUp={(index) => handleMoveSubItem(act.id, index, -1)}
                       onMoveSubItemDown={(index) => handleMoveSubItem(act.id, index, 1)}
                     />
-                    {editing && <AddActivityDivider onAddActivity={() => handleAddActivity(i + 1)} onAddItineraryCard={() => handleAddItineraryCard(i + 1)} />}
+                    {editing && <ItineraryAddButton onAddActivity={() => handleAddActivity(i + 1)} onAddItineraryCard={() => handleAddItineraryCard(i + 1)} />}
                   </div>
                 );
               }
@@ -769,7 +713,7 @@ export default function ScheduleScreen() {
                           <DistanceBetween from={act.place} to={next.place} />
                         )}
                       </div>
-                      {editing && <AddActivityDivider onAddActivity={() => handleAddActivity(i + 1)} onAddItineraryCard={() => handleAddItineraryCard(i + 1)} />}
+                      {editing && <ItineraryAddButton onAddActivity={() => handleAddActivity(i + 1)} onAddItineraryCard={() => handleAddItineraryCard(i + 1)} />}
                     </>
                   }
                 />

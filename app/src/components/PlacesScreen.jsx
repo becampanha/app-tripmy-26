@@ -219,38 +219,20 @@ export default function PlacesScreen() {
           />
         }
         right={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div
-              onClick={openMap}
-              style={{
-                height: 38,
-                padding: '0 14px',
-                borderRadius: 13,
-                background: color.surfaceMuted,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                cursor: 'pointer',
-              }}
-            >
-              <MapIcon size={17} color={color.dark} />
-              <span style={{ color: color.dark, fontSize: 13.5, fontWeight: 700 }}>Mapa</span>
-            </div>
-            <div
-              onClick={() => navigate('/lugares/novo')}
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 13,
-                background: color.surfaceMuted,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <AddIcon size={17} color={color.dark} />
-            </div>
+          <div
+            onClick={() => navigate('/lugares/novo')}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 13,
+              background: color.surfaceMuted,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <AddIcon size={17} color={color.dark} />
           </div>
         }
       />
@@ -271,6 +253,57 @@ export default function PlacesScreen() {
           padding: `2px ${space.screenGutter}px 120px`,
         }}
       >
+        {/* Call-to-action do mapa — mesmo padrão visual/posição do card
+            "Ver mapa do parque" da tela de Atrações (imagem estática, sem
+            overlay de gradiente, botão preto centralizado por cima).
+            Substituiu o antigo botão "Mapa" que ficava na navbar. */}
+        <motion.div
+          variants={STAGGER_ITEM}
+          onClick={openMap}
+          style={{
+            position: 'relative',
+            marginBottom: 28,
+            borderRadius: 20,
+            overflow: 'hidden',
+            height: 110,
+            background: '#eee9df',
+            border: `1px solid ${color.border}`,
+            cursor: 'pointer',
+          }}
+        >
+          <img
+            src="/roteiro-mapa-card.png"
+            alt=""
+            loading="lazy"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 18px',
+                borderRadius: 14,
+                background: '#1c1a17',
+              }}
+            >
+              <MapIcon size={17} color="#fff" />
+              <span style={{ color: '#fff', fontSize: 14.5, fontWeight: 800, letterSpacing: -0.1 }}>
+                Ver mapa
+              </span>
+            </div>
+          </div>
+        </motion.div>
+
         <motion.div variants={STAGGER_ITEM} style={{ display: 'flex', alignItems: 'stretch', gap: spacing.gapMd, marginBottom: 14 }}>
           <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nome" style={{ flex: 1, marginBottom: 0 }} />
 

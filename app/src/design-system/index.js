@@ -29,3 +29,4 @@ export { default as ImageLoadingBar } from './ImageLoadingBar.jsx';
 export { default as Confetti } from './Confetti.jsx';
 export { default as MapCardButton } from './MapCardButton.jsx';
 export { default as LiveQueueTag } from './LiveQueueTag.jsx';
+export { default as ItineraryAddButton } from './ItineraryAddButton.jsx';

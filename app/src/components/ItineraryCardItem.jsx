@@ -15,6 +15,7 @@ import { MapIcon } from '@solar-icons/react/linear/map';
 import { FieldLabel, inputStyle, color, radius, type } from '../design-system/index.js';
 import { useTapHandler } from '../hooks/useTapHandler.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
+import { resolveParkName } from '../data/parkIcons.js';
 
 // Subitem de um card "Roteiro" — sempre numerado (1, 2, 3...), mesmo visual
 // de número já usado em AttractionsItineraryScreen.jsx (círculo
@@ -305,6 +306,7 @@ export default function ItineraryCardItem({
   const tapHandlers = useTapHandler(
     clickable ? () => navigate(place ? `/lugares/${place.id}` : `/atracoes/${attraction.id}`) : null
   );
+  const parkName = resolveParkName({ place, attraction });
 
   return (
     <div
@@ -594,10 +596,10 @@ export default function ItineraryCardItem({
           </div>
         )}
 
-        {!editing && attraction && (
+        {!editing && parkName && (
           <button
             type="button"
-            onClick={() => navigate('/atracoes', { state: { parkName: attraction.parkName, mapOpen: true } })}
+            onClick={() => navigate('/atracoes', { state: { parkName, mapOpen: true } })}
             style={{
               marginTop: 12,
               width: '100%',

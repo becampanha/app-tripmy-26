@@ -14,6 +14,7 @@ import MoveToDayModal from './MoveToDayModal.jsx';
 import DayMap from './DayMap.jsx';
 import EditActionBar from './EditActionBar.jsx';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
+import { resolveParkName } from '../data/parkIcons.js';
 import { useItinerary } from '../hooks/useItinerary.js';
 import { useDayWeather } from '../hooks/useDayWeather.js';
 import { setGlobalEditing } from '../hooks/useEditingState.js';
@@ -776,11 +777,12 @@ export default function ScheduleScreen() {
             onClose={() => setAttractionSelectorFor(null)}
             initialParkName={
               // Facilitador: se o subitem pertence a um card de Roteiro cujo
-              // local principal já é uma atração (ex: card "Magic Kingdom"),
-              // abre o seletor direto na aba desse parque — evita o usuário
-              // ter que procurar de novo um parque que ele já escolheu antes.
+              // local principal já identifica um parque (seja uma atração
+              // vinculada, ou um lugar com categoria "Parque" — ex: os 7
+              // cards reais de parque, que usam place, não attraction), abre
+              // o seletor direto na aba desse parque.
               typeof attractionSelectorFor === 'object'
-                ? displayDay?.activities.find((a) => a.id === attractionSelectorFor.cardId)?.attraction?.parkName
+                ? resolveParkName(displayDay?.activities.find((a) => a.id === attractionSelectorFor.cardId) || {})
                 : undefined
             }
           />

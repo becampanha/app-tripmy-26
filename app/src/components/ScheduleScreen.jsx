@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AnimatePresence, Reorder, motion } from 'motion/react';
+import { AnimatePresence, Reorder, motion, useDragControls } from 'motion/react';
 import { PenIcon } from '@solar-icons/react/linear/pen';
 import { ListIcon } from '@solar-icons/react/linear/list';
 import { MapIcon } from '@solar-icons/react/bold/map';
@@ -60,6 +60,31 @@ function ActivitySkeleton() {
         <Skeleton width="45%" height={12} style={{ marginTop: 6 }} />
       </div>
     </div>
+  );
+}
+
+// Wrapper do card "Roteiro" que o torna arrastável dentro do Reorder.Group
+// externo (lista de atividades do dia) — extraído num componente próprio
+// porque useDragControls() não pode ser chamado dentro do .map() do pai.
+// Reaproveita exatamente o mesmo padrão já usado por ActivityItem (handle
+// dedicado via onPointerDown + dragListener:false, não o card inteiro
+// arrastável) — o drag-and-drop interno dos subitens (Reorder.Group aninhado
+// dentro de ItineraryCardItem) continua funcionando normalmente, pois usa
+// seu próprio useDragControls isolado, sem conflito com este.
+function DraggableItineraryCard({ activity, editing, ...itineraryCardProps }) {
+  const dragControls = useDragControls();
+  const Container = editing ? Reorder.Item : 'div';
+  const containerProps = editing ? { value: activity, dragListener: false, dragControls } : {};
+
+  return (
+    <Container {...containerProps} style={{ listStyle: 'none' }}>
+      <ItineraryCardItem
+        activity={activity}
+        editing={editing}
+        onDragHandlePointerDown={editing ? (e) => dragControls.start(e) : undefined}
+        {...itineraryCardProps}
+      />
+    </Container>
   );
 }
 
@@ -655,12 +680,10 @@ export default function ScheduleScreen() {
           >
             {displayDay.activities.map((act, i) => {
               const next = displayDay.activities[i + 1];
-              // Fase 4: CRUD completo do card e seus subitens — drag-and-drop
-              // dos subitens vem na fase 5.
               if (act.type === 'itinerary') {
                 return (
                   <div key={act.id} style={{ marginBottom: 12 }}>
-                    <ItineraryCardItem
+                    <DraggableItineraryCard
                       activity={act}
                       editing={editing}
                       onEditTime={(time) => patchDraftActivity(act.id, { time })}

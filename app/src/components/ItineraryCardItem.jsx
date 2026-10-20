@@ -278,6 +278,7 @@ export default function ItineraryCardItem({
   onDeleteSubItem,
   onMoveSubItemUp,
   onMoveSubItemDown,
+  onDragHandlePointerDown,
 }) {
   const navigate = useNavigate();
   const { place, attraction } = activity;
@@ -578,6 +579,15 @@ export default function ItineraryCardItem({
 
       {editing && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 'none', paddingTop: 2 }}>
+          {onDragHandlePointerDown && (
+            <button
+              type="button"
+              onPointerDown={onDragHandlePointerDown}
+              style={{ border: 0, background: 'none', padding: 2, cursor: 'grab', touchAction: 'none' }}
+            >
+              <HamburgerMenuIcon size={16} color={color.dark} />
+            </button>
+          )}
           {onMoveToDay && (
             <button type="button" onClick={onMoveToDay} style={{ border: 0, background: 'none', padding: 2, cursor: 'pointer' }}>
               <CalendarAddIcon size={16} color={color.dark} />

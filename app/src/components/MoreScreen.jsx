@@ -14,15 +14,22 @@ import WelcomeScreen from './WelcomeScreen.jsx';
 import { isStandalone } from '../hooks/useIsStandalone.js';
 import { getTravelerIdentity, setTravelerIdentity } from '../hooks/useTravelerIdentity.js';
 import { TRAVELERS } from '../data/travelers.js';
+import { showToast } from '../hooks/useToast.js';
 import {
   disablePushNotifications,
   getNotificationPermission,
   isPushSupported,
   requestPushPermission,
 } from '../hooks/usePushNotifications.js';
-import { FixedHeader, Select, Toggle, color, spacing, type } from '../design-system/index.js';
+import { FixedHeader, Select, Toggle, color, radius, spacing, type } from '../design-system/index.js';
 import { STAGGER_ITEM, WIPE_STAGGER_CONTAINER } from '../design-system/motionPresets.js';
 import { useStaggerKey } from '../hooks/useActiveScreen.js';
+
+// Avisa a si mesmo (na próxima carga da página, depois do reload físico que
+// hardRefresh() precisa) que acabou de concluir uma atualização manual — um
+// toast não sobrevive a um reload (estado em memória, ver useToast.js), por
+// isso a confirmação precisa ser guardada e lida de novo depois de recarregar.
+const REFRESH_FLAG = 'justHardRefreshed';
 
 function travelerOption(t) {
   return { value: t.name, label: `${t.emoji} ${t.name}` };
@@ -49,6 +56,7 @@ async function hardRefresh() {
     const keys = await caches.keys();
     await Promise.all(keys.map((k) => caches.delete(k)));
   }
+  sessionStorage.setItem(REFRESH_FLAG, '1');
   window.location.reload();
 }
 
@@ -76,6 +84,16 @@ export default function MoreScreen() {
   // configurações do sistema) entre uma visita e outra a esta tela.
   useEffect(() => {
     setPushEnabled(getNotificationPermission() === 'granted');
+  }, []);
+
+  // Confirma o hardRefresh() da visita anterior — a flag só existe aqui
+  // porque o reload físico que ele dispara aconteceu entre a escrita e esta
+  // leitura (ver REFRESH_FLAG acima).
+  useEffect(() => {
+    if (sessionStorage.getItem(REFRESH_FLAG)) {
+      sessionStorage.removeItem(REFRESH_FLAG);
+      showToast('O aplicativo está atualizado');
+    }
   }, []);
 
   const handleRefresh = async () => {
@@ -169,20 +187,27 @@ export default function MoreScreen() {
             </div>
           </div>
           <div
-            onClick={handleRefresh}
+            onClick={refreshing ? undefined : handleRefresh}
             style={{
               flex: 'none',
-              width: 32,
-              height: 32,
-              borderRadius: 10,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              gap: 6,
+              padding: '8px 12px',
+              borderRadius: radius.input,
+              background: color.dark,
               cursor: refreshing ? 'default' : 'pointer',
+              opacity: refreshing ? 0.7 : 1,
             }}
           >
-            <RefreshIcon size={17} color={refreshing ? color.faint : color.dark} />
+            <RefreshIcon
+              size={14}
+              color={color.white}
+              style={{ animation: refreshing ? 'more-refresh-spin 0.8s linear infinite' : 'none' }}
+            />
+            <span style={{ color: color.white, fontSize: 13, fontWeight: 700 }}>Atualizar</span>
           </div>
+          <style>{'@keyframes more-refresh-spin { to { transform: rotate(360deg); } }'}</style>
         </motion.div>
 
         {isStandalone() && isPushSupported() && (

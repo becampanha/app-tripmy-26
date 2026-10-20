@@ -53,14 +53,13 @@ export default function FilterMenu({
           alignItems: 'center',
           justifyContent: 'center',
           borderRadius: radius.input,
-          border: `1px solid ${active ? color.dark : color.border}`,
-          background: active ? color.dark : color.bg,
+          background: active ? color.dark : color.surfaceMuted,
           cursor: 'pointer',
           boxSizing: 'border-box',
           ...buttonStyle,
         }}
       >
-        <FilterIcon size={17} color={active ? color.white : color.faintIcon} />
+        <FilterIcon size={17} color={active ? color.white : color.dark} />
       </div>
 
       <AnimatePresence>

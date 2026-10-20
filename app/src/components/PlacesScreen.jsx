@@ -219,20 +219,34 @@ export default function PlacesScreen() {
           />
         }
         right={
-          <div
-            onClick={() => navigate('/lugares/novo')}
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 13,
-              background: color.surfaceMuted,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <AddIcon size={17} color={color.dark} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <FilterMenu
+              active={onlyInItinerary || onlyFavorite || !!subcategory}
+              checksLabel="Filtros"
+              checks={[
+                { label: 'Está no roteiro', icon: CheckCircleIcon, checked: onlyInItinerary, onChange: setOnlyInItinerary },
+                { label: 'Favoritos', icon: StarIcon, checked: onlyFavorite, onChange: setOnlyFavorite },
+              ]}
+              areaLabel="Filtrar por área"
+              areaOptions={subcategoryOptions}
+              areaValue={subcategory}
+              onAreaChange={setSubcategory}
+            />
+            <div
+              onClick={() => navigate('/lugares/novo')}
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 13,
+                background: color.surfaceMuted,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <AddIcon size={17} color={color.dark} />
+            </div>
           </div>
         }
       />
@@ -304,21 +318,8 @@ export default function PlacesScreen() {
           </div>
         </motion.div>
 
-        <motion.div variants={STAGGER_ITEM} style={{ display: 'flex', alignItems: 'stretch', gap: spacing.gapMd, marginBottom: 14 }}>
-          <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nome" style={{ flex: 1, marginBottom: 0 }} />
-
-          <FilterMenu
-            active={onlyInItinerary || onlyFavorite || !!subcategory}
-            checksLabel="Filtros"
-            checks={[
-              { label: 'Está no roteiro', icon: CheckCircleIcon, checked: onlyInItinerary, onChange: setOnlyInItinerary },
-              { label: 'Favoritos', icon: StarIcon, checked: onlyFavorite, onChange: setOnlyFavorite },
-            ]}
-            areaLabel="Filtrar por área"
-            areaOptions={subcategoryOptions}
-            areaValue={subcategory}
-            onAreaChange={setSubcategory}
-          />
+        <motion.div variants={STAGGER_ITEM} style={{ marginBottom: 14 }}>
+          <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nome" style={{ marginBottom: 0 }} />
         </motion.div>
 
         {loading && Array.from({ length: 3 }).map((_, i) => (

@@ -118,6 +118,15 @@ export default function AttractionsScreen() {
         title="Atrações"
         left={<HamburgerMenuButton />}
         tabs={<HScrollTabs items={tabItems} activeKey={parkIndex} onSelect={setParkIndex} loading={loading} instanceId="attractions" style={{ marginTop: 0, padding: `0 ${spacing.screenGutter}px` }} />}
+        right={
+          <FilterMenu
+            active={onlyInItinerary}
+            checksLabel="Filtros"
+            checks={[
+              { label: 'Está no roteiro', icon: CheckCircleIcon, checked: onlyInItinerary, onChange: setOnlyInItinerary },
+            ]}
+          />
+        }
       />
 
       <motion.div
@@ -187,16 +196,8 @@ export default function AttractionsScreen() {
           </motion.div>
         )}
 
-        <motion.div variants={STAGGER_ITEM} style={{ display: 'flex', alignItems: 'stretch', gap: spacing.gapMd, marginBottom: 14 }}>
-          <SearchInput value={search} onChange={setSearch} placeholder="Buscar atração" style={{ flex: 1, marginBottom: 0 }} />
-
-          <FilterMenu
-            active={onlyInItinerary}
-            checksLabel="Filtros"
-            checks={[
-              { label: 'Está no roteiro', icon: CheckCircleIcon, checked: onlyInItinerary, onChange: setOnlyInItinerary },
-            ]}
-          />
+        <motion.div variants={STAGGER_ITEM} style={{ marginBottom: 14 }}>
+          <SearchInput value={search} onChange={setSearch} placeholder="Buscar atração" style={{ marginBottom: 0 }} />
         </motion.div>
 
         {loading && parks.length === 0 && Array.from({ length: 4 }).map((_, i) => (

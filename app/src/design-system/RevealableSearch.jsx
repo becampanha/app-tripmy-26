@@ -1,6 +1,11 @@
 import SearchInput from './SearchInput.jsx';
+import { spacing } from './tokens.js';
 
-const HEIGHT = 46; // altura do SearchInput + respiro abaixo dele
+// Altura do SearchInput (~46px) + o mesmo respiro (controlGap) que ele teria
+// naturalmente antes do próximo bloco — zerado via marginBottom:0 abaixo
+// porque esse respiro precisa estar DENTRO da altura animada (senão o
+// elemento seguinte fica colado nele quando revelado).
+const HEIGHT = 46 + spacing.controlGap;
 
 // Campo de busca escondido por padrão, revelado com o mesmo "feel" elástico
 // do pull-to-refresh do iOS — ver usePullDownSearch.js. `progress` (0→1)

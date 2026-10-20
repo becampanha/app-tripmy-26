@@ -16,8 +16,9 @@ import { usePlacesInItinerary } from '../hooks/usePlacesInItinerary.js';
 import { getPlacesScreenState, savePlacesScreenState, getCachedPlaces, setCachedPlaces } from '../hooks/usePlacesScreenState.js';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
+import { usePullToReveal } from '../hooks/usePullToReveal.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
-import { FixedHeader, HScrollTabs, SearchInput, SectionHeader, Skeleton, FilterMenu, color, radius, space, spacing } from '../design-system/index.js';
+import { FixedHeader, HScrollTabs, PullToRevealSearch, SectionHeader, Skeleton, FilterMenu, color, radius, space, spacing } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
@@ -56,6 +57,7 @@ export default function PlacesScreen() {
   const { scrollY } = useScrollY(rootRef);
   const { ref: headerRef, height: headerHeight } = useElementHeight();
   const staggerKey = useStaggerKey();
+  const pullToReveal = usePullToReveal(rootRef);
 
   // Mesmo padrão do mapa do Roteiro (ver ScheduleScreen.jsx): abrir o mapa
   // empurra uma entrada real no histórico, pra "voltar" (botão dentro do
@@ -267,6 +269,12 @@ export default function PlacesScreen() {
           padding: `2px ${space.screenGutter}px 120px`,
         }}
       >
+        {/* Busca escondida por padrão, revelada só ao puxar a lista pra
+            baixo no topo (igual Contatos/Mail do iOS) — ver
+            usePullToReveal.js. Fica acima do card de mapa, não dentro do
+            fluxo normal da lista. */}
+        <PullToRevealSearch progress={pullToReveal} value={search} onChange={setSearch} placeholder="Buscar por nome" />
+
         {/* Call-to-action do mapa — mesmo padrão visual/posição do card
             "Ver mapa do parque" da tela de Atrações (imagem estática, sem
             overlay de gradiente, botão preto centralizado por cima).
@@ -316,10 +324,6 @@ export default function PlacesScreen() {
               </span>
             </div>
           </div>
-        </motion.div>
-
-        <motion.div variants={STAGGER_ITEM} style={{ marginBottom: 14 }}>
-          <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nome" style={{ marginBottom: 0 }} />
         </motion.div>
 
         {loading && Array.from({ length: 3 }).map((_, i) => (

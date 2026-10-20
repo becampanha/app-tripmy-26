@@ -24,6 +24,7 @@ export { default as ParkMap } from './ParkMap.jsx';
 export { default as YoutubePlayButton } from './YoutubePlayButton.jsx';
 export { default as YoutubeVideoModal } from './YoutubeVideoModal.jsx';
 export { default as PullToRefreshIndicator } from './PullToRefreshIndicator.jsx';
+export { default as PullToRevealSearch } from './PullToRevealSearch.jsx';
 export { default as BootLoader } from './BootLoader.jsx';
 export { default as ImageLoadingBar } from './ImageLoadingBar.jsx';
 export { default as Confetti } from './Confetti.jsx';

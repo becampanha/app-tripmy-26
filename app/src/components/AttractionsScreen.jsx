@@ -10,8 +10,9 @@ import { PARK_ICON_MAP } from '../data/parkIcons.js';
 import { useScrollY } from '../hooks/useScrollY.js';
 import { useElementHeight } from '../hooks/useElementHeight.js';
 import { useLiveQueueTimes } from '../hooks/useLiveQueueTimes.js';
+import { usePullToReveal } from '../hooks/usePullToReveal.js';
 import { HamburgerMenuButton } from './HamburgerMenuButton.jsx';
-import { FilterMenu, FixedHeader, HScrollTabs, ParkMap, SearchInput, SectionHeader, Skeleton, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
+import { FilterMenu, FixedHeader, HScrollTabs, ParkMap, PullToRevealSearch, SectionHeader, Skeleton, cardPhotoHeight, color, radius, space, spacing } from '../design-system/index.js';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '../design-system/motionPresets.js';
 import { useStaggerKey } from '../hooks/useActiveScreen.js';
 
@@ -44,6 +45,7 @@ export default function AttractionsScreen() {
   const { ref: headerRef, height: headerHeight } = useElementHeight();
   const { getLiveQueue, getLiveStatus } = useLiveQueueTimes();
   const staggerKey = useStaggerKey();
+  const pullToReveal = usePullToReveal(anchorRef);
 
   // Salva parque/filtros a cada mudança, pra sobreviver à desmontagem ao
   // navegar para outra tela e voltar (mesmo padrão de usePlacesScreenState).
@@ -142,6 +144,11 @@ export default function AttractionsScreen() {
           padding: `2px ${space.screenGutter}px 120px`,
         }}
       >
+        {/* Busca escondida por padrão, revelada só ao puxar a lista pra
+            baixo no topo (igual Contatos/Mail do iOS) — ver
+            usePullToReveal.js. Fica acima do card de mapa. */}
+        <PullToRevealSearch progress={pullToReveal} value={search} onChange={setSearch} placeholder="Buscar atração" />
+
         {/* Call-to-action do mapa do parque — mesmo padrão visual/posição do
             card "Ver roteiro no mapa" da tela de Roteiro (imagem estática,
             sem overlay, botão preto centralizado por cima). Substituiu o
@@ -195,10 +202,6 @@ export default function AttractionsScreen() {
             </div>
           </motion.div>
         )}
-
-        <motion.div variants={STAGGER_ITEM} style={{ marginBottom: 14 }}>
-          <SearchInput value={search} onChange={setSearch} placeholder="Buscar atração" style={{ marginBottom: 0 }} />
-        </motion.div>
 
         {loading && parks.length === 0 && Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} height={cardPhotoHeight} radius={radius.cardPhoto} style={{ marginBottom: spacing.controlGap }} />
